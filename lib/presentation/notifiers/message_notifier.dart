@@ -111,10 +111,19 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     try {
       final chatId = update['chat_id'] as int?;
       final messageIds = update['message_ids'] as List?;
+      final fromCache = update['from_cache'] as bool? ?? false;
 
       if (chatId == null || messageIds == null) return;
 
-      _logger.info('Messages deleted in chat $chatId: $messageIds');
+      // Ignore cache cleanup events - these are just TDLib unloading messages from RAM
+      // to manage memory, not actual deletions from Telegram
+      if (fromCache) {
+        _logger.info('Ignoring cache cleanup for chat $chatId: ${messageIds.length} messages unloaded from RAM');
+        return;
+      }
+
+      // Process real message deletions (from_cache: false or missing)
+      _logger.info('Messages actually deleted in chat $chatId: $messageIds');
 
       final currentState = state.valueOrNull;
       if (currentState != null) {

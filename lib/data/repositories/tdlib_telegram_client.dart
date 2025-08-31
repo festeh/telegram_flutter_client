@@ -365,30 +365,85 @@ class TdlibTelegramClient implements TelegramClientRepository {
   @override
   Future<List<Message>> loadMessages(int chatId, {int limit = 50, int fromMessageId = 0}) async {
     try {
-      // First check if we have cached messages
+      // First check if we have cached messages for initial load
       if (_messages.containsKey(chatId) && fromMessageId == 0) {
-        return _messages[chatId]!;
+        final cachedMessages = _messages[chatId]!;
+        // If we have enough messages cached, return them
+        if (cachedMessages.length >= 30) {
+          return cachedMessages;
+        }
+        // Otherwise, continue to load more messages
       }
+
+      // For initial load, try to get at least 30 messages
+      final minMessages = fromMessageId == 0 ? 30 : limit;
+      return await _loadMessagesRecursively(chatId, minMessages, fromMessageId);
+    } catch (e) {
+      _logger.logError('Failed to load messages for chat $chatId', error: e);
+      return _messages[chatId] ?? [];
+    }
+  }
+
+  Future<List<Message>> _loadMessagesRecursively(
+    int chatId, 
+    int minMessages, 
+    int fromMessageId,
+    {int maxAttempts = 5}
+  ) async {
+    int attempts = 0;
+    int currentFromMessageId = fromMessageId;
+    
+    while (attempts < maxAttempts) {
+      attempts++;
+      
+      _logger.logRequest({
+        '@type': 'recursive_load_attempt',
+        'chat_id': chatId,
+        'attempt': attempts,
+        'from_message_id': currentFromMessageId,
+        'current_cached': _messages[chatId]?.length ?? 0,
+        'target': minMessages,
+      });
 
       // Request messages from TDLib
       await _sendRequest({
         '@type': 'getChatHistory',
         'chat_id': chatId,
-        'limit': limit,
-        'from_message_id': fromMessageId,
+        'limit': 50,
+        'from_message_id': currentFromMessageId,
         'offset': 0,
         'only_local': false,
       });
 
       // Wait for messages to be received via updates
-      await Future.delayed(const Duration(milliseconds: 1000));
+      await Future.delayed(const Duration(milliseconds: 800));
 
-      // Return cached messages or empty list
-      return _messages[chatId] ?? [];
-    } catch (e) {
-      _logger.logError('Failed to load messages for chat $chatId', error: e);
-      return [];
+      final currentMessages = _messages[chatId] ?? [];
+      
+      // If we have enough messages or no new messages were received, stop
+      if (currentMessages.length >= minMessages || currentMessages.isEmpty) {
+        break;
+      }
+      
+      // Get the oldest message ID for next request
+      final oldestMessage = currentMessages.reduce((a, b) => a.date.isBefore(b.date) ? a : b);
+      currentFromMessageId = oldestMessage.id;
+      
+      // Small delay to avoid overwhelming TDLib
+      await Future.delayed(const Duration(milliseconds: 100));
     }
+
+    final finalMessages = _messages[chatId] ?? [];
+    
+    _logger.logRequest({
+      '@type': 'recursive_load_completed',
+      'chat_id': chatId,
+      'attempts_made': attempts,
+      'final_message_count': finalMessages.length,
+      'target_reached': finalMessages.length >= minMessages,
+    });
+
+    return finalMessages;
   }
 
   @override
