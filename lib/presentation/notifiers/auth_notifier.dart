@@ -8,6 +8,7 @@ import '../../data/repositories/tdlib_telegram_client.dart';
 import '../../data/repositories/shared_preferences_storage.dart';
 import '../../domain/entities/auth_state.dart';
 import '../state/unified_auth_state.dart';
+import '../providers/telegram_client_provider.dart';
 
 class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
   late final TelegramClientRepository _client;
@@ -17,8 +18,8 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
 
   @override
   Future<UnifiedAuthState> build() async {
-    // Initialize dependencies
-    _client = TdlibTelegramClient();
+    // Initialize dependencies - use shared client from provider
+    _client = ref.read(telegramClientProvider);
     _storage = SharedPreferencesStorage();
     _authRepository = TdlibAuthentication(_client, _storage);
 

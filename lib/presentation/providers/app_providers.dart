@@ -4,6 +4,7 @@ import '../notifiers/chat_notifier.dart';
 import '../state/unified_auth_state.dart';
 import '../state/chat_state.dart';
 import '../../domain/entities/chat.dart';
+import 'telegram_client_provider.dart';
 
 // Single source of truth for all authentication state
 final authProvider = AsyncNotifierProvider<AuthNotifier, UnifiedAuthState>(

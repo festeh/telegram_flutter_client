@@ -239,19 +239,39 @@ class TdlibTelegramClient implements TelegramClientRepository {
   @override
   Future<List<Chat>> loadChats({int limit = 20, int offsetOrder = 0, int offsetChatId = 0}) async {
     final completer = Completer<List<Chat>>();
+    final chats = <Chat>[];
     
     // Generate unique request id for tracking response
     final requestId = DateTime.now().millisecondsSinceEpoch.toString();
     
     // Listen for the response
     late StreamSubscription subscription;
-    subscription = updates.listen((update) {
+    subscription = updates.listen((update) async {
       if (update['@type'] == 'chats' && update['@extra'] == requestId) {
-        // final chatIds = List<int>.from(update['chat_ids'] ?? []);
-        final chats = <Chat>[];
+        final chatIds = List<int>.from(update['chat_ids'] ?? []);
+        _logger.logRequest({
+          '@type': 'chat_ids_received',
+          'count': chatIds.length,
+          'chat_ids': chatIds,
+        });
         
-        // We need to get full chat info for each chat ID
-        // For now, return empty list and let individual getChat calls populate
+        // Load full chat details for each chat ID
+        for (final chatId in chatIds) {
+          try {
+            final chat = await getChat(chatId);
+            if (chat != null) {
+              chats.add(chat);
+            }
+          } catch (e) {
+            _logger.logError('Error loading chat $chatId', error: e);
+          }
+        }
+        
+        _logger.logRequest({
+          '@type': 'chats_loaded',
+          'loaded_count': chats.length,
+          'requested_count': chatIds.length,
+        });
         completer.complete(chats);
         subscription.cancel();
       }
@@ -266,8 +286,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
     });
     
     // Set timeout
-    Timer(const Duration(seconds: 10), () {
+    Timer(const Duration(seconds: 15), () {
       if (!completer.isCompleted) {
+        _logger.logError('Timeout loading chats after 15 seconds');
         completer.completeError('Timeout loading chats');
         subscription.cancel();
       }
