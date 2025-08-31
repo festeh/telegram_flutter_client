@@ -23,7 +23,8 @@ abstract class TelegramClientRepository {
   Future<void> logOut();
 
   // Chat methods
-  Future<List<Chat>> loadChats({int limit = 20, int offsetOrder = 0, int offsetChatId = 0});
+  Future<List<Chat>> loadChats(
+      {int limit = 20, int offsetOrder = 0, int offsetChatId = 0});
   Future<Chat?> getChat(int chatId);
 
   void dispose();

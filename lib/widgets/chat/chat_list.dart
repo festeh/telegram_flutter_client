@@ -48,7 +48,8 @@ class _ChatListState extends ConsumerState<ChatList> {
         final chatAsync = ref.watch(chatProvider);
 
         return chatAsync.when(
-          data: (chatState) => _buildChatList(chatState.chats, chatState.isLoading),
+          data: (chatState) =>
+              _buildChatList(chatState.chats, chatState.isLoading),
           loading: () => _buildLoadingState(),
           error: (error, stackTrace) => _buildErrorState(error.toString()),
         );
@@ -78,7 +79,8 @@ class _ChatListState extends ConsumerState<ChatList> {
                     padding: EdgeInsets.all(16),
                     child: Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3390EC)),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFF3390EC)),
                       ),
                     ),
                   );
@@ -252,7 +254,7 @@ class _ChatListState extends ConsumerState<ChatList> {
     setState(() {
       _selectedChatId = chat.id;
     });
-    
+
     // Call the callback if provided
     widget.onChatSelected?.call(chat);
   }

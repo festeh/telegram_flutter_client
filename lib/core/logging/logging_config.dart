@@ -9,9 +9,10 @@ import 'tdlib_log_level.dart';
 
 class LoggingConfig {
   static TdLibLogLevel? _tdlibLogLevel;
-  
+
   /// Get the current TDLib log level
-  static TdLibLogLevel get tdlibLogLevel => _tdlibLogLevel ?? TdLibLogLevel.getDefault(kDebugMode, kReleaseMode);
+  static TdLibLogLevel get tdlibLogLevel =>
+      _tdlibLogLevel ?? TdLibLogLevel.getDefault(kDebugMode, kReleaseMode);
 
   static Future<void> initialize({TdLibLogLevel? tdlibLogLevel}) async {
     Level logLevel;

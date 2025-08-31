@@ -162,7 +162,7 @@ class Message {
     // Parse message content from TDLib format
     String parseContent(Map<String, dynamic>? contentMap) {
       if (contentMap == null) return '';
-      
+
       final type = contentMap['@type'] as String;
       switch (type) {
         case 'messageText':
@@ -188,7 +188,7 @@ class Message {
 
     MessageType parseMessageType(Map<String, dynamic>? contentMap) {
       if (contentMap == null) return MessageType.text;
-      
+
       final type = contentMap['@type'] as String;
       switch (type) {
         case 'messageText':

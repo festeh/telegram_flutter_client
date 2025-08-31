@@ -28,6 +28,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   AuthenticationState _currentAuthState =
       const AuthenticationState(state: AuthorizationState.unknown);
   UserSession? _currentUser;
+  final Map<int, Chat> _chats = <int, Chat>{};
 
   @override
   AuthenticationState get currentAuthState => _currentAuthState;
@@ -49,10 +50,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
     if (_isStarted) return;
 
     _client = TdJsonClient();
-    
+
     // Set TDLib log verbosity level before any other operations
     _setTdLibLogVerbosity();
-    
+
     _isStarted = true;
 
     _startReceiving();
@@ -136,6 +137,49 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _handleAuthorizationState(authState);
     } else if (type == 'updateUser' && update['user']?['is_self'] == true) {
       _currentUser = UserSession.fromJson(update['user']);
+    } else if (type == 'updateNewChat') {
+      _handleNewChatUpdate(update);
+    } else if (type == 'updateChatLastMessage') {
+      _handleChatLastMessageUpdate(update);
+    }
+  }
+
+  void _handleNewChatUpdate(Map<String, dynamic> update) {
+    try {
+      final chatData = update['chat'] as Map<String, dynamic>?;
+      if (chatData != null) {
+        final chat = Chat.fromJson(chatData);
+        _chats[chat.id] = chat;
+        _logger.logRequest({
+          '@type': 'chat_added_to_cache',
+          'chat_id': chat.id,
+          'chat_title': chat.title,
+          'total_chats': _chats.length,
+        });
+      }
+    } catch (e) {
+      _logger.logError('Error processing updateNewChat', error: e);
+    }
+  }
+
+  void _handleChatLastMessageUpdate(Map<String, dynamic> update) {
+    try {
+      final chatId = update['chat_id'] as int?;
+      final lastMessageData = update['last_message'] as Map<String, dynamic>?;
+
+      if (chatId != null &&
+          lastMessageData != null &&
+          _chats.containsKey(chatId)) {
+        final message = Message.fromJson(lastMessageData);
+        final existingChat = _chats[chatId]!;
+        final updatedChat = existingChat.copyWith(
+          lastMessage: message,
+          lastActivity: message.date,
+        );
+        _chats[chatId] = updatedChat;
+      }
+    } catch (e) {
+      _logger.logError('Error processing updateChatLastMessage', error: e);
     }
   }
 
@@ -161,7 +205,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
   Future<String> _getDatabasePath() async {
     final homeDir = Platform.environment['HOME'] ?? '';
-    final dbPath = path.join(homeDir, '.local', 'share', 'telegram_flutter_client');
+    final dbPath =
+        path.join(homeDir, '.local', 'share', 'telegram_flutter_client');
     return dbPath;
   }
 
@@ -237,105 +282,52 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   @override
-  Future<List<Chat>> loadChats({int limit = 20, int offsetOrder = 0, int offsetChatId = 0}) async {
-    final completer = Completer<List<Chat>>();
-    final chats = <Chat>[];
-    
-    // Generate unique request id for tracking response
-    final requestId = DateTime.now().millisecondsSinceEpoch.toString();
-    
-    // Listen for the response
-    late StreamSubscription subscription;
-    subscription = updates.listen((update) async {
-      if (update['@type'] == 'chats' && update['@extra'] == requestId) {
-        final chatIds = List<int>.from(update['chat_ids'] ?? []);
-        _logger.logRequest({
-          '@type': 'chat_ids_received',
-          'count': chatIds.length,
-          'chat_ids': chatIds,
-        });
-        
-        // Load full chat details for each chat ID
-        for (final chatId in chatIds) {
-          try {
-            final chat = await getChat(chatId);
-            if (chat != null) {
-              chats.add(chat);
-            }
-          } catch (e) {
-            _logger.logError('Error loading chat $chatId', error: e);
-          }
-        }
-        
-        _logger.logRequest({
-          '@type': 'chats_loaded',
-          'loaded_count': chats.length,
-          'requested_count': chatIds.length,
-        });
-        completer.complete(chats);
-        subscription.cancel();
-      }
-    });
-    
-    // Send the request
+  Future<List<Chat>> loadChats(
+      {int limit = 20, int offsetOrder = 0, int offsetChatId = 0}) async {
+    // Send the getChats request to trigger TDLib to send updateNewChat events
     await _sendRequest({
       '@type': 'getChats',
       'chat_list': {'@type': 'chatListMain'},
       'limit': limit,
-      '@extra': requestId,
     });
-    
-    // Set timeout
-    Timer(const Duration(seconds: 15), () {
-      if (!completer.isCompleted) {
-        _logger.logError('Timeout loading chats after 15 seconds');
-        completer.completeError('Timeout loading chats');
-        subscription.cancel();
-      }
+
+    // Wait a moment for updates to arrive
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Return currently cached chats
+    final chatList = _chats.values.toList();
+    chatList.sort((a, b) {
+      final aTime = a.lastActivity ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.lastActivity ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bTime.compareTo(aTime); // Most recent first
     });
-    
-    return completer.future;
+
+    _logger.logRequest({
+      '@type': 'chats_returned_from_cache',
+      'count': chatList.length,
+    });
+
+    return chatList;
   }
 
   @override
   Future<Chat?> getChat(int chatId) async {
-    final completer = Completer<Chat?>();
-    
-    // Generate unique request id for tracking response
-    final requestId = DateTime.now().millisecondsSinceEpoch.toString();
-    
-    // Listen for the response
-    late StreamSubscription subscription;
-    subscription = updates.listen((update) {
-      if (update['@type'] == 'chat' && 
-          update['id'] == chatId && 
-          update['@extra'] == requestId) {
-        try {
-          final chat = Chat.fromJson(update);
-          completer.complete(chat);
-        } catch (e) {
-          completer.completeError('Error parsing chat: $e');
-        }
-        subscription.cancel();
-      }
-    });
-    
-    // Send the request
+    // First try to return from cache
+    if (_chats.containsKey(chatId)) {
+      return _chats[chatId];
+    }
+
+    // If not in cache, request it from TDLib
     await _sendRequest({
       '@type': 'getChat',
       'chat_id': chatId,
-      '@extra': requestId,
     });
-    
-    // Set timeout
-    Timer(const Duration(seconds: 5), () {
-      if (!completer.isCompleted) {
-        completer.complete(null);
-        subscription.cancel();
-      }
-    });
-    
-    return completer.future;
+
+    // Wait a moment for the update to arrive
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    // Return from cache if it's now available
+    return _chats[chatId];
   }
 
   /// Sets TDLib's native C++ logging verbosity level
@@ -350,8 +342,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       // Use synchronous execute method for immediate effect
       _client.execute(request);
-      
-      _logger.logConnectionState('Log verbosity set to level ${logLevel.level} (${logLevel.description})');
+
+      _logger.logConnectionState(
+          'Log verbosity set to level ${logLevel.level} (${logLevel.description})');
     } catch (e) {
       _logger.logError(
         'Failed to set TDLib log verbosity',

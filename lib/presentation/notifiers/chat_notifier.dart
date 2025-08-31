@@ -17,10 +17,10 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   Future<ChatState> build() async {
     // Use the shared client instance from provider
     _client = ref.read(telegramClientProvider);
-    
+
     // Start listening to chat updates
     _listenToUpdates();
-    
+
     // Load initial chats
     return await _loadChats();
   }
@@ -39,8 +39,11 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
 
   void _handleUpdate(Map<String, dynamic> update) {
     final updateType = update['@type'] as String;
-    
+
     switch (updateType) {
+      case 'updateNewChat':
+        _handleNewChatUpdate(update);
+        break;
       case 'updateNewMessage':
         _handleNewMessage(update);
         break;
@@ -65,14 +68,33 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
     }
   }
 
+  void _handleNewChatUpdate(Map<String, dynamic> update) {
+    try {
+      final chatData = update['chat'] as Map<String, dynamic>?;
+      if (chatData == null) return;
+
+      final chat = Chat.fromJson(chatData);
+      _logger.info('New chat received: ${chat.title} (ID: ${chat.id})');
+
+      final currentState = state.valueOrNull;
+      if (currentState != null) {
+        final newState = currentState.addChat(chat);
+        state = AsyncData(newState.sortByLastActivity());
+        _logger.info('Chat added to state. Total chats: ${newState.chatCount}');
+      }
+    } catch (e) {
+      _logger.error('Error handling updateNewChat', error: e);
+    }
+  }
+
   void _handleNewMessage(Map<String, dynamic> update) {
     try {
       final message = update['message'] as Map<String, dynamic>?;
       if (message == null) return;
-      
+
       final chatId = message['chat_id'] as int?;
       if (chatId == null) return;
-      
+
       // Update the chat with new last message
       _updateChatFromMessage(chatId, message);
     } catch (e) {
@@ -84,7 +106,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   void _handleChatTitleUpdate(Map<String, dynamic> update) {
     final chatId = update['chat_id'] as int?;
     final title = update['title'] as String?;
-    
+
     if (chatId != null && title != null) {
       _updateChatProperty(chatId, (chat) => chat.copyWith(title: title));
     }
@@ -93,22 +115,23 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   void _handleChatPhotoUpdate(Map<String, dynamic> update) {
     final chatId = update['chat_id'] as int?;
     final photo = update['photo'] as Map<String, dynamic>?;
-    
+
     if (chatId != null) {
       String? photoPath;
       if (photo != null) {
         final small = photo['small'] as Map<String, dynamic>?;
         photoPath = small?['local']?['path'] as String?;
       }
-      
-      _updateChatProperty(chatId, (chat) => chat.copyWith(photoPath: photoPath));
+
+      _updateChatProperty(
+          chatId, (chat) => chat.copyWith(photoPath: photoPath));
     }
   }
 
   void _handleChatLastMessageUpdate(Map<String, dynamic> update) {
     final chatId = update['chat_id'] as int?;
     final messageData = update['last_message'] as Map<String, dynamic>?;
-    
+
     if (chatId != null && messageData != null) {
       _updateChatFromMessage(chatId, messageData);
     }
@@ -125,9 +148,10 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   void _handleChatReadUpdate(Map<String, dynamic> update) {
     final chatId = update['chat_id'] as int?;
     final unreadCount = update['unread_count'] as int?;
-    
+
     if (chatId != null && unreadCount != null) {
-      _updateChatProperty(chatId, (chat) => chat.copyWith(unreadCount: unreadCount));
+      _updateChatProperty(
+          chatId, (chat) => chat.copyWith(unreadCount: unreadCount));
     }
   }
 
@@ -137,11 +161,13 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       final lastActivity = DateTime.fromMillisecondsSinceEpoch(
         (messageData['date'] as int) * 1000,
       );
-      
-      _updateChatProperty(chatId, (chat) => chat.copyWith(
-        lastMessage: message,
-        lastActivity: lastActivity,
-      ));
+
+      _updateChatProperty(
+          chatId,
+          (chat) => chat.copyWith(
+                lastMessage: message,
+                lastActivity: lastActivity,
+              ));
     } catch (e) {
       _logger.error('Error updating chat from message', error: e);
     }
@@ -150,13 +176,13 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   void _updateChatProperty(int chatId, Chat Function(Chat) updater) {
     final currentState = state.valueOrNull;
     if (currentState == null) return;
-    
+
     final chatIndex = currentState.chats.indexWhere((c) => c.id == chatId);
     if (chatIndex == -1) return;
-    
+
     final currentChat = currentState.chats[chatIndex];
     final updatedChat = updater(currentChat);
-    
+
     final newState = currentState.updateChat(updatedChat);
     state = AsyncData(newState.sortByLastActivity());
   }
@@ -164,30 +190,42 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   Future<ChatState> _loadChats() async {
     try {
       _setLoading(true);
-      
-      // First get the chat IDs
+
+      // Load chats from the client
       final chats = await _client.loadChats(limit: 50);
-      
-      _logger.info('Chat loading result: ${chats.length} chats loaded');
-      
-      // If no chats from TDLib, create some test data for development
-      List<Chat> finalChats = chats;
+
+      _logger.info(
+          'Chat loading result: ${chats.length} chats loaded from client');
+
+      // Return the chats (could be empty initially if updates haven't arrived yet)
+      final chatState = ChatState.loaded(chats);
+
+      // If no chats yet, the real ones will come via updateNewChat events
       if (chats.isEmpty) {
-        _logger.info('No chats from TDLib, creating test data');
-        finalChats = _createTestChats();
+        _logger.info(
+            'No cached chats yet, real chats will arrive via updateNewChat events');
+        // For development: add test data if no real chats after a delay
+        Future.delayed(const Duration(seconds: 2), () {
+          final currentState = state.valueOrNull;
+          if (currentState != null && currentState.chats.isEmpty) {
+            _logger.info(
+                'Still no real chats after 2 seconds, adding test data for development');
+            final testChats = _createTestChats();
+            final newState = ChatState.loaded(testChats);
+            state = AsyncData(newState.sortByLastActivity());
+          }
+        });
       }
-      
-      final chatState = ChatState.loaded(finalChats);
-      
+
       _setLoading(false);
       return chatState.sortByLastActivity();
     } catch (e) {
       _logger.error('Failed to load chats', error: e);
-      
-      // Fallback to test data on error
-      _logger.info('Falling back to test data due to error');
-      final testChats = _createTestChats();
-      final chatState = ChatState.loaded(testChats);
+
+      // On error, start with empty state, real chats will still come via updates
+      _logger.info(
+          'Starting with empty state, real chats will arrive via updates');
+      final chatState = ChatState.loaded([]);
       _setLoading(false);
       return chatState.sortByLastActivity();
     }
@@ -264,7 +302,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   }
 
   // Public methods for UI actions
-  
+
   Future<void> refreshChats() async {
     final newState = await _loadChats();
     state = AsyncData(newState);
@@ -273,22 +311,23 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   Future<void> loadMoreChats() async {
     final currentState = state.valueOrNull;
     if (currentState == null || currentState.isLoading) return;
-    
+
     try {
       _setLoading(true);
-      
+
       // Load more chats starting from the last chat
       final moreChats = await _client.loadChats(
         limit: 20,
-        offsetChatId: currentState.chats.isNotEmpty ? currentState.chats.last.id : 0,
+        offsetChatId:
+            currentState.chats.isNotEmpty ? currentState.chats.last.id : 0,
       );
-      
+
       // Add new chats to existing list
       var newState = currentState;
       for (final chat in moreChats) {
         newState = newState.addChat(chat);
       }
-      
+
       state = AsyncData(newState.sortByLastActivity().setLoading(false));
     } catch (e) {
       _setError('Failed to load more chats: $e');
@@ -296,7 +335,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   }
 
   // State management helpers
-  
+
   void _setLoading(bool isLoading) {
     final currentState = state.valueOrNull ?? ChatState.initial();
     state = AsyncData(currentState.setLoading(isLoading));

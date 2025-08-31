@@ -94,9 +94,12 @@ extension ChatX on WidgetRef {
   String? get chatError => watch(chatProvider).error?.toString();
 
   // Computed properties
-  List<Chat> get chats => watch(chatProvider.select((state) => state.valueOrNull?.chats ?? []));
-  int get chatCount => watch(chatProvider.select((state) => state.valueOrNull?.chatCount ?? 0));
-  bool get hasChats => watch(chatProvider.select((state) => state.valueOrNull?.chats.isNotEmpty ?? false));
+  List<Chat> get chats =>
+      watch(chatProvider.select((state) => state.valueOrNull?.chats ?? []));
+  int get chatCount =>
+      watch(chatProvider.select((state) => state.valueOrNull?.chatCount ?? 0));
+  bool get hasChats => watch(chatProvider
+      .select((state) => state.valueOrNull?.chats.isNotEmpty ?? false));
 
   // Action shortcuts
   ChatNotifier get chatActions => read(chatProvider.notifier);

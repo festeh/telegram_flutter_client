@@ -49,7 +49,8 @@ class ChatState {
   // Helper methods
   ChatState setLoading(bool loading) => copyWith(isLoading: loading);
   ChatState clearError() => copyWith(errorMessage: null);
-  ChatState setError(String error) => copyWith(errorMessage: error, isLoading: false);
+  ChatState setError(String error) =>
+      copyWith(errorMessage: error, isLoading: false);
 
   // Computed properties
   bool get hasError => errorMessage != null;

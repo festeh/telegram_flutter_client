@@ -144,7 +144,7 @@ class _ChatListItemState extends State<ChatListItem>
   String _getInitials() {
     final title = widget.chat.title.trim();
     if (title.isEmpty) return '?';
-    
+
     final words = title.split(' ').where((word) => word.isNotEmpty).toList();
     if (words.length == 1) {
       return words[0][0].toUpperCase();
@@ -160,10 +160,11 @@ class _ChatListItemState extends State<ChatListItem>
 
     final now = DateTime.now();
     final diff = now.difference(lastActivity);
-    
+
     String timeText;
-    Color timeColor = widget.isSelected ? Colors.white70 : const Color(0xFF8E8E93);
-    
+    Color timeColor =
+        widget.isSelected ? Colors.white70 : const Color(0xFF8E8E93);
+
     if (diff.inDays > 0) {
       if (diff.inDays == 1) {
         timeText = 'yesterday';
@@ -225,8 +226,8 @@ class _ChatListItemState extends State<ChatListItem>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: widget.chat.isMuted 
-            ? const Color(0xFF8E8E93) 
+        color: widget.chat.isMuted
+            ? const Color(0xFF8E8E93)
             : const Color(0xFF3390EC),
         borderRadius: BorderRadius.circular(10),
       ),
