@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../domain/entities/chat.dart';
 
@@ -106,8 +107,11 @@ class _ChatListItemState extends State<ChatListItem>
         color: _getAvatarColor(),
         image: widget.chat.photoPath != null
             ? DecorationImage(
-                image: NetworkImage(widget.chat.photoPath!),
+                image: _getImageProvider(widget.chat.photoPath!),
                 fit: BoxFit.cover,
+                onError: (exception, stackTrace) {
+                  // Handle image loading error silently, fallback to initials
+                },
               )
             : null,
       ),
@@ -124,6 +128,15 @@ class _ChatListItemState extends State<ChatListItem>
             )
           : null,
     );
+  }
+
+  ImageProvider _getImageProvider(String path) {
+    // Check if the path is a network URL
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    }
+    // Otherwise, treat it as a local file path
+    return FileImage(File(path));
   }
 
   Color _getAvatarColor() {
