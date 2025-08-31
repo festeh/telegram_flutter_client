@@ -1,6 +1,0 @@
-❌ TDLib binary not found at linux/lib/libtdjson.so
-💡 Available setup options:
-   just setup-tdlib-auto    (recommended - uses npm)
-   just download-tdlib-direct (direct download)
-   just build-tdlib-source    (build from source)
-   just setup-tdlib-manual    (manual instructions)

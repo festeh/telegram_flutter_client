@@ -191,12 +191,20 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          _buildFilterTab('All', true),
-          const SizedBox(width: 8),
-          _buildFilterTab('Unread', false),
-          const SizedBox(width: 8),
-          _buildFilterTab('Favorites', false),
-          const Spacer(),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterTab('All', true),
+                  const SizedBox(width: 6),
+                  _buildFilterTab('Unread', false),
+                  const SizedBox(width: 6),
+                  _buildFilterTab('Favorites', false),
+                ],
+              ),
+            ),
+          ),
           // Archive button
           IconButton(
             onPressed: () {
@@ -204,10 +212,12 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
             },
             icon: const Icon(
               Icons.archive_outlined,
-              size: 20,
+              size: 18,
               color: Color(0xFF6B7280),
             ),
             tooltip: 'Archive',
+            padding: const EdgeInsets.all(4),
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
         ],
       ),
@@ -220,10 +230,10 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
         // TODO: Implement filter functionality
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: isActive ? const Color(0xFF3390EC) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: isActive
               ? null
               : Border.all(
@@ -234,7 +244,7 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
             color: isActive ? Colors.white : const Color(0xFF6B7280),
           ),
