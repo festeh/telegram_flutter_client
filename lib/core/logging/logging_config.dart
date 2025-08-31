@@ -5,12 +5,21 @@ import 'package:path/path.dart' as path;
 
 import 'app_logger.dart';
 import 'log_level.dart';
+import 'tdlib_log_level.dart';
 
 class LoggingConfig {
-  static Future<void> initialize() async {
+  static TdLibLogLevel? _tdlibLogLevel;
+  
+  /// Get the current TDLib log level
+  static TdLibLogLevel get tdlibLogLevel => _tdlibLogLevel ?? TdLibLogLevel.getDefault(kDebugMode, kReleaseMode);
+
+  static Future<void> initialize({TdLibLogLevel? tdlibLogLevel}) async {
     Level logLevel;
     bool enableFileLogging;
     String? logDirectory;
+
+    // Store TDLib log level for later use
+    _tdlibLogLevel = tdlibLogLevel;
 
     // Configure based on build mode
     if (kDebugMode) {
@@ -65,6 +74,7 @@ class LoggingConfig {
           'log_level': logLevel.name,
           'file_logging': enableFileLogging,
           'log_directory': logDirectory,
+          'tdlib_log_level': LoggingConfig.tdlibLogLevel.toString(),
         },
       ),
     );

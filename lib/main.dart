@@ -4,12 +4,15 @@ import 'presentation/providers/app_providers.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'core/logging/logging_config.dart';
+import 'core/logging/tdlib_log_level.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize logging system
-  await LoggingConfig.initialize();
+  // Initialize logging system with minimal TDLib logging
+  await LoggingConfig.initialize(
+    tdlibLogLevel: TdLibLogLevel.fatal, // Minimal C++ logging
+  );
 
   runApp(
     const ProviderScope(

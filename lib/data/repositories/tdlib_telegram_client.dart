@@ -7,6 +7,7 @@ import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
 import '../../utils/tdlib_bindings.dart';
 import '../../core/logging/specialized_loggers.dart';
+import '../../core/logging/logging_config.dart';
 
 class TdlibTelegramClient implements TelegramClientRepository {
   static const int apiId = 94575;
@@ -47,6 +48,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
     if (_isStarted) return;
 
     _client = TdJsonClient();
+    
+    // Set TDLib log verbosity level before any other operations
+    _setTdLibLogVerbosity();
+    
     _isStarted = true;
 
     _startReceiving();
@@ -228,6 +233,28 @@ class TdlibTelegramClient implements TelegramClientRepository {
     await _sendRequest({
       '@type': 'logOut',
     });
+  }
+
+  /// Sets TDLib's native C++ logging verbosity level
+  /// This must be called before any other TDLib operations
+  void _setTdLibLogVerbosity() {
+    try {
+      final logLevel = LoggingConfig.tdlibLogLevel;
+      final request = jsonEncode({
+        '@type': 'setLogVerbosityLevel',
+        'new_verbosity_level': logLevel.level,
+      });
+
+      // Use synchronous execute method for immediate effect
+      _client.execute(request);
+      
+      _logger.logConnectionState('Log verbosity set to level ${logLevel.level} (${logLevel.description})');
+    } catch (e) {
+      _logger.logError(
+        'Failed to set TDLib log verbosity',
+        error: e,
+      );
+    }
   }
 
   @override
