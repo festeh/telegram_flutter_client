@@ -1,0 +1,2479 @@
+✓ TDLib binary found at linux/lib/libtdjson.so
+📋 File info: linux/lib/libtdjson.so: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, stripped
+📏 File size: 50M
+🐧 Running on Linux...
+Launching lib/main.dart on Linux in debug mode...
+Building Linux application...                                   
+✓ Built build/linux/x64/debug/bundle/telegram_flutter_client
+Gdk-Message: 11:00:06.608: Unable to load  from the cursor theme
+Syncing files to device Linux...                                    24ms
+
+Flutter run key commands.
+r Hot reload. 🔥🔥🔥
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on Linux is available at: http://127.0.0.1:41051/Z-0UXLMihZo=/
+[1;36m[ 3][t 0][1756630806.970247983][Client.cpp:599]	Create client 1[0m
+[1;36m[ 3][t 0][1756630806.970272064][Client.cpp:383]	Initialize client 1[0m
+[1;36m[ 3][t 4][1756630806.970857143][Td.cpp:138][#1][!MultiTd]	Create Td with layer 208, database version 14 and version 54 on 4 threads[0m
+[1;36m[ 3][t 4][1756630806.970921993][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "version"
+  value = optionValueString {
+    value = "1.8.52"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630806.970941066][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "commit_hash"
+  value = optionValueString {
+    value = "GITDIR-NOTFOUND"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630806.970942020][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateAuthorizationState {
+  authorization_state = authorizationStateWaitTdlibParameters {
+  }
+}[0m
+[1;36m[ 3][t 4][1756630806.983408927][Td.cpp:282][#1][!Td][&td_requests]	Receive request 1: setTdlibParameters {
+  use_test_dc = false
+  database_directory = "/home/dima/Documents/telegram_flutter_client"
+  files_directory = "/home/dima/Documents/telegram_flutter_client/files"
+  database_encryption_key = bytes [0] { }
+  use_file_database = true
+  use_chat_info_database = true
+  use_message_database = true
+  use_secret_chats = false
+  api_id = 94575
+  api_hash = "a3406de8d171bb422bb6ddf3bbd800e2"
+  system_language_code = "en"
+  device_model = "Desktop"
+  system_version = ""
+  application_version = "1.0.0"
+}[0m
+[1;36m[ 3][t 1][1756630806.985294103][Binlog.cpp:377][#1][!RunOnSchedulerWorker]	Load: init encryption[0m
+[1;36m[ 3][t 1][1756630806.985543966][TdDb.cpp:529][#1][!RunOnSchedulerWorker]	Destroy SQLite database, because wasn't authorized yet[0m
+[ 4][t 1][1756630806.986216068][SqliteDb.cpp:273][#1][!RunOnSchedulerWorker]	ENCRYPT
+[1;36m[ 3][t 1][1756630807.043366909][TdDb.cpp:392][#1][!RunOnSchedulerWorker]	Have PRAGMA user_version = 0[0m
+[1;36m[ 3][t 1][1756630807.043376922][DialogDb.cpp:29][#1][!RunOnSchedulerWorker]	Init dialog database [version:0][0m
+[1;36m[ 3][t 1][1756630807.043414115][DialogDb.cpp:60][#1][!RunOnSchedulerWorker]	Create new dialog database[0m
+[1;36m[ 3][t 1][1756630807.043538093][MessageDb.cpp:46][#1][!RunOnSchedulerWorker]	Init message database [version:0][0m
+[1;36m[ 3][t 1][1756630807.043546199][MessageDb.cpp:115][#1][!RunOnSchedulerWorker]	Create new message database[0m
+[1;36m[ 3][t 1][1756630807.044303178][StoryDb.cpp:31][#1][!RunOnSchedulerWorker]	Init story database [version:0][0m
+[1;36m[ 3][t 1][1756630807.044326066][StoryDb.cpp:43][#1][!RunOnSchedulerWorker]	Create new story database[0m
+[1;36m[ 3][t 1][1756630807.044439077][FileDb.cpp:41][#1][!RunOnSchedulerWorker]	Init file database [version:0][0m
+[1;33m[ 2][t 1][1756630807.044466972][TdDb.cpp:432][#1][!RunOnSchedulerWorker]	Set PRAGMA user_version = 14[0m
+[ 4][t 1][1756630807.044499158][Binlog.cpp:425][#1][!RunOnSchedulerWorker]	Flush binlog from init_sqlite
+[ 4][t 1][1756630807.044501066][BufferedFd.h:140][#1][!RunOnSchedulerWorker]	Nothing to write to [fd:44]
+[1;36m[ 3][t 1][1756630807.053189277][TdDb.cpp:597][#1][!RunOnSchedulerWorker]	Successfully inited database in directory /home/dima/Documents/telegram_flutter_client/ and files directory /home/dima/Documents/telegram_flutter_client/files/[0m
+[ 4][t 4][1756630807.053258180][Global.cpp:127][#1][!Td]	LOAD: [server_time_difference:1756129873.405362]
+[1;36m[ 3][t 4][1756630807.053296327][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "unix_time"
+  value = optionValueInteger {
+    value = 1756630806
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.053645133][AuthManager.cpp:1548][#1][!Td]	Have no saved auth_state. Waiting for phone number[0m
+[1;36m[ 3][t 4][1756630807.054029226][NetQueryCreator.cpp:45][#1][!Td]	Create query help.getNearestDc {
+}[0m
+[1;36m[ 3][t 4][1756630807.054047107][NetQuery.cpp:57][#1][!Td]	[Query:[id:65536][tl:0x1fb33026]][0m
+[1;36m[ 3][t 4][1756630807.054055929][NetQuery.cpp:28][#1][!Td][&net_query]	[Query:[id:65536][tl:0x1fb33026]] [Send to NetQueryDispatcher][0m
+[1;36m[ 3][t 3][1756630807.054231166][ResourceManager.cpp:141][#1][!UploadResourceManager]	[unused:4194304][0m
+[1;33m[ 2][t 4][1756630807.054720163][AuthDataShared.cpp:118][#1][!Td]	DcId{1} [auth_key_id:15854876821297219569][state:NoAuth][created_at:1756630506][last_used:1756747507][0m
+[1;36m[ 3][t 4][1756630807.054741144][NetQuery.cpp:28][#1][!Td][&net_query]	[Query:[id:65536][tl:0x1fb33026]] [sent to main session multi proxy DcId{1}][0m
+[1;36m[ 3][t 4][1756630807.054856061][NetQueryCreator.cpp:45][#1][!ConfigManager]	Create query help.getConfig {
+}[0m
+[1;36m[ 3][t 4][1756630807.054865121][NetQuery.cpp:57][#1][!ConfigManager]	[Query:[id:131072][tl:0xc4f9186b]][0m
+[1;36m[ 3][t 4][1756630807.054870128][NetQuery.cpp:28][#1][!ConfigManager][&net_query]	[Query:[id:131072][tl:0xc4f9186b]] [sent to main session multi proxy DcId{1}][0m
+[1;36m[ 3][t 4][1756630807.054963111][StorageManager.cpp:327][#1][!StorageManager]	No next file clean up is scheduled[0m
+[1;36m[ 3][t 4][1756630807.054967164][StorageManager.cpp:243][#1][!StorageManager]	Loaded fast storage statistics with 0 files of total size 0[0m
+[1;36m[ 3][t 4][1756630807.054989099][MessagesManager.cpp:10280][#1][!MessagesManager]	Send ttl_db query with limit 50[0m
+[1;36m[ 3][t 4][1756630807.055703163][NotificationManager.cpp:4196][#1][!NotificationManager][&notifications]	Begin to process 0 binlog events[0m
+[1;36m[ 3][t 4][1756630807.055716276][NotificationManager.cpp:4245][#1][!NotificationManager][&notifications]	Finish processing binlog events[0m
+[1;36m[ 3][t 4][1756630807.055740118][MessagesManager.cpp:10308][#1][!MessagesManager]	Receive 0 expired messages from ttl_db with next request in 3857 seconds[0m
+[1;36m[ 3][t 4][1756630807.055745124][MessagesManager.cpp:10275][#1][!MessagesManager]	Set ttl_db timeout in 3856.999997[0m
+[1;36m[ 3][t 4][1756630807.055758237][ConnectionCreator.cpp:661][#1][!ConnectionCreator][&connections]	Receive network flag true with generation 1[0m
+[1;36m[ 3][t 4][1756630807.055759906][ConnectionCreator.cpp:666][#1][!ConnectionCreator][&connections]	Set proxy query token to 0: 0 1[0m
+[1;36m[ 3][t 4][1756630807.055762052][ConnectionCreator.cpp:685][#1][!ConnectionCreator][&connections]	Receive online flag false[0m
+[1;36m[ 3][t 4][1756630807.055767059][ConfigManager.cpp:719][#1][!Recoverer][&config_recoverer]	Successfully connected in 0.000915 seconds[0m
+[1;36m[ 3][t 4][1756630807.055814027][ConfigManager.cpp:719][#1][!Recoverer][&config_recoverer]	Successfully connected in 0.000962 seconds[0m
+[1;36m[ 3][t 4][1756630807.055818080][ConfigManager.cpp:533][#1][!Recoverer][&config_recoverer]	On connecting true[0m
+[1;36m[ 3][t 4][1756630807.055819034][ConfigManager.cpp:717][#1][!Recoverer][&config_recoverer]	Failed to connect for 0.000000 seconds[0m
+[1;36m[ 3][t 4][1756630807.055822134][ConfigManager.cpp:791][#1][!Recoverer][&config_recoverer]	Wakeup in 20.0s[0m
+[ 4][t 4][1756630807.055849075][AuthData.cpp:86][#1][!SessionProxy:1:main]	Reset server time difference: 0.000000 -> 1756129873.405362
+[1;33m[ 2][t 4][1756630807.055859088][Session.cpp:267][#1][!SessionProxy:1:main]	Generate new session_id 6233499954034579202 for auth key 15854876821297219569 for main DC1[0m
+[1;36m[ 3][t 4][1756630807.055863142][NetQuery.cpp:28][#1][!SessionProxy:1:main][&net_query]	[Query:[id:65536][tl:0x1fb33026]] [SessionProxy:1:main: sent to session][0m
+[1;36m[ 3][t 4][1756630807.055866956][NetQuery.cpp:28][#1][!SessionProxy:1:main][&net_query]	[Query:[id:131072][tl:0xc4f9186b]] [SessionProxy:1:main: sent to session][0m
+[1;36m[ 3][t 4][1756630807.055870056][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "bot_verification_custom_description_length_max"
+  value = optionValueInteger {
+    value = 70
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055876255][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_star_earnings_per_mille"
+  value = optionValueInteger {
+    value = 850
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055877923][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "monthly_sent_story_count_max"
+  value = optionValueInteger {
+    value = 10
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055879116][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "can_enable_paid_messages"
+  value = optionValueBoolean {
+    value = false
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055881023][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "can_accept_calls"
+  value = optionValueBoolean {
+    value = true
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055883169][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "notification_sound_size_max"
+  value = optionValueInteger {
+    value = 307200
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055884122][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "direct_channel_message_star_count_default"
+  value = optionValueInteger {
+    value = 10
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055885076][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "story_suggested_reaction_area_count_max"
+  value = optionValueInteger {
+    value = 1
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055886268][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "can_gift_stars"
+  value = optionValueBoolean {
+    value = true
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055887937][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "pinned_chat_count_max"
+  value = optionValueInteger {
+    value = 5
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055888891][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "premium_gift_boost_count"
+  value = optionValueInteger {
+    value = 0
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055891990][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "message_text_length_max"
+  value = optionValueInteger {
+    value = 4096
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055894136][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "business_chat_link_count_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055895090][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "notification_sound_count_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055896282][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "pinned_archived_chat_count_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055898189][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "gift_resale_earnings_per_mille"
+  value = optionValueInteger {
+    value = 800
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055898904][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "verification_codes_bot_chat_id"
+  value = optionValueInteger {
+    value = 489000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055901050][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "can_set_new_chat_privacy_settings"
+  value = optionValueBoolean {
+    value = false
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055902004][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_lifetime_min"
+  value = optionValueInteger {
+    value = 86400
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055903196][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "affiliate_program_commission_per_mille_max"
+  value = optionValueInteger {
+    value = 800
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055906057][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "affiliate_program_commission_per_mille_min"
+  value = optionValueInteger {
+    value = 1
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055907249][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_video_note_video_bitrate"
+  value = optionValueInteger {
+    value = 1000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055909156][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "giveaway_country_count_max"
+  value = optionValueInteger {
+    value = 10
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055910110][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "weekly_sent_story_count_max"
+  value = optionValueInteger {
+    value = 3
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055912017][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "group_anonymous_bot_user_id"
+  value = optionValueInteger {
+    value = 1087968824
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055914163][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "active_story_count_max"
+  value = optionValueInteger {
+    value = 1
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055916070][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "story_stealth_mode_past_period"
+  value = optionValueInteger {
+    value = 300
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055918216][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "gift_resale_star_count_min"
+  value = optionValueInteger {
+    value = 125
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055920124][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "gift_sell_period"
+  value = optionValueInteger {
+    value = 604800
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055922985][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "basic_group_size_max"
+  value = optionValueInteger {
+    value = 200
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055925130][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "business_start_page_title_length_max"
+  value = optionValueInteger {
+    value = 32
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055927038][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_star_count_max"
+  value = optionValueInteger {
+    value = 100000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055929183][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "paid_reaction_star_count_max"
+  value = optionValueInteger {
+    value = 10000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055931091][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "toncoin_top_up_url"
+  value = optionValueString {
+    value = "https://fragment.com/ads/topup"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055932998][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "quick_reply_shortcut_message_count_max"
+  value = optionValueInteger {
+    value = 20
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055933952][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "pinned_story_count_max"
+  value = optionValueInteger {
+    value = 3
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055936098][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "t_me_url"
+  value = optionValueString {
+    value = "https://t.me/"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055938243][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "story_caption_length_max"
+  value = optionValueInteger {
+    value = 200
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055940151][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "bio_length_max"
+  value = optionValueInteger {
+    value = 70
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055942058][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "story_stealth_mode_cooldown_period"
+  value = optionValueInteger {
+    value = 10800
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055943965][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "chat_available_reaction_count_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055946111][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "story_link_area_count_max"
+  value = optionValueInteger {
+    value = 3
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055947065][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "expect_blocking"
+  value = optionValueBoolean {
+    value = false
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055949211][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "premium_upload_speedup"
+  value = optionValueInteger {
+    value = 10
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055951118][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_video_note_audio_bitrate"
+  value = optionValueInteger {
+    value = 64
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055953025][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_toncoin_cent_count_max"
+  value = optionValueInteger {
+    value = 1000000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055956125][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_video_note_length"
+  value = optionValueInteger {
+    value = 384
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055957078][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "message_caption_length_max"
+  value = optionValueInteger {
+    value = 1024
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055958032][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "can_preload_weather"
+  value = optionValueBoolean {
+    value = true
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055960178][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "business_start_page_message_length_max"
+  value = optionValueInteger {
+    value = 70
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055962324][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "channel_bot_user_id"
+  value = optionValueInteger {
+    value = 136817688
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055963993][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "notification_sound_duration_max"
+  value = optionValueInteger {
+    value = 5
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055966138][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "chat_folder_new_chats_update_period"
+  value = optionValueInteger {
+    value = 300
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055968046][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "bot_media_preview_count_max"
+  value = optionValueInteger {
+    value = 12
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055970191][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "ton_blockchain_explorer_url"
+  value = optionValueString {
+    value = "https://tonviewer.com/"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055972099][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "added_shareable_chat_folder_count_max"
+  value = optionValueInteger {
+    value = 2
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055974006][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "paid_message_star_count_max"
+  value = optionValueInteger {
+    value = 10000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055974960][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "premium_download_speedup"
+  value = optionValueInteger {
+    value = 10
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055977106][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_toncoin_cent_count_min"
+  value = optionValueInteger {
+    value = 1
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055979013][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "telegram_service_notifications_chat_id"
+  value = optionValueInteger {
+    value = 777000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055981159][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "story_stealth_mode_future_period"
+  value = optionValueInteger {
+    value = 1500
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055988073][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "pinned_gift_count_max"
+  value = optionValueInteger {
+    value = 6
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055989027][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "fact_check_length_max"
+  value = optionValueInteger {
+    value = 1024
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055991172][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "subscription_star_count_max"
+  value = optionValueInteger {
+    value = 10000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055992126][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "anti_spam_bot_user_id"
+  value = optionValueInteger {
+    value = 5434988373
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055993080][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "gift_text_length_max"
+  value = optionValueInteger {
+    value = 128
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055994272][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "can_use_text_entities_in_story_caption"
+  value = optionValueBoolean {
+    value = false
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055994987][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "million_toncoin_to_usd_rate"
+  value = optionValueInteger {
+    value = 3138470
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055995941][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "paid_message_earnings_per_mille"
+  value = optionValueInteger {
+    value = 850
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055997133][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "chat_folder_invite_link_count_max"
+  value = optionValueInteger {
+    value = 3
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055999040][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_star_count_min"
+  value = optionValueInteger {
+    value = 5
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.055999994][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "giveaway_boost_count_per_premium"
+  value = optionValueInteger {
+    value = 4
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056001186][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "animation_search_bot_username"
+  value = optionValueString {
+    value = "gif"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056002140][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "pinned_saved_messages_topic_count_max"
+  value = optionValueInteger {
+    value = 5
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056003093][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "can_withdraw_chat_revenue"
+  value = optionValueBoolean {
+    value = true
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056004285][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "group_call_participant_count_max"
+  value = optionValueInteger {
+    value = 200
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056005239][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "poll_answer_count_max"
+  value = optionValueInteger {
+    value = 12
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056005954][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_toncoin_earnings_per_mille"
+  value = optionValueInteger {
+    value = 850
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056006908][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "chat_folder_count_max"
+  value = optionValueInteger {
+    value = 10
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056008100][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_send_delay_max"
+  value = optionValueInteger {
+    value = 2678400
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056009054][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "web_app_allowed_protocols"
+  value = optionValueString {
+    value = "http https"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056011199][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "favorite_stickers_limit"
+  value = optionValueInteger {
+    value = 5
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056012153][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "quick_reply_shortcut_count_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056013107][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "star_withdrawal_count_min"
+  value = optionValueInteger {
+    value = 1000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056014299][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "giveaway_additional_chat_count_max"
+  value = optionValueInteger {
+    value = 10
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056015253][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "call_packet_timeout_ms"
+  value = optionValueInteger {
+    value = 10000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056015968][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "story_viewers_expiration_delay"
+  value = optionValueInteger {
+    value = 86400
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056016921][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "test_mode"
+  value = optionValueBoolean {
+    value = false
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056018114][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "gift_resale_star_count_max"
+  value = optionValueInteger {
+    value = 100000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056019067][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "usd_to_thousand_star_rate"
+  value = optionValueInteger {
+    value = 1410
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056020021][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "forwarded_message_count_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056021213][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "checklist_task_count_max"
+  value = optionValueInteger {
+    value = 30
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056023120][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "replies_bot_chat_id"
+  value = optionValueInteger {
+    value = 1271266957
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056024074][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "photo_search_bot_username"
+  value = optionValueString {
+    value = "bing"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056025266][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "gift_premium_from_attachment_menu"
+  value = optionValueBoolean {
+    value = true
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056026220][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "supergroup_size_max"
+  value = optionValueInteger {
+    value = 200000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056026935][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "suggested_post_send_delay_min"
+  value = optionValueInteger {
+    value = 300
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056028127][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "call_connect_timeout_ms"
+  value = optionValueInteger {
+    value = 30000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056029081][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "giveaway_duration_max"
+  value = optionValueInteger {
+    value = 2678400
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056030035][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "star_withdrawal_count_max"
+  value = optionValueInteger {
+    value = 25000000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056030988][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "checklist_task_text_length_max"
+  value = optionValueInteger {
+    value = 200
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056032180][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "message_reply_quote_length_max"
+  value = optionValueInteger {
+    value = 1024
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056034088][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "checklist_title_length_max"
+  value = optionValueInteger {
+    value = 255
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056035280][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "chat_boost_level_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056036233][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "venue_search_bot_username"
+  value = optionValueString {
+    value = "foursquare"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056037187][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "paid_media_message_star_count_max"
+  value = optionValueInteger {
+    value = 10000
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056037902][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "thousand_star_to_usd_rate"
+  value = optionValueInteger {
+    value = 1300
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056040048][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "chat_folder_chosen_chat_count_max"
+  value = optionValueInteger {
+    value = 100
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056041002][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "pinned_forum_topic_count_max"
+  value = optionValueInteger {
+    value = 5
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056042194][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "utc_time_offset"
+  value = optionValueInteger {
+    value = 7200
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056044101][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateAuthorizationState {
+  authorization_state = authorizationStateWaitPhoneNumber {
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056046247][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateAnimationSearchParameters {
+  provider = "tenor"
+  emojis = vector[10] {
+    "👍"
+    "😘"
+    "😍"
+    "😡"
+    "🥳"
+    "😂"
+    "😮"
+    "🙄"
+    "😎"
+    "👎"
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056049108][Td.cpp:1372][#1][!Td][&td_requests]	Sending result for request 1: ok {
+}[0m
+[1;36m[ 3][t 4][1756630807.056051969][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateDefaultBackground {
+  for_dark_theme = false
+  background = null
+}[0m
+[1;36m[ 3][t 4][1756630807.056054115][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateDefaultBackground {
+  for_dark_theme = true
+  background = null
+}[0m
+[1;36m[ 3][t 4][1756630807.056055068][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateFileDownloads {
+  total_size = 0
+  total_count = 0
+  downloaded_size = 0
+}[0m
+[1;36m[ 3][t 4][1756630807.056057214][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateConnectionState {
+  state = connectionStateConnecting {
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.056064128][Session.cpp:374][#1][!Session:1:main][&net_query]	Receive query [Query:[id:65536][tl:0x1fb33026]][0m
+[1;36m[ 3][t 4][1756630807.056067228][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:65536][tl:0x1fb33026]] [Session:1:main: pending][0m
+[1;36m[ 3][t 4][1756630807.056069135][Session.cpp:374][#1][!Session:1:main][&net_query]	Receive query [Query:[id:131072][tl:0xc4f9186b]][0m
+[1;36m[ 3][t 4][1756630807.056070089][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:131072][tl:0xc4f9186b]] [Session:1:main: pending][0m
+[1;36m[ 3][t 4][1756630807.056076049][ConnectionCreator.cpp:748][#1][!ConnectionCreator][&connections]	Request connection for [client:0xe8d0ca4a] to DcId{1} [allow_media_only:false][0m
+[1;36m[ 3][t 4][1756630807.056079864][ConnectionCreator.cpp:953][#1][!ConnectionCreator][&connections]	In client_loop: [client:0xe8d0ca4a][0m
+[ 4][t 4][1756630807.056084156][DcOptionsSet.cpp:56][#1][!ConnectionCreator]	Find all connections in DcId{1}. use_static = false, prefer_ipv6 = false, only_http = false
+[1;36m[ 3][t 4][1756630807.056092023][ConnectionCreator.cpp:844][#1][!ConnectionCreator][&connections]	Create: [149.154.175.59:443] to DcId{1}[0m
+[1;36m[ 3][t 4][1756630807.056172132][ConnectionCreator.cpp:924][#1][!ConnectionCreator][&connections]	Create new direct connection [149.154.175.59:443] to DcId{1} from [192.168.2.89:60188][0m
+[ 4][t 4][1756630807.056182146][Session.cpp:340][#1][!Session:1:main]	Set online flag to false
+[ 4][t 4][1756630807.056184291][Session.cpp:347][#1][!Session:1:main]	Set logging out flag to false
+[ 4][t 4][1756630807.056188106][RawConnection.cpp:46][#1][!ConnectionCreator]	Create raw connection 0x7f305c19ee10
+[1;36m[ 3][t 4][1756630807.056227207][ConnectionCreator.cpp:1091][#1][!ConnectionCreator][&connections]	Ready connection (unchecked) 0x7f305c19ee10 [rtt:0.0ns] [149.154.175.59:443] to DcId{1} from [192.168.2.89:60188][0m
+[1;36m[ 3][t 4][1756630807.056234121][ConnectionCreator.cpp:1144][#1][!ConnectionCreator][&connections]	Add ready connection 0x7f305c19ee10 for [client:0xe8d0ca4a][0m
+[1;36m[ 3][t 4][1756630807.056235074][ConnectionCreator.cpp:953][#1][!ConnectionCreator][&connections]	In client_loop: [client:0xe8d0ca4a][0m
+[1;36m[ 3][t 4][1756630807.056236028][ConnectionCreator.cpp:969][#1][!ConnectionCreator][&connections]	Send to promise [connection:0x7f305c19ee10][0m
+[1;36m[ 3][t 4][1756630807.056239128][Session.cpp:1283][#1][!Session:1:main]	Finished to open connection Session:1:main::Connect::TCP::[149.154.175.59:443] to DcId{1} from [192.168.2.89:60188][0m
+[ 4][t 4][1756630807.056241035][SessionConnection.cpp:782][#1][!Session:1:main]	Set online to false
+[1;36m[ 3][t 4][1756630807.056250333][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:65536][tl:0x1fb33026]] [Session:1:main: send to [149.154.175.59:443] to DcId{1} from [192.168.2.89:60188]][0m
+[ 4][t 4][1756630807.056252956][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f16cf9d9934 at 500933.405461
+[1;36m[ 3][t 4][1756630807.056257247][Session.cpp:1162][#1][!Session:1:main][&net_query]	Send query to connection [Query:[id:65536][tl:0x1fb33026][msg_id:0x68b40f16cf9d9934]][invoke_after:{}][0m
+[1;36m[ 3][t 4][1756630807.056259155][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:131072][tl:0xc4f9186b]] [Session:1:main: send to [149.154.175.59:443] to DcId{1} from [192.168.2.89:60188]][0m
+[ 4][t 4][1756630807.056261301][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f16cfba4810 at 500933.405469
+[1;36m[ 3][t 4][1756630807.056262016][Session.cpp:1162][#1][!Session:1:main][&net_query]	Send query to connection [Query:[id:131072][tl:0xc4f9186b][msg_id:0x68b40f16cfba4810]][invoke_after:{}][0m
+[ 4][t 4][1756630807.056268215][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f16cfba61f8 at 500933.405476
+[ 4][t 4][1756630807.056277036][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f16cfbcc898 at 500933.405486
+[ 4][t 4][1756630807.056279182][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f16cfbcc9e0 at 500933.405487
+[ 4][t 4][1756630807.056302070][BufferedFd.h:142][#1][!Session:1:main]	Can't flush write to [fd:52] with flags = []
+[ 4][t 4][1756630807.056304931][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.000041/500933.405513, last read was in 0.000041/500933.405513, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 61.800319, wakeup in 61.800319
+[ 4][t 4][1756630807.179708957][BufferedFd.h:215][#1][!Session:1:main]	Flush write: +476B[left:0B]
+[ 4][t 4][1756630807.179724216][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.123460/500933.528932, last read was in 0.123460/500933.528932, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 61.676900, wakeup in 61.676900
+[1;36m[ 3][t 0][1756630807.182930946][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.182949304][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c102130[0m
+The Flutter DevTools debugger and profiler on Linux is available at: http://127.0.0.1:9100?uri=http://127.0.0.1:41051/Z-0UXLMihZo=/
+[1;36m[ 3][t 0][1756630807.272073030][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.272109270][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1021b0[0m
+[ 4][t 4][1756630807.303777217][BufferedFd.h:206][#1][!Session:1:main]	Flush read: +204B[total:204B]
+[ 4][t 4][1756630807.303851127][AuthData.cpp:155][#1][!Session:1:main]	Receive packet in message 0x68b40f173e450009 from session 6233499954034579202 at 500933.653058
+[ 4][t 4][1756630807.303868055][AuthData.cpp:72][#1][!Session:1:main]	Set server time difference: 1756129873.405362 -> 1756129873.346942
+[ 4][t 4][1756630807.303871154][AuthData.cpp:81][#1][!Session:1:main]	New server time: 1756630807.000021
+[1;36m[ 3][t 4][1756630807.303900957][Td.cpp:1355][#1][!Td][&td_requests]	Sending update: updateConnectionState {
+  state = connectionStateReady {
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.303910017][ConfigManager.cpp:533][#1][!Recoverer][&config_recoverer]	On connecting false[0m
+[1;36m[ 3][t 4][1756630807.303913116][ConfigManager.cpp:719][#1][!Recoverer][&config_recoverer]	Successfully connected in 0.248094 seconds[0m
+[1;36m[ 3][t 4][1756630807.303921937][Session.cpp:702][#1][!Session:1:main]	New session 14056237589217574060 created with first message 0x68b40f16cf9d9934[0m
+[ 4][t 4][1756630807.303925037][Session.cpp:707][#1][!Session:1:main]	Sending updatesTooLong to force getDifference
+[1;36m[ 3][t 4][1756630807.303931951][Session.cpp:716][#1][!Session:1:main]	Update first message to container's message 0x68b40f16cfbcc9e0[0m
+[1;36m[ 3][t 4][1756630807.303941965][Session.cpp:787][#1][!Session:1:main][&net_query]	Ack [Query:[id:65536][tl:0x1fb33026][msg_id:0x68b40f16cf9d9934]][0m
+[1;36m[ 3][t 4][1756630807.303948163][Session.cpp:787][#1][!Session:1:main][&net_query]	Ack [Query:[id:131072][tl:0xc4f9186b][msg_id:0x68b40f16cfba4810]][0m
+[ 4][t 4][1756630807.303954124][BufferedFd.h:140][#1][!Session:1:main]	Nothing to write to [fd:52]
+[ 4][t 4][1756630807.303958177][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.000022/0.000022, last read was in 0.000168/0.000168, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 29.999962, wakeup in 29.999962
+[1;36m[ 3][t 4][1756630807.303979158][UpdatesManager.cpp:1179][#1][!UpdatesManager]	Receive updatesTooLong {
+}[0m
+[1;36m[ 3][t 4][1756630807.303983211][UpdatesManager.cpp:1208][#1][!UpdatesManager]	Ignore received before authorization or after logout updatesTooLong {
+}[0m
+[ 4][t 1][1756630807.304994106][Binlog.cpp:425][#1][!Binlog /home/dima/Documents/telegram_flutter_client/td.binlog]	Flush binlog from try_flush
+[ 4][t 4][1756630807.307745218][BufferedFd.h:206][#1][!Session:1:main]	Flush read: +108B[total:108B]
+[ 4][t 4][1756630807.307821273][AuthData.cpp:155][#1][!Session:1:main]	Receive packet in message 0x68b40f173f465c01 from session 6233499954034579202 at 500933.657029
+[1;36m[ 3][t 4][1756630807.307839155][Session.cpp:895][#1][!Session:1:main][&net_query]	Return query result [Query:[id:65536][tl:0x1fb33026][msg_id:0x68b40f16cf9d9934]][0m
+[1;36m[ 3][t 4][1756630807.307844161][NetQuery.cpp:96][#1][!Session:1:main][&net_query]	Receive answer [Query:[id:65536][tl:0x1fb33026][msg_id:0x68b40f16cf9d9934]][0m
+[1;36m[ 3][t 4][1756630807.307850122][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:65536][tl:0x1fb33026][result_tl:0x8e1a1775]] [sent to handler][0m
+[ 4][t 4][1756630807.307856082][BufferedFd.h:140][#1][!Session:1:main]	Nothing to write to [fd:52]
+[ 4][t 4][1756630807.307857990][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.000023/0.000023, last read was in 0.000104/0.000104, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 29.996061, wakeup in 29.996061
+[1;36m[ 3][t 4][1756630807.307865142][NetQuery.cpp:28][#1][!Td][&net_query]	[Query:[id:65536][tl:0x1fb33026][result_tl:0x8e1a1775]] [Td: received from DcManager][0m
+[1;36m[ 3][t 4][1756630807.307866334][Td.cpp:410][#1][!Td][&net_query]	Receive result of [Query:[id:65536][tl:0x1fb33026][result_tl:0x8e1a1775]][0m
+[ 4][t 4][1756630807.308771133][BufferedFd.h:206][#1][!Session:1:main]	Flush read: +476B[total:476B]
+[ 4][t 4][1756630807.308826923][AuthData.cpp:155][#1][!Session:1:main]	Receive packet in message 0x68b40f173f870801 from session 6233499954034579202 at 500933.658035
+[1;36m[ 3][t 4][1756630807.308875083][Session.cpp:895][#1][!Session:1:main][&net_query]	Return query result [Query:[id:131072][tl:0xc4f9186b][msg_id:0x68b40f16cfba4810]][0m
+[1;36m[ 3][t 4][1756630807.308881998][NetQuery.cpp:96][#1][!Session:1:main][&net_query]	Receive answer [Query:[id:131072][tl:0xc4f9186b][msg_id:0x68b40f16cfba4810]][0m
+[1;36m[ 3][t 4][1756630807.308888196][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:131072][tl:0xc4f9186b][result_tl:0xcc1a241e]] [sent to callback][0m
+[ 4][t 4][1756630807.308895111][BufferedFd.h:140][#1][!Session:1:main]	Nothing to write to [fd:52]
+[ 4][t 4][1756630807.308899164][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.000059/0.000059, last read was in 0.000118/0.000118, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 29.995021, wakeup in 29.995021
+[1;36m[ 3][t 4][1756630807.308964252][ConfigManager.cpp:719][#1][!Recoverer][&config_recoverer]	Successfully connected in 0.253146 seconds[0m
+[ 4][t 1][1756630807.308964252][Binlog.cpp:425][#1][!Binlog /home/dima/Documents/telegram_flutter_client/td.binlog]	Flush binlog from try_flush
+[1;36m[ 3][t 4][1756630807.308972120][ConfigManager.cpp:1173][#1][!ConfigManager]	config {
+  flags = 3656
+  default_p2p_contacts = true
+  revoke_pm_inbox = true
+  date = 1756630807
+  expires = 1756634687
+  test_mode = false
+  this_dc = 1
+  dc_options = vector[19] {
+    dcOption {
+      flags = 0
+      id = 1
+      ip_address = "149.154.175.59"
+      port = 443
+    }
+    dcOption {
+      flags = 16
+      static = true
+      id = 1
+      ip_address = "149.154.175.53"
+      port = 443
+    }
+    dcOption {
+      flags = 1
+      ipv6 = true
+      id = 1
+      ip_address = "2001:0b28:f23d:f001:0000:0000:0000:000a"
+      port = 443
+    }
+    dcOption {
+      flags = 0
+      id = 2
+      ip_address = "149.154.167.41"
+      port = 443
+    }
+    dcOption {
+      flags = 16
+      static = true
+      id = 2
+      ip_address = "149.154.167.41"
+      port = 443
+    }
+    dcOption {
+      flags = 2
+      media_only = true
+      id = 2
+      ip_address = "149.154.167.222"
+      port = 443
+    }
+    dcOption {
+      flags = 1
+      ipv6 = true
+      id = 2
+      ip_address = "2001:067c:04e8:f002:0000:0000:0000:000a"
+      port = 443
+    }
+    dcOption {
+      flags = 3
+      ipv6 = true
+      media_only = true
+      id = 2
+      ip_address = "2001:067c:04e8:f002:0000:0000:0000:000b"
+      port = 443
+    }
+    dcOption {
+      flags = 0
+      id = 3
+      ip_address = "149.154.175.100"
+      port = 443
+    }
+    dcOption {
+      flags = 16
+      static = true
+      id = 3
+      ip_address = "149.154.175.100"
+      port = 443
+    }
+    dcOption {
+      flags = 1
+      ipv6 = true
+      id = 3
+      ip_address = "2001:0b28:f23d:f003:0000:0000:0000:000a"
+      port = 443
+    }
+    dcOption {
+      flags = 0
+      id = 4
+      ip_address = "149.154.167.92"
+      port = 443
+    }
+    dcOption {
+      flags = 16
+      static = true
+      id = 4
+      ip_address = "149.154.167.92"
+      port = 443
+    }
+    dcOption {
+      flags = 1
+      ipv6 = true
+      id = 4
+      ip_address = "2001:067c:04e8:f004:0000:0000:0000:000a"
+      port = 443
+    }
+    dcOption {
+      flags = 2
+      media_only = true
+      id = 4
+      ip_address = "149.154.165.96"
+      port = 443
+    }
+    dcOption {
+      flags = 3
+      ipv6 = true
+      media_only = true
+      id = 4
+      ip_address = "2001:067c:04e8:f004:0000:0000:0000:000b"
+      port = 443
+    }
+    dcOption {
+      flags = 1
+      ipv6 = true
+      id = 5
+      ip_address = "2001:0b28:f23f:f005:0000:0000:0000:000a"
+      port = 443
+    }
+    dcOption {
+      flags = 0
+      id = 5
+      ip_address = "91.108.56.141"
+      port = 443
+    }
+    dcOption {
+      flags = 16
+      static = true
+      id = 5
+      ip_address = "91.108.56.141"
+      port = 443
+    }
+  }
+  dc_txt_domain_name = "apv3.stel.com"
+  chat_size_max = 200
+  megagroup_size_max = 200000
+  forwarded_count_max = 100
+  online_update_period_ms = 210000
+  offline_blur_timeout_ms = 5000
+  offline_idle_timeout_ms = 30000
+  online_cloud_timeout_ms = 300000
+  notify_cloud_delay_ms = 30000
+  notify_default_delay_ms = 1500
+  push_chat_period_ms = 60000
+  push_chat_limit = 2
+  edit_time_limit = 172800
+  revoke_time_limit = 2147483647
+  revoke_pm_time_limit = 2147483647
+  rating_e_decay = 2419200
+  stickers_recent_limit = 200
+  channels_read_media_period = 604800
+  call_receive_timeout_ms = 20000
+  call_ring_timeout_ms = 90000
+  call_connect_timeout_ms = 30000
+  call_packet_timeout_ms = 10000
+  me_url_prefix = "https://t.me/"
+  gif_search_username = "gif"
+  venue_search_username = "foursquare"
+  img_search_username = "bing"
+  caption_length_max = 1024
+  message_length_max = 4096
+  webfile_dc_id = 4
+}[0m
+[1;36m[ 3][t 4][1756630807.309010982][ConnectionCreator.cpp:1192][#1][!ConnectionCreator][&connections]	SAVE DcOptions{[DcOption:DcId{1}[ip:149.154.175.59][port:443][secret_len:0][flags:]], [DcOption:DcId{1}[ip:149.154.175.53][port:443][secret_len:0][flags:(Static)]], [DcOption:DcId{1}[ip:2001:b28:f23d:f001::a][port:443][secret_len:0][flags:(IPv6)]], [DcOption:DcId{2}[ip:149.154.167.41][port:443][secret_len:0][flags:]], [DcOption:DcId{2}[ip:149.154.167.41][port:443][secret_len:0][flags:(Static)]], [DcOption:DcId{2}[ip:149.154.167.222][port:443][secret_len:0][flags:(MediaOnly)]], [DcOption:DcId{2}[ip:2001:67c:4e8:f002::a][port:443][secret_len:0][flags:(IPv6)]], [DcOption:DcId{2}[ip:2001:67c:4e8:f002::b][port:443][secret_len:0][flags:(MediaOnly)(IPv6)]], [DcOption:DcId{3}[ip:149.154.175.100][port:443][secret_len:0][flags:]], [DcOption:DcId{3}[ip:149.154.175.100][port:443][secret_len:0][flags:(Static)]], [DcOption:DcId{3}[ip:2001:b28:f23d:f003::a][port:443][secret_len:0][flags:(IPv6)]], [DcOption:DcId{4}[ip:149.154.167.92][port:443][secret_len:0][flags:]], [DcOption:DcId{4}[ip:149.154.167.92][port:443][secret_len:0][flags:(Static)]], [DcOption:DcId{4}[ip:149.154.165.96][port:443][secret_len:0][flags:(MediaOnly)]], [DcOption:DcId{4}[ip:2001:67c:4e8:f004::a][port:443][secret_len:0][flags:(IPv6)]], [DcOption:DcId{4}[ip:2001:67c:4e8:f004::b][port:443][secret_len:0][flags:(MediaOnly)(IPv6)]], [DcOption:DcId{5}[ip:91.108.56.141][port:443][secret_len:0][flags:]], [DcOption:DcId{5}[ip:91.108.56.141][port:443][secret_len:0][flags:(Static)]], [DcOption:DcId{5}[ip:2001:b28:f23f:f005::a][port:443][secret_len:0][flags:(IPv6)]]}[0m
+[1;36m[ 3][t 4][1756630807.309080123][NetQueryCreator.cpp:45][#1][!ConfigManager]	Create query help.getAppConfig {
+  hash = -217714508
+}[0m
+[1;36m[ 3][t 4][1756630807.309089183][NetQuery.cpp:57][#1][!ConfigManager]	[Query:[id:196608][tl:0x61e3f854]][0m
+[1;36m[ 3][t 4][1756630807.309093236][NetQuery.cpp:28][#1][!ConfigManager][&net_query]	[Query:[id:196608][tl:0x61e3f854]] [sent to main session multi proxy DcId{1}][0m
+[1;36m[ 3][t 4][1756630807.309101104][NetQuery.cpp:28][#1][!SessionProxy:1:main][&net_query]	[Query:[id:196608][tl:0x61e3f854]] [SessionProxy:1:main: sent to session][0m
+[1;36m[ 3][t 4][1756630807.309108018][Session.cpp:374][#1][!Session:1:main][&net_query]	Receive query [Query:[id:196608][tl:0x61e3f854]][0m
+[1;36m[ 3][t 4][1756630807.309110164][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:196608][tl:0x61e3f854]] [Session:1:main: pending][0m
+[1;36m[ 3][t 4][1756630807.309114217][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:196608][tl:0x61e3f854]] [Session:1:main: send to [149.154.175.59:443] to DcId{1} from [192.168.2.89:60188]][0m
+[ 4][t 4][1756630807.309117078][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f170164d930 at 500933.658325
+[1;36m[ 3][t 4][1756630807.309121131][Session.cpp:1162][#1][!Session:1:main][&net_query]	Send query to connection [Query:[id:196608][tl:0x61e3f854][msg_id:0x68b40f170164d930]][invoke_after:{}][0m
+[ 4][t 4][1756630807.309127092][BufferedFd.h:140][#1][!Session:1:main]	Nothing to write to [fd:52]
+[ 4][t 4][1756630807.309128046][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.000288/0.000288, last read was in 0.000348/0.000348, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 0.000992, wakeup in 0.000992
+[ 4][t 1][1756630807.310102224][Binlog.cpp:425][#1][!Binlog /home/dima/Documents/telegram_flutter_client/td.binlog]	Flush binlog from try_flush
+[ 4][t 4][1756630807.310217142][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f1701b98d00 at 500933.659424
+[ 4][t 4][1756630807.310238122][AuthData.cpp:122][#1][!Session:1:main]	Create identifier for message 0x68b40f1701b9a488 at 500933.659447
+[ 4][t 4][1756630807.310337066][BufferedFd.h:215][#1][!Session:1:main]	Flush write: +284B[left:0B]
+[ 4][t 4][1756630807.310342073][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.001501/0.001501, last read was in 0.001561/0.001561, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 61.546283, wakeup in 61.546283
+[1;36m[ 3][t 0][1756630807.371740102][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.371776103][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c102200[0m
+[ 4][t 4][1756630807.440083026][BufferedFd.h:206][#1][!Session:1:main]	Flush read: +2456B[total:2456B]
+[ 4][t 4][1756630807.440119266][BufferedFd.h:140][#1][!Session:1:main]	Nothing to write to [fd:52]
+[ 4][t 4][1756630807.440124034][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.131284/0.131284, last read was in 0.000023/0.000023, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 61.416500, wakeup in 61.416500
+[ 4][t 4][1756630807.440294981][BufferedFd.h:206][#1][!Session:1:main]	Flush read: +116B[total:116B]
+[ 4][t 4][1756630807.440360069][AuthData.cpp:155][#1][!Session:1:main]	Receive packet in message 0x68b40f1761080801 from session 6233499954034579202 at 500933.789567
+[1;36m[ 3][t 4][1756630807.440537214][Session.cpp:895][#1][!Session:1:main][&net_query]	Return query result [Query:[id:196608][tl:0x61e3f854][msg_id:0x68b40f170164d930]][0m
+[1;36m[ 3][t 4][1756630807.440549135][NetQuery.cpp:96][#1][!Session:1:main][&net_query]	Receive answer [Query:[id:196608][tl:0x61e3f854][msg_id:0x68b40f170164d930]][0m
+[1;36m[ 3][t 4][1756630807.440559148][NetQuery.cpp:28][#1][!Session:1:main][&net_query]	[Query:[id:196608][tl:0x61e3f854][result_tl:0xdd18782e]] [sent to callback][0m
+[ 4][t 4][1756630807.440567255][BufferedFd.h:140][#1][!Session:1:main]	Nothing to write to [fd:52]
+[ 4][t 4][1756630807.440569162][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.000202/0.000202, last read was in 0.000271/0.000271, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 29.999801, wakeup in 29.999801
+[1;36m[ 3][t 4][1756630807.440688133][ConfigManager.cpp:1320][#1][!ConfigManager]	Receive app config jsonObject {
+  value = vector[145] {
+    jsonObjectValue {
+      key = "test"
+      value = jsonNumber {
+        value = 1.000000
+      }
+    }
+    jsonObjectValue {
+      key = "emojies_animated_zoom"
+      value = jsonNumber {
+        value = 0.625000
+      }
+    }
+    jsonObjectValue {
+      key = "emojies_send_dice"
+      value = jsonArray {
+        value = vector[7] {
+          jsonString {
+            value = "🎲"
+          }
+          jsonString {
+            value = "🎯"
+          }
+          jsonString {
+            value = "🏀"
+          }
+          jsonString {
+            value = "⚽"
+          }
+          jsonString {
+            value = "⚽️"
+          }
+          jsonString {
+            value = "🎰"
+          }
+          jsonString {
+            value = "🎳"
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "emojies_send_dice_success"
+      value = jsonObject {
+        value = vector[6] {
+          jsonObjectValue {
+            key = "🎯"
+            value = jsonObject {
+              value = vector[2] {
+                jsonObjectValue {
+                  key = "value"
+                  value = jsonNumber {
+                    value = 6.000000
+                  }
+                }
+                jsonObjectValue {
+                  key = "frame_start"
+                  value = jsonNumber {
+                    value = 62.000000
+                  }
+                }
+              }
+            }
+          }
+          jsonObjectValue {
+            key = "🏀"
+            value = jsonObject {
+              value = vector[2] {
+                jsonObjectValue {
+                  key = "value"
+                  value = jsonNumber {
+                    value = 5.000000
+                  }
+                }
+                jsonObjectValue {
+                  key = "frame_start"
+                  value = jsonNumber {
+                    value = 110.000000
+                  }
+                }
+              }
+            }
+          }
+          jsonObjectValue {
+            key = "⚽"
+            value = jsonObject {
+              value = vector[2] {
+                jsonObjectValue {
+                  key = "value"
+                  value = jsonNumber {
+                    value = 5.000000
+                  }
+                }
+                jsonObjectValue {
+                  key = "frame_start"
+                  value = jsonNumber {
+                    value = 110.000000
+                  }
+                }
+              }
+            }
+          }
+          jsonObjectValue {
+            key = "⚽️"
+            value = jsonObject {
+              value = vector[2] {
+                jsonObjectValue {
+                  key = "value"
+                  value = jsonNumber {
+                    value = 5.000000
+                  }
+                }
+                jsonObjectValue {
+                  key = "frame_start"
+                  value = jsonNumber {
+                    value = 110.000000
+                  }
+                }
+              }
+            }
+          }
+          jsonObjectValue {
+            key = "🎰"
+            value = jsonObject {
+              value = vector[2] {
+                jsonObjectValue {
+                  key = "value"
+                  value = jsonNumber {
+                    value = 64.000000
+                  }
+                }
+                jsonObjectValue {
+                  key = "frame_start"
+                  value = jsonNumber {
+                    value = 110.000000
+                  }
+                }
+              }
+            }
+          }
+          jsonObjectValue {
+            key = "🎳"
+            value = jsonObject {
+              value = vector[2] {
+                jsonObjectValue {
+                  key = "value"
+                  value = jsonNumber {
+                    value = 6.000000
+                  }
+                }
+                jsonObjectValue {
+                  key = "frame_start"
+                  value = jsonNumber {
+                    value = 110.000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "gif_search_branding"
+      value = jsonString {
+        value = "tenor"
+      }
+    }
+    jsonObjectValue {
+      key = "gif_search_emojies"
+      value = jsonArray {
+        value = vector[10] {
+          jsonString {
+            value = "👍"
+          }
+          jsonString {
+            value = "😘"
+          }
+          jsonString {
+            value = "😍"
+          }
+          jsonString {
+            value = "😡"
+          }
+          jsonString {
+            value = "🥳"
+          }
+          jsonString {
+            value = "😂"
+          }
+          jsonString {
+            value = "😮"
+          }
+          jsonString {
+            value = "🙄"
+          }
+          jsonString {
+            value = "😎"
+          }
+          jsonString {
+            value = "👎"
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "stickers_emoji_suggest_only_api"
+      value = jsonBool {
+        value = false
+      }
+    }
+    jsonObjectValue {
+      key = "stickers_emoji_cache_time"
+      value = jsonNumber {
+        value = 86400.000000
+      }
+    }
+    jsonObjectValue {
+      key = "groupcall_video_participants_max"
+      value = jsonNumber {
+        value = 1000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "youtube_pip"
+      value = jsonString {
+        value = "inapp"
+      }
+    }
+    jsonObjectValue {
+      key = "qr_login_camera"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "qr_login_code"
+      value = jsonString {
+        value = "primary"
+      }
+    }
+    jsonObjectValue {
+      key = "round_video_encoding"
+      value = jsonObject {
+        value = vector[4] {
+          jsonObjectValue {
+            key = "diameter"
+            value = jsonNumber {
+              value = 384.000000
+            }
+          }
+          jsonObjectValue {
+            key = "video_bitrate"
+            value = jsonNumber {
+              value = 1000.000000
+            }
+          }
+          jsonObjectValue {
+            key = "audio_bitrate"
+            value = jsonNumber {
+              value = 64.000000
+            }
+          }
+          jsonObjectValue {
+            key = "max_size"
+            value = jsonNumber {
+              value = 12582912.000000
+            }
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "chat_read_mark_expire_period"
+      value = jsonNumber {
+        value = 604800.000000
+      }
+    }
+    jsonObjectValue {
+      key = "chat_read_mark_size_threshold"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ringtone_duration_max"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ringtone_size_max"
+      value = jsonNumber {
+        value = 307200.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ringtone_saved_count_max"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "premium_purchase_blocked"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "premium_playmarket_direct_currency_list"
+      value = jsonArray {
+        value = vector[2] {
+          jsonString {
+            value = "RUB"
+          }
+          jsonString {
+            value = "BYN"
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "forum_upgrade_participants_min"
+      value = jsonNumber {
+        value = 0.000000
+      }
+    }
+    jsonObjectValue {
+      key = "whitelisted_domains"
+      value = jsonArray {
+        value = vector[7] {
+          jsonString {
+            value = "telegram.dog"
+          }
+          jsonString {
+            value = "telegram.me"
+          }
+          jsonString {
+            value = "telegram.org"
+          }
+          jsonString {
+            value = "t.me"
+          }
+          jsonString {
+            value = "telesco.pe"
+          }
+          jsonString {
+            value = "fragment.com"
+          }
+          jsonString {
+            value = "translations.telegram.org"
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "topics_pinned_limit"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "telegram_antispam_user_id"
+      value = jsonString {
+        value = "5434988373"
+      }
+    }
+    jsonObjectValue {
+      key = "telegram_antispam_group_size_min"
+      value = jsonNumber {
+        value = 200.000000
+      }
+    }
+    jsonObjectValue {
+      key = "fragment_prefixes"
+      value = jsonArray {
+        value = vector[1] {
+          jsonString {
+            value = "888"
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "hidden_members_group_size_min"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ios_disable_parallel_channel_reset"
+      value = jsonNumber {
+        value = 1.000000
+      }
+    }
+    jsonObjectValue {
+      key = "getfile_experimental_params"
+      value = jsonBool {
+        value = false
+      }
+    }
+    jsonObjectValue {
+      key = "premium_gift_attach_menu_icon"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "premium_gift_text_field_icon"
+      value = jsonBool {
+        value = false
+      }
+    }
+    jsonObjectValue {
+      key = "chatlist_update_period"
+      value = jsonNumber {
+        value = 300.000000
+      }
+    }
+    jsonObjectValue {
+      key = "small_queue_max_active_operations_count"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "large_queue_max_active_operations_count"
+      value = jsonNumber {
+        value = 2.000000
+      }
+    }
+    jsonObjectValue {
+      key = "story_expire_period"
+      value = jsonNumber {
+        value = 86400.000000
+      }
+    }
+    jsonObjectValue {
+      key = "story_viewers_expire_period"
+      value = jsonNumber {
+        value = 86400.000000
+      }
+    }
+    jsonObjectValue {
+      key = "story_expiring_limit_default"
+      value = jsonNumber {
+        value = 1.000000
+      }
+    }
+    jsonObjectValue {
+      key = "story_expiring_limit_premium"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "story_caption_length_limit_premium"
+      value = jsonNumber {
+        value = 2048.000000
+      }
+    }
+    jsonObjectValue {
+      key = "story_caption_length_limit_default"
+      value = jsonNumber {
+        value = 200.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_posting"
+      value = jsonString {
+        value = "disabled"
+      }
+    }
+    jsonObjectValue {
+      key = "stories_stealth_past_period"
+      value = jsonNumber {
+        value = 300.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_stealth_future_period"
+      value = jsonNumber {
+        value = 1500.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_stealth_cooldown_period"
+      value = jsonNumber {
+        value = 10800.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_sent_weekly_limit_default"
+      value = jsonNumber {
+        value = 3.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_sent_weekly_limit_premium"
+      value = jsonNumber {
+        value = 700.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_sent_monthly_limit_default"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_sent_monthly_limit_premium"
+      value = jsonNumber {
+        value = 3000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_venue_search_username"
+      value = jsonString {
+        value = "foursquare"
+      }
+    }
+    jsonObjectValue {
+      key = "stories_all_hidden"
+      value = jsonBool {
+        value = false
+      }
+    }
+    jsonObjectValue {
+      key = "stories_entities"
+      value = jsonString {
+        value = "premium"
+      }
+    }
+    jsonObjectValue {
+      key = "stories_export_nopublic_link"
+      value = jsonBool {
+        value = false
+      }
+    }
+    jsonObjectValue {
+      key = "stories_changelog_user_id"
+      value = jsonNumber {
+        value = 777000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "authorization_autoconfirm_period"
+      value = jsonNumber {
+        value = 604800.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_suggested_reactions_limit_default"
+      value = jsonNumber {
+        value = 1.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stories_suggested_reactions_limit_premium"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "giveaway_gifts_purchase_available"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "giveaway_add_peers_max"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "giveaway_countries_max"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "giveaway_boosts_per_premium"
+      value = jsonNumber {
+        value = 4.000000
+      }
+    }
+    jsonObjectValue {
+      key = "giveaway_period_max"
+      value = jsonNumber {
+        value = 2678400.000000
+      }
+    }
+    jsonObjectValue {
+      key = "boosts_channel_level_max"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "boosts_per_sent_gift"
+      value = jsonNumber {
+        value = 0.000000
+      }
+    }
+    jsonObjectValue {
+      key = "quote_length_max"
+      value = jsonNumber {
+        value = 1024.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_color_level_min"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "transcribe_audio_trial_weekly_number"
+      value = jsonNumber {
+        value = 0.000000
+      }
+    }
+    jsonObjectValue {
+      key = "transcribe_audio_trial_duration_max"
+      value = jsonNumber {
+        value = 300.000000
+      }
+    }
+    jsonObjectValue {
+      key = "recommended_channels_limit_default"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "recommended_channels_limit_premium"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_bg_icon_level_min"
+      value = jsonNumber {
+        value = 4.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_profile_bg_icon_level_min"
+      value = jsonNumber {
+        value = 7.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_emoji_status_level_min"
+      value = jsonNumber {
+        value = 8.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_wallpaper_level_min"
+      value = jsonNumber {
+        value = 9.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_custom_wallpaper_level_min"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "saved_dialogs_pinned_limit_default"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "saved_dialogs_pinned_limit_premium"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "pm_read_date_expire_period"
+      value = jsonNumber {
+        value = 604800.000000
+      }
+    }
+    jsonObjectValue {
+      key = "group_transcribe_level_min"
+      value = jsonNumber {
+        value = 6.000000
+      }
+    }
+    jsonObjectValue {
+      key = "group_emoji_stickers_level_min"
+      value = jsonNumber {
+        value = 4.000000
+      }
+    }
+    jsonObjectValue {
+      key = "group_profile_bg_icon_level_min"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "group_emoji_status_level_min"
+      value = jsonNumber {
+        value = 8.000000
+      }
+    }
+    jsonObjectValue {
+      key = "group_wallpaper_level_min"
+      value = jsonNumber {
+        value = 9.000000
+      }
+    }
+    jsonObjectValue {
+      key = "group_custom_wallpaper_level_min"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "quick_replies_limit"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "quick_reply_messages_limit"
+      value = jsonNumber {
+        value = 20.000000
+      }
+    }
+    jsonObjectValue {
+      key = "upload_premium_speedup_upload"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "upload_premium_speedup_download"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "upload_premium_speedup_notify_period"
+      value = jsonNumber {
+        value = 3600.000000
+      }
+    }
+    jsonObjectValue {
+      key = "intro_title_length_limit"
+      value = jsonNumber {
+        value = 32.000000
+      }
+    }
+    jsonObjectValue {
+      key = "intro_description_length_limit"
+      value = jsonNumber {
+        value = 70.000000
+      }
+    }
+    jsonObjectValue {
+      key = "business_chat_links_limit"
+      value = jsonNumber {
+        value = 100.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_restrict_sponsored_level_min"
+      value = jsonNumber {
+        value = 50.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_revenue_withdrawal_enabled"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "stars_purchase_blocked"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "stories_area_url_max"
+      value = jsonNumber {
+        value = 3.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_revenue_withdrawal_min"
+      value = jsonNumber {
+        value = 1000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_paid_post_amount_max"
+      value = jsonNumber {
+        value = 10000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "web_app_allowed_protocols"
+      value = jsonArray {
+        value = vector[2] {
+          jsonString {
+            value = "http"
+          }
+          jsonString {
+            value = "https"
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "bot_preview_medias_max"
+      value = jsonNumber {
+        value = 12.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ton_proxy_address"
+      value = jsonString {
+        value = "magic.org"
+      }
+    }
+    jsonObjectValue {
+      key = "weather_search_username"
+      value = jsonString {
+        value = "StoryWeatherBot"
+      }
+    }
+    jsonObjectValue {
+      key = "story_weather_preload"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "stars_gifts_enabled"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "stars_subscription_amount_max"
+      value = jsonNumber {
+        value = 10000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_usd_sell_rate_x1000"
+      value = jsonNumber {
+        value = 1410.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_usd_withdraw_rate_x1000"
+      value = jsonNumber {
+        value = 1300.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_paid_reaction_amount_max"
+      value = jsonNumber {
+        value = 10000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stargifts_message_length_max"
+      value = jsonNumber {
+        value = 128.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stargifts_blocked"
+      value = jsonBool {
+        value = false
+      }
+    }
+    jsonObjectValue {
+      key = "stargifts_convert_period_max"
+      value = jsonNumber {
+        value = 604800.000000
+      }
+    }
+    jsonObjectValue {
+      key = "starref_start_param_prefixes"
+      value = jsonArray {
+        value = vector[1] {
+          jsonString {
+            value = "_tgr_"
+          }
+        }
+      }
+    }
+    jsonObjectValue {
+      key = "starref_program_allowed"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "starref_connect_allowed"
+      value = jsonBool {
+        value = true
+      }
+    }
+    jsonObjectValue {
+      key = "starref_min_commission_permille"
+      value = jsonNumber {
+        value = 1.000000
+      }
+    }
+    jsonObjectValue {
+      key = "starref_max_commission_permille"
+      value = jsonNumber {
+        value = 800.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ton_blockchain_explorer_url"
+      value = jsonString {
+        value = "https://tonviewer.com/"
+      }
+    }
+    jsonObjectValue {
+      key = "stars_paid_message_amount_max"
+      value = jsonNumber {
+        value = 10000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_paid_message_commission_permille"
+      value = jsonNumber {
+        value = 850.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stargifts_pinned_to_top_limit"
+      value = jsonNumber {
+        value = 6.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_paid_messages_available"
+      value = jsonBool {
+        value = false
+      }
+    }
+    jsonObjectValue {
+      key = "bot_verification_description_length_limit"
+      value = jsonNumber {
+        value = 70.000000
+      }
+    }
+    jsonObjectValue {
+      key = "conference_call_size_limit"
+      value = jsonNumber {
+        value = 200.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_stargift_resale_amount_max"
+      value = jsonNumber {
+        value = 100000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_stargift_resale_amount_min"
+      value = jsonNumber {
+        value = 125.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_stargift_resale_commission_permille"
+      value = jsonNumber {
+        value = 800.000000
+      }
+    }
+    jsonObjectValue {
+      key = "channel_autotranslation_level_min"
+      value = jsonNumber {
+        value = 3.000000
+      }
+    }
+    jsonObjectValue {
+      key = "poll_answers_max"
+      value = jsonNumber {
+        value = 12.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_paid_messages_channel_amount_default"
+      value = jsonNumber {
+        value = 10.000000
+      }
+    }
+    jsonObjectValue {
+      key = "translations_manual_enabled"
+      value = jsonString {
+        value = "enabled"
+      }
+    }
+    jsonObjectValue {
+      key = "translations_auto_enabled"
+      value = jsonString {
+        value = "enabled"
+      }
+    }
+    jsonObjectValue {
+      key = "todo_items_max"
+      value = jsonNumber {
+        value = 30.000000
+      }
+    }
+    jsonObjectValue {
+      key = "todo_title_length_max"
+      value = jsonNumber {
+        value = 255.000000
+      }
+    }
+    jsonObjectValue {
+      key = "todo_item_length_max"
+      value = jsonNumber {
+        value = 200.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_suggested_post_amount_min"
+      value = jsonNumber {
+        value = 5.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_suggested_post_amount_max"
+      value = jsonNumber {
+        value = 100000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_suggested_post_commission_permille"
+      value = jsonNumber {
+        value = 850.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ton_suggested_post_commission_permille"
+      value = jsonNumber {
+        value = 850.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_suggested_post_age_min"
+      value = jsonNumber {
+        value = 86400.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_suggested_post_future_max"
+      value = jsonNumber {
+        value = 2678400.000000
+      }
+    }
+    jsonObjectValue {
+      key = "stars_suggested_post_future_min"
+      value = jsonNumber {
+        value = 300.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ton_suggested_post_amount_min"
+      value = jsonNumber {
+        value = 10000000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ton_suggested_post_amount_max"
+      value = jsonNumber {
+        value = 10000000000000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ton_usd_rate"
+      value = jsonNumber {
+        value = 3.138405
+      }
+    }
+    jsonObjectValue {
+      key = "stars_revenue_withdrawal_max"
+      value = jsonNumber {
+        value = 25000000.000000
+      }
+    }
+    jsonObjectValue {
+      key = "ton_topup_url"
+      value = jsonString {
+        value = "https://fragment.com/ads/topup"
+      }
+    }
+  }
+}[0m
+[1;36m[ 3][t 4][1756630807.441066026][Td.cpp:1348][#1][!Td][&td_requests]	Sending update: updateOption {
+  name = "million_toncoin_to_usd_rate"
+  value = optionValueInteger {
+    value = 3138404
+  }
+}[0m
+[ 4][t 1][1756630807.442256927][Binlog.cpp:425][#1][!Binlog /home/dima/Documents/telegram_flutter_client/td.binlog]	Flush binlog from try_flush
+[1;36m[ 3][t 0][1756630807.472509145][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.472539901][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1025a0[0m
+[1;36m[ 3][t 0][1756630807.572575092][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.572644233][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c102bc0[0m
+[1;36m[ 3][t 0][1756630807.672757148][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.672822237][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1048c0[0m
+[1;36m[ 3][t 0][1756630807.771559953][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.771588087][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c104980[0m
+[1;36m[ 3][t 0][1756630807.873112201][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.873160123][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c104a60[0m
+[1;36m[ 3][t 0][1756630807.972603082][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630807.972656965][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c104a10[0m
+[1;36m[ 3][t 4][1756630808.056338071][StateManager.cpp:128][#1][!State manager]	Auto set net_type = Other[0m
+[1;36m[ 3][t 4][1756630808.056366205][ConnectionCreator.cpp:661][#1][!ConnectionCreator][&connections]	Receive network flag true with generation 1[0m
+[1;36m[ 3][t 4][1756630808.056370019][ConnectionCreator.cpp:666][#1][!ConnectionCreator][&connections]	Set proxy query token to 0: 1 1[0m
+[1;36m[ 3][t 4][1756630808.056375265][ConnectionCreator.cpp:953][#1][!ConnectionCreator][&connections]	In client_loop: [client:0xe8d0ca4a][0m
+[1;36m[ 3][t 4][1756630808.056391954][ConfigManager.cpp:719][#1][!Recoverer][&config_recoverer]	Successfully connected in 1.000574 seconds[0m
+[ 4][t 4][1756630808.056442260][BufferedFd.h:140][#1][!Session:1:main]	Nothing to write to [fd:52]
+[ 4][t 4][1756630808.056448221][SessionConnection.cpp:1140][#1][!Session:1:main]	Last pong was in 0.616081/0.616081, last read was in 0.616150/0.616150, RTT = 2.000000, ping timeout = 136.800356, read timeout = 136.800356, flush packet in 29.383921, wakeup in 29.383921
+[1;36m[ 3][t 0][1756630808.072335243][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.072395086][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c105fb0[0m
+[1;36m[ 3][t 0][1756630808.170887947][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.170913219][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1060a0[0m
+[1;36m[ 3][t 0][1756630808.303724050][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.303754091][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1061c0[0m
+[1;36m[ 3][t 0][1756630808.371418237][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.371456146][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106880[0m
+[1;36m[ 3][t 0][1756630808.473486185][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.473534107][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106900[0m
+[1;36m[ 3][t 0][1756630808.573307991][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.573365211][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106a10[0m
+[1;36m[ 3][t 0][1756630808.672645330][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.672694206][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106af0[0m
+[1;36m[ 3][t 0][1756630808.773537158][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.773586988][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106bd0[0m
+[1;36m[ 3][t 0][1756630808.873361110][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.873411178][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106300[0m
+[1;36m[ 3][t 0][1756630808.973707199][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630808.973757982][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106410[0m
+[1;36m[ 3][t 0][1756630809.073565959][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.073615312][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1064f0[0m
+[1;36m[ 3][t 0][1756630809.170904159][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.170922040][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106630[0m
+[1;36m[ 3][t 0][1756630809.272202014][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.272242069][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106710[0m
+[1;36m[ 3][t 0][1756630809.373376131][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.373429059][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1067f0[0m
+[1;36m[ 3][t 0][1756630809.472098112][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.472141265][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1067a0[0m
+[1;36m[ 3][t 0][1756630809.572224140][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.572262048][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1079d0[0m
+[1;36m[ 3][t 0][1756630809.672785997][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.672833204][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107af0[0m
+[1;36m[ 3][t 0][1756630809.772669076][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.772713184][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107bd0[0m
+[1;36m[ 3][t 0][1756630809.874031305][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.874101161][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107cb0[0m
+[1;36m[ 3][t 0][1756630809.973511934][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630809.973583221][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106ce0[0m
+[1;36m[ 3][t 0][1756630810.072849035][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.072901248][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106d90[0m
+[1;36m[ 3][t 0][1756630810.170870065][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.170895099][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106e70[0m
+[1;36m[ 3][t 0][1756630810.272790193][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.272850036][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c106f50[0m
+[1;36m[ 3][t 0][1756630810.373711109][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.373754978][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107030[0m
+[1;36m[ 3][t 0][1756630810.471131086][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.471167087][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1070b0[0m
+[1;36m[ 3][t 0][1756630810.573029279][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.573081254][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107190[0m
+[1;36m[ 3][t 0][1756630810.672844171][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.672901153][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107270[0m
+[1;36m[ 3][t 0][1756630810.772442102][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.772485256][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107350[0m
+[1;36m[ 3][t 0][1756630810.871877908][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.871939182][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1073e0[0m
+[1;36m[ 3][t 0][1756630810.972315073][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630810.972357988][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107520[0m
+[1;36m[ 3][t 0][1756630811.072930097][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.072957038][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1074d0[0m
+[1;36m[ 3][t 0][1756630811.170908927][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.170925140][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107660[0m
+[1;36m[ 3][t 0][1756630811.270859003][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.270877122][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107740[0m
+[1;36m[ 3][t 0][1756630811.372734069][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.372786045][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109b90[0m
+[1;36m[ 3][t 0][1756630811.470868110][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.470892190][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109c50[0m
+[1;36m[ 3][t 0][1756630811.572095155][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.572136163][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109d30[0m
+[1;36m[ 3][t 0][1756630811.671790122][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.671848058][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109e10[0m
+[1;36m[ 3][t 0][1756630811.771770238][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.771826028][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109ef0[0m
+[1;36m[ 3][t 0][1756630811.872079133][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.872121095][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109fa0[0m
+[1;36m[ 3][t 0][1756630811.972132205][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630811.972186326][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a080[0m
+[1;36m[ 3][t 0][1756630812.072089195][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.072117090][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a160[0m
+[1;36m[ 3][t 0][1756630812.170866012][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.170891046][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a240[0m
+[1;36m[ 3][t 0][1756630812.273020029][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.273072957][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107dc0[0m
+[1;36m[ 3][t 0][1756630812.372171163][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.372213125][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107d70[0m
+[1;36m[ 3][t 0][1756630812.472813129][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.472870111][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107f50[0m
+[1;36m[ 3][t 0][1756630812.573069095][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.573121070][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c107f00[0m
+[1;36m[ 3][t 0][1756630812.672652244][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.672711133][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1080e0[0m
+[1;36m[ 3][t 0][1756630812.772495985][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.772548198][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1081c0[0m
+[1;36m[ 3][t 0][1756630812.872463226][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.872518062][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1082d0[0m
+[1;36m[ 3][t 0][1756630812.973320007][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630812.973424196][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1083f0[0m
+[1;36m[ 3][t 0][1756630813.073810100][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.073880195][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1084d0[0m
+[1;36m[ 3][t 0][1756630813.170861244][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.170886039][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108610[0m
+[1;36m[ 3][t 0][1756630813.273090124][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.273144245][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1086f0[0m
+[1;36m[ 3][t 0][1756630813.372066259][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.372102975][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1087d0[0m
+[1;36m[ 3][t 0][1756630813.472908258][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.472959041][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1088b0[0m
+[1;36m[ 3][t 0][1756630813.573626279][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.573698043][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108990[0m
+[1;36m[ 3][t 0][1756630813.673453092][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.673588991][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108ad0[0m
+[1;36m[ 3][t 0][1756630813.772611141][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.772662162][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108bc0[0m
+[1;36m[ 3][t 0][1756630813.872854232][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.872907161][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108ca0[0m
+[1;36m[ 3][t 0][1756630813.973028182][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630813.973083972][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108c50[0m
+[1;36m[ 3][t 0][1756630814.072664260][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.072752952][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108dd0[0m
+[1;36m[ 3][t 0][1756630814.170893192][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.170917987][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108eb0[0m
+[1;36m[ 3][t 0][1756630814.272538185][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.272589206][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c108fc0[0m
+[1;36m[ 3][t 0][1756630814.372765064][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.372848272][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1090a0[0m
+[1;36m[ 3][t 0][1756630814.472862005][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.472906112][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109180[0m
+[1;36m[ 3][t 0][1756630814.571077346][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.571102142][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109260[0m
+[1;36m[ 3][t 0][1756630814.670905113][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.670939922][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109340[0m
+[1;36m[ 3][t 0][1756630814.772307157][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.772376060][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109460[0m
+[1;36m[ 3][t 0][1756630814.873222112][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.873305082][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109540[0m
+[1;36m[ 3][t 0][1756630814.972874164][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630814.972954273][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109620[0m
+[1;36m[ 3][t 0][1756630815.072064161][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.072114944][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109730[0m
+[1;36m[ 3][t 0][1756630815.170878171][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.170905113][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1096e0[0m
+[1;36m[ 3][t 0][1756630815.273145198][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.273191928][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1098b0[0m
+[1;36m[ 3][t 0][1756630815.372449159][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.372498989][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109970[0m
+[1;36m[ 3][t 0][1756630815.472227096][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.472278118][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109ab0[0m
+[1;36m[ 3][t 0][1756630815.573265075][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.573347091][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10df20[0m
+[1;36m[ 3][t 0][1756630815.672829151][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.672908067][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10dfe0[0m
+[1;36m[ 3][t 0][1756630815.772453308][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.772512197][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e0c0[0m
+[1;36m[ 3][t 0][1756630815.872236251][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.872298002][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e1a0[0m
+[1;36m[ 3][t 0][1756630815.972288131][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630815.972342014][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e310[0m
+[1;36m[ 3][t 0][1756630816.072108030][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.072149038][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e2c0[0m
+[1;36m[ 3][t 0][1756630816.170917987][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.170936107][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e470[0m
+[1;36m[ 3][t 0][1756630816.271358966][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.271402120][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e420[0m
+[1;36m[ 3][t 0][1756630816.372167110][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.372220039][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e5d0[0m
+[1;36m[ 3][t 0][1756630816.472204208][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.472261190][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e6b0[0m
+[1;36m[ 3][t 0][1756630816.571357965][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.571398019][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e790[0m
+[1;36m[ 3][t 0][1756630816.671654939][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.671699047][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e870[0m
+[1;36m[ 3][t 0][1756630816.771280050][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.771321296][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e820[0m
+[1;36m[ 3][t 0][1756630816.872594118][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.872651100][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10e9e0[0m
+[1;36m[ 3][t 0][1756630816.972704172][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630816.972758054][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a320[0m
+[1;36m[ 3][t 0][1756630817.071463108][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.071496009][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a2d0[0m
+[1;36m[ 3][t 0][1756630817.170910120][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.170934200][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a480[0m
+[1;36m[ 3][t 0][1756630817.272005319][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.272056102][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a560[0m
+[1;36m[ 3][t 0][1756630817.371215105][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.371265172][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a510[0m
+[1;36m[ 3][t 0][1756630817.471556186][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.471601963][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a6f0[0m
+[1;36m[ 3][t 0][1756630817.571426153][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.571469068][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a7d0[0m
+[1;36m[ 3][t 0][1756630817.671716213][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.671761989][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a8b0[0m
+[1;36m[ 3][t 0][1756630817.772343158][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.772419214][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a990[0m
+[1;36m[ 3][t 0][1756630817.871804952][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.871856212][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10a940[0m
+[1;36m[ 3][t 0][1756630817.972083091][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630817.972139120][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10ab00[0m
+[1;36m[ 3][t 0][1756630818.071933984][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.071984291][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10ac40[0m
+[1;36m[ 3][t 0][1756630818.170926094][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.170945167][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10ad50[0m
+[1;36m[ 3][t 0][1756630818.271498203][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.271538019][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10ae70[0m
+[1;36m[ 3][t 0][1756630818.370898962][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.370921134][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10af80[0m
+[1;36m[ 3][t 0][1756630818.471976041][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.472027063][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c10af30[0m
+[1;36m[ 3][t 0][1756630818.572607040][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.572657108][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c130de0[0m
+[1;36m[ 3][t 0][1756630818.675423145][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.675440311][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c131eb0[0m
+[1;36m[ 3][t 0][1756630818.770909070][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.770927190][Client.cpp:293][&td_requests]	End to wait for updates, returning object 1 0x7f305c15e900[0m
+[1;36m[ 3][t 0][1756630818.871134996][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.871194124][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1308e0[0m
+[1;36m[ 3][t 0][1756630818.971077203][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630818.971128225][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c11caf0[0m
+[1;36m[ 3][t 0][1756630819.070979118][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.071016073][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c1622c0[0m
+[1;36m[ 3][t 0][1756630819.170912027][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.170930147][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c13ea70[0m
+[1;36m[ 3][t 0][1756630819.271103143][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.271160125][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c13bb60[0m
+[1;36m[ 3][t 0][1756630819.371108293][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.371157169][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 0x7f305c109d90[0m
+[1;36m[ 3][t 0][1756630819.471069097][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.571591138][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630819.571846961][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.672845125][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630819.673201084][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.773297071][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630819.773593187][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.874531269][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630819.874897003][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630819.975694179][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630819.976016044][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.077071189][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.077386140][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.178321123][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.178462028][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.279445171][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.285473108][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.385733127][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.398859024][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.499866962][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.501455307][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.602132081][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.602461099][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.703482151][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.703762054][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.804744005][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.805025100][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630820.905166149][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630820.905439138][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+[1;36m[ 3][t 0][1756630821.005827188][Client.cpp:293][&td_requests]	End to wait for updates, returning object 0 (nil)[0m
+[1;36m[ 3][t 0][1756630821.009637117][Client.cpp:280][&td_requests]	Begin to wait for updates with timeout 0.100000[0m
+Lost connection to device.
