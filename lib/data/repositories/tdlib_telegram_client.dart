@@ -147,6 +147,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
     } else if (type == 'message') {
       // Handle single message response (from getChatHistory)
       _handleMessageUpdate(update);
+    } else if (type == 'messages') {
+      // Handle batch messages response from getChatHistory
+      _handleMessagesResponse(update);
     }
   }
 
@@ -378,7 +381,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
       });
 
       // Wait for messages to be received via updates
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 1000));
 
       // Return cached messages or empty list
       return _messages[chatId] ?? [];
@@ -509,6 +512,58 @@ class TdlibTelegramClient implements TelegramClientRepository {
       });
     } catch (e) {
       _logger.logError('Error handling message update', error: e);
+    }
+  }
+
+  void _handleMessagesResponse(Map<String, dynamic> update) {
+    try {
+      final messages = update['messages'] as List?;
+      if (messages == null || messages.isEmpty) return;
+
+      _logger.logRequest({
+        '@type': 'processing_messages_batch',
+        'message_count': messages.length,
+      });
+
+      // Process each message in the batch
+      for (final messageData in messages) {
+        if (messageData is Map<String, dynamic>) {
+          final chatId = messageData['chat_id'] as int?;
+          if (chatId == null) continue;
+
+          final messageObj = Message.fromJson(messageData);
+
+          // Add to message cache
+          if (!_messages.containsKey(chatId)) {
+            _messages[chatId] = <Message>[];
+          }
+
+          // Check if message already exists (to avoid duplicates)
+          final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == messageObj.id);
+          if (existingIndex != -1) {
+            _messages[chatId]![existingIndex] = messageObj;
+          } else {
+            // Insert messages in chronological order (oldest first)
+            _messages[chatId]!.add(messageObj);
+          }
+        }
+      }
+
+      // Sort messages by date for each chat
+      for (final chatId in _messages.keys) {
+        _messages[chatId]!.sort((a, b) => a.date.compareTo(b.date));
+        // Keep only the most recent 100 messages per chat
+        if (_messages[chatId]!.length > 100) {
+          _messages[chatId] = _messages[chatId]!.skip(_messages[chatId]!.length - 100).toList();
+        }
+      }
+
+      _logger.logRequest({
+        '@type': 'messages_batch_processed',
+        'total_chats_updated': _messages.length,
+      });
+    } catch (e) {
+      _logger.logError('Error handling messages response', error: e);
     }
   }
 
