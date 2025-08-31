@@ -4,7 +4,6 @@ import '../../domain/repositories/authentication_repository.dart';
 import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/repositories/storage_repository.dart';
 import '../../data/repositories/tdlib_authentication.dart';
-import '../../data/repositories/tdlib_telegram_client.dart';
 import '../../data/repositories/shared_preferences_storage.dart';
 import '../../domain/entities/auth_state.dart';
 import '../state/unified_auth_state.dart';

@@ -29,6 +29,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
       const AuthenticationState(state: AuthorizationState.unknown);
   UserSession? _currentUser;
   final Map<int, Chat> _chats = <int, Chat>{};
+  final Map<int, List<Message>> _messages = <int, List<Message>>{};
 
   @override
   AuthenticationState get currentAuthState => _currentAuthState;
@@ -141,6 +142,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _handleNewChatUpdate(update);
     } else if (type == 'updateChatLastMessage') {
       _handleChatLastMessageUpdate(update);
+    } else if (type == 'updateNewMessage') {
+      _handleMessageUpdate(update);
+    } else if (type == 'message') {
+      // Handle single message response (from getChatHistory)
+      _handleMessageUpdate(update);
     }
   }
 
@@ -350,6 +356,159 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'Failed to set TDLib log verbosity',
         error: e,
       );
+    }
+  }
+
+  @override
+  Future<List<Message>> loadMessages(int chatId, {int limit = 50, int fromMessageId = 0}) async {
+    try {
+      // First check if we have cached messages
+      if (_messages.containsKey(chatId) && fromMessageId == 0) {
+        return _messages[chatId]!;
+      }
+
+      // Request messages from TDLib
+      await _sendRequest({
+        '@type': 'getChatHistory',
+        'chat_id': chatId,
+        'limit': limit,
+        'from_message_id': fromMessageId,
+        'offset': 0,
+        'only_local': false,
+      });
+
+      // Wait for messages to be received via updates
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Return cached messages or empty list
+      return _messages[chatId] ?? [];
+    } catch (e) {
+      _logger.logError('Failed to load messages for chat $chatId', error: e);
+      return [];
+    }
+  }
+
+  @override
+  Future<Message?> sendMessage(int chatId, String text) async {
+    try {
+      final request = {
+        '@type': 'sendMessage',
+        'chat_id': chatId,
+        'input_message_content': {
+          '@type': 'inputMessageText',
+          'text': {
+            '@type': 'formattedText',
+            'text': text,
+            'entities': <dynamic>[],
+          },
+        },
+      };
+
+      await _sendRequest(request);
+      
+      // For now, return null. The actual message will come via updateNewMessage
+      return null;
+    } catch (e) {
+      _logger.logError('Failed to send message to chat $chatId', error: e);
+      return null;
+    }
+  }
+
+  @override
+  Future<void> markAsRead(int chatId, int messageId) async {
+    try {
+      await _sendRequest({
+        '@type': 'viewMessages',
+        'chat_id': chatId,
+        'message_ids': [messageId],
+        'force_read': true,
+      });
+    } catch (e) {
+      _logger.logError('Failed to mark message as read in chat $chatId', error: e);
+    }
+  }
+
+  @override
+  Future<bool> deleteMessage(int chatId, int messageId) async {
+    try {
+      await _sendRequest({
+        '@type': 'deleteMessages',
+        'chat_id': chatId,
+        'message_ids': [messageId],
+        'revoke': true,
+      });
+      
+      // Remove from local cache
+      if (_messages.containsKey(chatId)) {
+        _messages[chatId]!.removeWhere((msg) => msg.id == messageId);
+      }
+      
+      return true;
+    } catch (e) {
+      _logger.logError('Failed to delete message $messageId in chat $chatId', error: e);
+      return false;
+    }
+  }
+
+  @override
+  Future<Message?> editMessage(int chatId, int messageId, String newText) async {
+    try {
+      await _sendRequest({
+        '@type': 'editMessageText',
+        'chat_id': chatId,
+        'message_id': messageId,
+        'input_message_content': {
+          '@type': 'inputMessageText',
+          'text': {
+            '@type': 'formattedText',
+            'text': newText,
+            'entities': <dynamic>[],
+          },
+        },
+      });
+      
+      return null; // Updated message will come via updates
+    } catch (e) {
+      _logger.logError('Failed to edit message $messageId in chat $chatId', error: e);
+      return null;
+    }
+  }
+
+  void _handleMessageUpdate(Map<String, dynamic> update) {
+    try {
+      final message = update['message'] as Map<String, dynamic>?;
+      if (message == null) return;
+
+      final chatId = message['chat_id'] as int?;
+      if (chatId == null) return;
+
+      final messageObj = Message.fromJson(message);
+
+      // Add to message cache
+      if (!_messages.containsKey(chatId)) {
+        _messages[chatId] = <Message>[];
+      }
+
+      // Check if message already exists (to avoid duplicates)
+      final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == messageObj.id);
+      if (existingIndex != -1) {
+        _messages[chatId]![existingIndex] = messageObj;
+      } else {
+        _messages[chatId]!.insert(0, messageObj);
+        // Keep only the most recent 100 messages per chat
+        if (_messages[chatId]!.length > 100) {
+          _messages[chatId] = _messages[chatId]!.take(100).toList();
+        }
+      }
+
+      _logger.logRequest({
+        '@type': 'message_added_to_cache',
+        'chat_id': chatId,
+        'message_id': messageObj.id,
+        'total_messages': _messages[chatId]!.length,
+      });
+    } catch (e) {
+      _logger.logError('Error handling message update', error: e);
     }
   }
 

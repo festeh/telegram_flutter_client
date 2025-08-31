@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../notifiers/auth_notifier.dart';
 import '../notifiers/chat_notifier.dart';
+import '../notifiers/message_notifier.dart';
 import '../state/unified_auth_state.dart';
 import '../state/chat_state.dart';
+import '../state/message_state.dart';
 import '../../domain/entities/chat.dart';
-import 'telegram_client_provider.dart';
 
 // Single source of truth for all authentication state
 final authProvider = AsyncNotifierProvider<AuthNotifier, UnifiedAuthState>(
@@ -14,6 +15,11 @@ final authProvider = AsyncNotifierProvider<AuthNotifier, UnifiedAuthState>(
 // Single source of truth for all chat state
 final chatProvider = AsyncNotifierProvider<ChatNotifier, ChatState>(
   () => ChatNotifier(),
+);
+
+// Single source of truth for all message state
+final messageProvider = AsyncNotifierProvider<MessageNotifier, MessageState>(
+  () => MessageNotifier(),
 );
 
 // Clean extension methods for convenient UI access
@@ -108,6 +114,62 @@ extension ChatX on WidgetRef {
   Future<void> refreshChats() => chatActions.refreshChats();
   Future<void> loadMoreChats() => chatActions.loadMoreChats();
   void clearChatError() => chatActions.clearError();
+}
+
+// Message extension methods for convenient UI access
+extension MessageX on WidgetRef {
+  // State access
+  MessageState? get messageState => watch(messageProvider).valueOrNull;
+  bool get isMessageLoading => watch(messageProvider).isLoading;
+  bool get hasMessageError => watch(messageProvider).hasError;
+  String? get messageError => watch(messageProvider).error?.toString();
+
+  // Computed properties
+  Map<int, List<Message>> get messagesByChat =>
+      watch(messageProvider.select((state) => state.valueOrNull?.messagesByChat ?? {}));
+  
+  List<Message> get selectedChatMessages =>
+      watch(messageProvider.select((state) => state.valueOrNull?.selectedChatMessages ?? []));
+  
+  int? get selectedChatId =>
+      watch(messageProvider.select((state) => state.valueOrNull?.selectedChatId));
+  
+  bool get hasSelectedChat =>
+      watch(messageProvider.select((state) => state.valueOrNull?.hasSelectedChat ?? false));
+  
+  bool get selectedChatHasMessages =>
+      watch(messageProvider.select((state) => state.valueOrNull?.selectedChatHasMessages ?? false));
+  
+  bool get isLoadingMore =>
+      watch(messageProvider.select((state) => state.valueOrNull?.isLoadingMore ?? false));
+  
+  bool get isSending =>
+      watch(messageProvider.select((state) => state.valueOrNull?.isSending ?? false));
+
+  // Action shortcuts
+  MessageNotifier get messageActions => read(messageProvider.notifier);
+
+  // Convenience action methods
+  Future<void> loadMessages(int chatId, {bool forceRefresh = false}) =>
+      messageActions.loadMessages(chatId, forceRefresh: forceRefresh);
+  
+  Future<void> loadMoreMessages(int chatId) =>
+      messageActions.loadMoreMessages(chatId);
+  
+  Future<void> sendMessage(int chatId, String text) =>
+      messageActions.sendMessage(chatId, text);
+  
+  Future<void> editMessage(int chatId, int messageId, String newText) =>
+      messageActions.editMessage(chatId, messageId, newText);
+  
+  Future<void> deleteMessage(int chatId, int messageId) =>
+      messageActions.deleteMessage(chatId, messageId);
+  
+  Future<void> markAsRead(int chatId, int messageId) =>
+      messageActions.markAsRead(chatId, messageId);
+  
+  void selectChatForMessages(int chatId) => messageActions.selectChat(chatId);
+  void clearMessageError() => messageActions.clearError();
 }
 
 // Legacy provider names for backward compatibility during migration (optional)

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/telegram_client_repository.dart';
-import '../../data/repositories/tdlib_telegram_client.dart';
 import '../../domain/entities/chat.dart';
 import '../state/chat_state.dart';
 import '../../core/logging/app_logger.dart';

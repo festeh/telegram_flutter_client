@@ -1,0 +1,181 @@
+import '../../domain/entities/chat.dart';
+
+class MessageState {
+  final Map<int, List<Message>> messagesByChat;
+  final int? selectedChatId;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool isSending;
+  final String? errorMessage;
+  final bool isInitialized;
+
+  const MessageState({
+    this.messagesByChat = const {},
+    this.selectedChatId,
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.isSending = false,
+    this.errorMessage,
+    this.isInitialized = false,
+  });
+
+  // Factory constructors for common states
+  factory MessageState.initial() => const MessageState(
+        isLoading: false,
+        isInitialized: false,
+      );
+
+  factory MessageState.error(String message) => MessageState(
+        errorMessage: message,
+        isLoading: false,
+        isInitialized: false,
+      );
+
+  factory MessageState.loaded(Map<int, List<Message>> messages) => MessageState(
+        messagesByChat: messages,
+        isLoading: false,
+        isInitialized: true,
+      );
+
+  // Copy with method for immutable updates
+  MessageState copyWith({
+    Map<int, List<Message>>? messagesByChat,
+    int? selectedChatId,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? isSending,
+    String? errorMessage,
+    bool? isInitialized,
+  }) {
+    return MessageState(
+      messagesByChat: messagesByChat ?? this.messagesByChat,
+      selectedChatId: selectedChatId ?? this.selectedChatId,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isSending: isSending ?? this.isSending,
+      errorMessage: errorMessage,
+      isInitialized: isInitialized ?? this.isInitialized,
+    );
+  }
+
+  // Helper methods
+  MessageState setLoading(bool loading) => copyWith(isLoading: loading);
+  MessageState setLoadingMore(bool loadingMore) => copyWith(isLoadingMore: loadingMore);
+  MessageState setSending(bool sending) => copyWith(isSending: sending);
+  MessageState clearError() => copyWith(errorMessage: null);
+  MessageState setError(String error) =>
+      copyWith(errorMessage: error, isLoading: false);
+  MessageState selectChat(int chatId) => copyWith(selectedChatId: chatId);
+
+  // Computed properties
+  bool get hasError => errorMessage != null;
+  bool get isEmpty => messagesByChat.isEmpty;
+  int get totalMessageCount => messagesByChat.values.fold(0, (sum, list) => sum + list.length);
+  
+  List<Message> get selectedChatMessages {
+    if (selectedChatId == null) return [];
+    return messagesByChat[selectedChatId!] ?? [];
+  }
+
+  bool get hasSelectedChat => selectedChatId != null;
+  bool get selectedChatHasMessages => selectedChatMessages.isNotEmpty;
+
+  // Message management methods
+  MessageState addMessage(int chatId, Message message) {
+    final newMessages = Map<int, List<Message>>.from(messagesByChat);
+    if (!newMessages.containsKey(chatId)) {
+      newMessages[chatId] = [];
+    }
+    
+    // Check if message already exists to avoid duplicates
+    final existingIndex = newMessages[chatId]!.indexWhere((msg) => msg.id == message.id);
+    if (existingIndex != -1) {
+      newMessages[chatId]![existingIndex] = message;
+    } else {
+      newMessages[chatId]!.insert(0, message);
+    }
+    
+    return copyWith(messagesByChat: newMessages);
+  }
+
+  MessageState addMessages(int chatId, List<Message> messages) {
+    final newMessages = Map<int, List<Message>>.from(messagesByChat);
+    if (!newMessages.containsKey(chatId)) {
+      newMessages[chatId] = [];
+    }
+    
+    // Add messages in chronological order (newest first)
+    for (final message in messages) {
+      final existingIndex = newMessages[chatId]!.indexWhere((msg) => msg.id == message.id);
+      if (existingIndex == -1) {
+        // Insert in correct chronological position
+        final insertIndex = newMessages[chatId]!.indexWhere((msg) => msg.date.isBefore(message.date));
+        if (insertIndex == -1) {
+          newMessages[chatId]!.add(message);
+        } else {
+          newMessages[chatId]!.insert(insertIndex, message);
+        }
+      }
+    }
+    
+    return copyWith(messagesByChat: newMessages);
+  }
+
+  MessageState updateMessage(int chatId, Message updatedMessage) {
+    final newMessages = Map<int, List<Message>>.from(messagesByChat);
+    if (newMessages.containsKey(chatId)) {
+      final messageList = List<Message>.from(newMessages[chatId]!);
+      final index = messageList.indexWhere((msg) => msg.id == updatedMessage.id);
+      if (index != -1) {
+        messageList[index] = updatedMessage;
+        newMessages[chatId] = messageList;
+      }
+    }
+    return copyWith(messagesByChat: newMessages);
+  }
+
+  MessageState removeMessage(int chatId, int messageId) {
+    final newMessages = Map<int, List<Message>>.from(messagesByChat);
+    if (newMessages.containsKey(chatId)) {
+      newMessages[chatId] = newMessages[chatId]!
+          .where((message) => message.id != messageId)
+          .toList();
+    }
+    return copyWith(messagesByChat: newMessages);
+  }
+
+  MessageState clearChatMessages(int chatId) {
+    final newMessages = Map<int, List<Message>>.from(messagesByChat);
+    newMessages[chatId] = [];
+    return copyWith(messagesByChat: newMessages);
+  }
+
+  @override
+  String toString() {
+    return 'MessageState(totalMessages: $totalMessageCount, selectedChat: $selectedChatId, isLoading: $isLoading, isSending: $isSending, hasError: $hasError)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is MessageState &&
+        other.selectedChatId == selectedChatId &&
+        other.isLoading == isLoading &&
+        other.isLoadingMore == isLoadingMore &&
+        other.isSending == isSending &&
+        other.errorMessage == errorMessage &&
+        other.isInitialized == isInitialized;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      selectedChatId,
+      isLoading,
+      isLoadingMore,
+      isSending,
+      errorMessage,
+      isInitialized,
+    );
+  }
+}

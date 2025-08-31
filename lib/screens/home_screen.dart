@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../presentation/providers/app_providers.dart';
 import '../domain/entities/chat.dart';
 import '../widgets/home/left_pane.dart';
+import '../widgets/message/message_list.dart';
+import '../widgets/message/message_input_area.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -56,43 +58,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // Chat Header
           _buildChatHeader(chat),
-          // Messages Area (placeholder)
+          // Messages Area
           Expanded(
             child: Container(
               color: const Color(0xFFF8F9FA),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Messages for ${chat.title}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Message interface will be implemented next',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: MessageList(chat: chat),
             ),
           ),
-          // Message Input Area (placeholder)
-          _buildMessageInputArea(),
+          // Message Input Area
+          MessageInputArea(chat: chat),
         ],
       ),
     );
@@ -208,81 +182,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildMessageInputArea() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE4E4E7),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () {
-              // TODO: Implement attach functionality
-            },
-            icon: const Icon(
-              Icons.attach_file,
-              color: Color(0xFF6B7280),
-            ),
-            tooltip: 'Attach file',
-          ),
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Type a message...',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF9CA3AF),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF9FAFB),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFE5E7EB),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFE5E7EB),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF3390EC),
-                    width: 2,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              maxLines: null,
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: () {
-              // TODO: Implement send message
-            },
-            icon: const Icon(
-              Icons.send,
-              color: Color(0xFF3390EC),
-            ),
-            tooltip: 'Send message',
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildWelcomeScreen() {
     return Container(
