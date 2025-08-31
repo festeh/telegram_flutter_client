@@ -16,8 +16,10 @@ class AuthManager extends ChangeNotifier {
   QrCodeInfo? _qrCodeInfo;
   String? _errorMessage;
   bool _isLoading = false;
+  bool _isInitialized = false;
   
   AuthenticationState get authState => _authState;
+  bool get isInitialized => _isInitialized;
   UserSession? get currentUser => _currentUser;
   CodeInfo? get codeInfo => _codeInfo;
   QrCodeInfo? get qrCodeInfo => _qrCodeInfo;
@@ -86,8 +88,22 @@ class AuthManager extends ChangeNotifier {
   }
   
   Future<void> initialize() async {
-    await _loadUserSession();
-    await _client.start();
+    try {
+      // Step 1: Load cached user session (fast)
+      await _loadUserSession();
+      
+      // Step 2: Start TDLib client (slower but essential)
+      await _client.start();
+      
+      // Step 3: Mark as initialized
+      _isInitialized = true;
+      notifyListeners();
+    } catch (e) {
+      print('Initialization failed: $e');
+      _isInitialized = true; // Allow app to continue even if init fails
+      notifyListeners();
+      rethrow;
+    }
   }
   
   Future<void> submitPhoneNumber(String phoneNumber) async {
@@ -235,9 +251,12 @@ class AuthManager extends ChangeNotifier {
       if (sessionData != null) {
         // Note: In a real implementation, you'd parse this properly
         // For now, we'll let TDLib handle session restoration
+        print('Found cached user session');
       }
+      // This completes quickly regardless, allowing UI to show sooner
     } catch (e) {
       print('Failed to load user session: $e');
+      // Don't rethrow - this shouldn't block initialization
     }
   }
   

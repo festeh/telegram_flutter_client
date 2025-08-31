@@ -34,70 +34,134 @@ class AppWrapper extends StatefulWidget {
 }
 
 class _AppWrapperState extends State<AppWrapper> {
-  late TelegramClient _client;
-  late AuthManager _authManager;
-  bool _isInitialized = false;
+  late Future<AuthManager> _initializationFuture;
 
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _initializationFuture = _initializeApp();
   }
 
-  Future<void> _initializeApp() async {
+  Future<AuthManager> _initializeApp() async {
     try {
-      _client = TelegramClient();
-      _authManager = AuthManager(_client);
+      final client = TelegramClient();
+      final authManager = AuthManager(client);
       
-      await _authManager.initialize();
+      await authManager.initialize();
       
-      setState(() {
-        _isInitialized = true;
-      });
+      return authManager;
     } catch (e) {
       print('Failed to initialize app: $e');
-      setState(() {
-        _isInitialized = true;
-      });
+      rethrow;
     }
   }
 
   @override
   void dispose() {
-    _authManager.dispose();
+    _initializationFuture.then((authManager) => authManager.dispose()).catchError((_) {});
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Initializing Telegram Client...'),
-              ],
+    return FutureBuilder<AuthManager>(
+      future: _initializationFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(
+            home: Scaffold(
+              backgroundColor: Colors.white,
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Initializing Telegram Client...',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 200,
+                      height: 2,
+                      child: LinearProgressIndicator(
+                        backgroundColor: Colors.grey[300],
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
-      );
-    }
+          );
+        }
 
-    return ChangeNotifierProvider<AuthManager>.value(
-      value: _authManager,
-      child: Consumer<AuthManager>(
-        builder: (context, authManager, child) {
-          if (authManager.isAuthenticated) {
-            return const HomeScreen();
-          } else {
-            return const AuthScreen();
-          }
-        },
-      ),
+        if (snapshot.hasError) {
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 64,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to initialize app',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      snapshot.error.toString(),
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _initializationFuture = _initializeApp();
+                        });
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final authManager = snapshot.data!;
+        return ChangeNotifierProvider<AuthManager>.value(
+          value: authManager,
+          child: Consumer<AuthManager>(
+            builder: (context, authManager, child) {
+              if (authManager.isAuthenticated) {
+                return const HomeScreen();
+              } else {
+                return const AuthScreen();
+              }
+            },
+          ),
+        );
+      },
     );
   }
 }

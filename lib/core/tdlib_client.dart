@@ -25,6 +25,7 @@ class TelegramClient {
   
   bool _isStarted = false;
   Timer? _receiveTimer;
+  final List<Map<String, dynamic>> _pendingUpdates = [];
   
   TelegramClient() {
     _updateController = StreamController<Map<String, dynamic>>.broadcast();
@@ -60,17 +61,50 @@ class TelegramClient {
   }
   
   void _startReceiving() {
-    _receiveTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      final response = _client.receive(0.1);
-      if (response != null) {
-        try {
-          final update = jsonDecode(response) as Map<String, dynamic>;
-          _handleUpdate(update);
-        } catch (e) {
-          print('Error parsing update: $e');
+    _receiveTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
+      // Batch receive multiple updates in one cycle
+      bool hasUpdates = false;
+      while (true) {
+        final response = _client.receive(0.0); // Non-blocking receive
+        if (response != null) {
+          try {
+            final update = jsonDecode(response) as Map<String, dynamic>;
+            _pendingUpdates.add(update);
+            hasUpdates = true;
+          } catch (e) {
+            print('Error parsing update: $e');
+          }
+        } else {
+          break; // No more updates available
         }
       }
+      
+      // Process all pending updates in batch
+      if (hasUpdates) {
+        _processBatchedUpdates();
+      }
     });
+  }
+  
+  void _processBatchedUpdates() {
+    final updates = List<Map<String, dynamic>>.from(_pendingUpdates);
+    _pendingUpdates.clear();
+    
+    // Process high-priority updates first (auth state changes)
+    final authUpdates = updates.where((update) => 
+        update['@type'] == 'updateAuthorizationState').toList();
+    final otherUpdates = updates.where((update) => 
+        update['@type'] != 'updateAuthorizationState').toList();
+    
+    // Process auth updates immediately
+    for (final update in authUpdates) {
+      _handleUpdate(update);
+    }
+    
+    // Process other updates
+    for (final update in otherUpdates) {
+      _handleUpdate(update);
+    }
   }
   
   void _handleUpdate(Map<String, dynamic> update) {

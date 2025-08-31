@@ -121,27 +121,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         } else if (authManager.needsRegistration) {
           return RegistrationWidget();
         } else if (authManager.isLoading) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text('Connecting to Telegram...'),
-              ],
-            ),
-          );
+          return _buildLoadingState('Connecting to Telegram...');
         } else {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 8),
-                Text('Initializing...'),
-              ],
-            ),
-          );
+          return _buildSkeletonLoader();
         }
       },
     );
@@ -152,6 +134,78 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       builder: (context, authManager, child) {
         return QrAuthWidget();
       },
+    );
+  }
+  
+  Widget _buildLoadingState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildSkeletonLoader() {
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Skeleton for input field
+          Container(
+            width: double.infinity,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Skeleton for button
+          Container(
+            width: double.infinity,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Loading text
+          const Text(
+            'Initializing authentication...',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
