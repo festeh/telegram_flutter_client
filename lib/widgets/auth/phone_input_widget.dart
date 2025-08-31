@@ -30,8 +30,8 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final errorMessage = ref.watch(errorMessageProvider);
-    final isLoading = ref.watch(isLoadingProvider);
+    final errorMessage = ref.errorMessage;
+    final isLoading = ref.isLoading;
 
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -236,11 +236,10 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
 
   void _submitPhoneNumber() {
     if (_formKey.currentState?.validate() ?? false) {
-      final authRepository = ref.read(authenticationRepositoryProvider);
-      authRepository.clearError();
+      ref.clearError();
       final phoneCode = _selectedCountry?.phoneCode ?? '49';
       final phoneNumber = '+$phoneCode${_phoneController.text.trim()}';
-      authRepository.submitPhoneNumber(phoneNumber);
+      ref.submitPhoneNumber(phoneNumber);
     }
   }
 }

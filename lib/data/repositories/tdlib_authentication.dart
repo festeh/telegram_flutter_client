@@ -5,12 +5,14 @@ import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/repositories/storage_repository.dart';
 import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
+import '../../core/logging/specialized_loggers.dart';
 
 class TdlibAuthentication implements AuthenticationRepository {
   final TelegramClientRepository _client;
   final StorageRepository _storage;
   late StreamSubscription _authSubscription;
   late StreamSubscription _updateSubscription;
+  final AuthLogger _logger = AuthLogger.instance;
 
   AuthenticationState _authState =
       const AuthenticationState(state: AuthorizationState.unknown);
@@ -76,7 +78,7 @@ class TdlibAuthentication implements AuthenticationRepository {
       _authStateController.stream;
 
   void _onAuthUpdate(AuthenticationState state) {
-    print('Auth state changed to: ${state.state}');
+    _logger.logAuthStart(state.state.toString());
     _authState = state;
     _errorMessage = null;
     _isLoading = false;
@@ -114,7 +116,7 @@ class TdlibAuthentication implements AuthenticationRepository {
         if (update['user']?['is_self'] == true) {
           _currentUser = UserSession.fromJson(update['user']);
           _saveUserSession();
-          print('User session updated: ${_currentUser?.displayName}');
+          _logger.logAuthSuccess(_currentUser?.userId.toString() ?? 'unknown');
           _authStateController.add(_authState);
         }
         break;
@@ -135,7 +137,7 @@ class TdlibAuthentication implements AuthenticationRepository {
       _isInitialized = true;
       _authStateController.add(_authState);
     } catch (e) {
-      print('Initialization failed: $e');
+      _logger.logError('Authentication initialization failed', error: e);
       _isInitialized = true;
       _authStateController.add(_authState);
       rethrow;
@@ -155,8 +157,10 @@ class TdlibAuthentication implements AuthenticationRepository {
     _authStateController.add(_authState);
 
     try {
+      _logger.logPhoneNumberSubmission();
       await _client.setPhoneNumber(phoneNumber);
     } catch (e) {
+      _logger.logAuthFailure('Phone number submission failed', error: e);
       _errorMessage = 'Failed to send phone number: $e';
       _isLoading = false;
       _authStateController.add(_authState);
@@ -176,8 +180,10 @@ class TdlibAuthentication implements AuthenticationRepository {
     _authStateController.add(_authState);
 
     try {
+      _logger.logCodeSubmission();
       await _client.checkAuthenticationCode(code);
     } catch (e) {
+      _logger.logAuthFailure('Code verification failed', error: e);
       _errorMessage = 'Invalid verification code: $e';
       _isLoading = false;
       _authStateController.add(_authState);
@@ -197,8 +203,10 @@ class TdlibAuthentication implements AuthenticationRepository {
     _authStateController.add(_authState);
 
     try {
+      _logger.logPasswordSubmission();
       await _client.checkAuthenticationPassword(password);
     } catch (e) {
+      _logger.logAuthFailure('Password authentication failed', error: e);
       _errorMessage = 'Invalid password: $e';
       _isLoading = false;
       _authStateController.add(_authState);
@@ -212,8 +220,10 @@ class TdlibAuthentication implements AuthenticationRepository {
     _authStateController.add(_authState);
 
     try {
+      _logger.logQrCodeRequest();
       await _client.requestQrCodeAuthentication();
     } catch (e) {
+      _logger.logAuthFailure('QR code request failed', error: e);
       _errorMessage = 'Failed to request QR code: $e';
       _isLoading = false;
       _authStateController.add(_authState);
@@ -262,9 +272,11 @@ class TdlibAuthentication implements AuthenticationRepository {
     _authStateController.add(_authState);
 
     try {
+      _logger.logLogout(_currentUser?.userId.toString());
       await _client.logOut();
       await _clearUserSession();
     } catch (e) {
+      _logger.logAuthFailure('Logout failed', error: e);
       _errorMessage = 'Failed to log out: $e';
       _isLoading = false;
       _authStateController.add(_authState);
@@ -284,7 +296,7 @@ class TdlibAuthentication implements AuthenticationRepository {
       await _storage.setString(
           'user_session', jsonEncode(_currentUser!.toJson()));
     } catch (e) {
-      print('Failed to save user session: $e');
+      _logger.logError('Failed to save user session', error: e);
     }
   }
 
@@ -292,10 +304,10 @@ class TdlibAuthentication implements AuthenticationRepository {
     try {
       final sessionData = await _storage.getString('user_session');
       if (sessionData != null) {
-        print('Found cached user session');
+        _logger.logSessionLoad();
       }
     } catch (e) {
-      print('Failed to load user session: $e');
+      _logger.logError('Failed to load user session', error: e);
     }
   }
 
@@ -304,7 +316,7 @@ class TdlibAuthentication implements AuthenticationRepository {
       await _storage.remove('user_session');
       _currentUser = null;
     } catch (e) {
-      print('Failed to clear user session: $e');
+      _logger.logError('Failed to clear user session', error: e);
     }
   }
 

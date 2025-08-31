@@ -1,79 +1,84 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/repositories/telegram_client_repository.dart';
-import '../../domain/repositories/authentication_repository.dart';
-import '../../domain/repositories/storage_repository.dart';
-import '../../data/repositories/tdlib_telegram_client.dart';
-import '../../data/repositories/tdlib_authentication.dart';
-import '../../data/repositories/shared_preferences_storage.dart';
-import '../../domain/entities/auth_state.dart';
+import '../notifiers/auth_notifier.dart';
+import '../state/unified_auth_state.dart';
 
-// Repository providers
-final storageRepositoryProvider = Provider<StorageRepository>((ref) {
-  return SharedPreferencesStorage();
-});
+// Single source of truth for all authentication state
+final authProvider = AsyncNotifierProvider<AuthNotifier, UnifiedAuthState>(
+  () => AuthNotifier(),
+);
 
-final telegramClientRepositoryProvider =
-    Provider<TelegramClientRepository>((ref) {
-  return TdlibTelegramClient();
-});
+// Clean extension methods for convenient UI access
+extension AuthX on WidgetRef {
+  // State access
+  UnifiedAuthState? get auth => watch(authProvider).valueOrNull;
+  bool get isAuthLoading => watch(authProvider).isLoading;
+  bool get hasAuthError => watch(authProvider).hasError;
+  String? get authError => watch(authProvider).error?.toString();
 
-final authenticationRepositoryProvider =
-    Provider<AuthenticationRepository>((ref) {
-  return TdlibAuthentication(
-    ref.watch(telegramClientRepositoryProvider),
-    ref.watch(storageRepositoryProvider),
-  );
-});
+  // Computed properties - these will trigger rebuilds only when specific values change
+  bool get isAuthenticated => watch(authProvider
+      .select((state) => state.valueOrNull?.isAuthenticated ?? false));
 
-// State providers
-final authStateProvider = StreamProvider<AuthenticationState>((ref) {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  return authRepository.authStateChanges;
-});
+  bool get needsPhoneNumber => watch(authProvider
+      .select((state) => state.valueOrNull?.needsPhoneNumber ?? false));
 
-// Initialization provider
-final initializationProvider = FutureProvider<void>((ref) async {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  await authRepository.initialize();
-});
+  bool get needsCode => watch(
+      authProvider.select((state) => state.valueOrNull?.needsCode ?? false));
 
-// Current auth state provider (synchronous)
-final currentAuthStateProvider = Provider<AuthenticationState>((ref) {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  return authRepository.authState;
-});
+  bool get needsPassword => watch(authProvider
+      .select((state) => state.valueOrNull?.needsPassword ?? false));
 
-// Authentication status helpers
+  bool get needsRegistration => watch(authProvider
+      .select((state) => state.valueOrNull?.needsRegistration ?? false));
+
+  bool get needsQrConfirmation => watch(authProvider
+      .select((state) => state.valueOrNull?.needsQrConfirmation ?? false));
+
+  bool get isLoading => watch(
+      authProvider.select((state) => state.valueOrNull?.isLoading ?? false));
+
+  String? get errorMessage =>
+      watch(authProvider.select((state) => state.valueOrNull?.errorMessage));
+
+  // User info access
+  dynamic get currentUser =>
+      watch(authProvider.select((state) => state.valueOrNull?.user));
+
+  // Additional auth info
+  dynamic get codeInfo =>
+      watch(authProvider.select((state) => state.valueOrNull?.codeInfo));
+
+  dynamic get qrCodeInfo =>
+      watch(authProvider.select((state) => state.valueOrNull?.qrCodeInfo));
+
+  // Action shortcuts - these don't trigger rebuilds
+  AuthNotifier get authActions => read(authProvider.notifier);
+
+  // Convenience action methods
+  Future<void> submitPhoneNumber(String phone) =>
+      authActions.submitPhoneNumber(phone);
+
+  Future<void> submitVerificationCode(String code) =>
+      authActions.submitVerificationCode(code);
+
+  Future<void> submitPassword(String password) =>
+      authActions.submitPassword(password);
+
+  Future<void> requestQrCode() => authActions.requestQrCode();
+
+  Future<void> resendCode() => authActions.resendCode();
+
+  Future<void> registerUser(String firstName, String lastName) =>
+      authActions.registerUser(firstName, lastName);
+
+  Future<void> logout() => authActions.logout();
+
+  void clearError() => authActions.clearError();
+}
+
+// Legacy provider names for backward compatibility during migration (optional)
+// These can be removed once all widgets are updated
 final isAuthenticatedProvider = Provider<bool>((ref) {
-  final authStateAsync = ref.watch(authStateProvider);
-  return authStateAsync.when(
-    data: (state) => state.state == AuthorizationState.ready,
-    loading: () => false,
-    error: (_, __) => false,
-  );
-});
-
-final isLoadingProvider = Provider<bool>((ref) {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  return authRepository.isLoading;
-});
-
-final errorMessageProvider = Provider<String?>((ref) {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  return authRepository.errorMessage;
-});
-
-final codeInfoProvider = Provider<CodeInfo?>((ref) {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  return authRepository.codeInfo;
-});
-
-final qrCodeInfoProvider = Provider<QrCodeInfo?>((ref) {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  return authRepository.qrCodeInfo;
-});
-
-final currentUserProvider = Provider((ref) {
-  final authRepository = ref.watch(authenticationRepositoryProvider);
-  return authRepository.currentUser;
+  return ref.watch(authProvider
+      .select((state) => state.valueOrNull?.isAuthenticated ?? false));
 });

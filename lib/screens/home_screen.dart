@@ -36,7 +36,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: Builder(
         builder: (context) {
-          final user = ref.watch(currentUserProvider);
+          final user = ref.currentUser;
 
           return Center(
             child: Padding(
@@ -145,7 +145,7 @@ class HomeScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              ref.read(authenticationRepositoryProvider).logOut();
+              ref.logout();
             },
             child: const Text('Logout'),
           ),

@@ -3,8 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'presentation/providers/app_providers.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
+import 'core/logging/logging_config.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize logging system
+  await LoggingConfig.initialize();
+
   runApp(
     const ProviderScope(
       child: TelegramFlutterApp(),
@@ -34,12 +40,12 @@ class AppWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final initializationAsync = ref.watch(initializationProvider);
-    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+    final authAsync = ref.watch(authProvider);
 
-    return initializationAsync.when(
-      data: (_) {
-        if (isAuthenticated) {
+    return authAsync.when(
+      data: (authState) {
+        // Show appropriate screen based on auth state
+        if (authState.isAuthenticated) {
           return const HomeScreen();
         } else {
           return const AuthScreen();
@@ -64,7 +70,7 @@ class AppWrapper extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
+                SizedBox(
                   width: 200,
                   height: 2,
                   child: LinearProgressIndicator(
@@ -110,7 +116,7 @@ class AppWrapper extends ConsumerWidget {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
-                    ref.invalidate(initializationProvider);
+                    ref.invalidate(authProvider);
                   },
                   child: const Text('Retry'),
                 ),

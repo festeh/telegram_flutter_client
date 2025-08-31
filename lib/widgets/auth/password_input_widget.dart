@@ -23,8 +23,8 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final errorMessage = ref.watch(errorMessageProvider);
-    final isLoading = ref.watch(isLoadingProvider);
+    final errorMessage = ref.errorMessage;
+    final isLoading = ref.isLoading;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -135,9 +135,8 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
 
   void _submitPassword() {
     if (_formKey.currentState?.validate() ?? false) {
-      final authRepository = ref.read(authenticationRepositoryProvider);
-      authRepository.clearError();
-      authRepository.submitPassword(_passwordController.text);
+      ref.clearError();
+      ref.submitPassword(_passwordController.text);
     }
   }
 }

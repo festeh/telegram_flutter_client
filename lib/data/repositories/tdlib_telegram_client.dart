@@ -6,6 +6,7 @@ import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
 import '../../utils/tdlib_bindings.dart';
+import '../../core/logging/specialized_loggers.dart';
 
 class TdlibTelegramClient implements TelegramClientRepository {
   static const int apiId = 94575;
@@ -14,6 +15,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   late TdJsonClient _client;
   late StreamController<Map<String, dynamic>> _updateController;
   late StreamController<AuthenticationState> _authController;
+  final TdlibLogger _logger = TdlibLogger.instance;
 
   @override
   Stream<Map<String, dynamic>> get updates => _updateController.stream;
@@ -79,7 +81,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
             _pendingUpdates.add(update);
             hasUpdates = true;
           } catch (e) {
-            print('Error parsing update: $e');
+            _logger.logError('Error parsing TDLib update', error: e);
           }
         } else {
           break;
@@ -113,6 +115,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   void _handleUpdate(Map<String, dynamic> update) {
+    _logger.logUpdate(update);
     _updateController.add(update);
 
     final type = update['@type'] as String;
@@ -120,7 +123,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     if (type == 'updateAuthorizationState') {
       final authState =
           AuthenticationState.fromJson(update['authorization_state']);
-      print('TDLib auth state: ${authState.state}');
+      _logger.logAuthState(authState.state.toString());
       _currentAuthState = authState;
       _authController.add(authState);
 
@@ -158,6 +161,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
   Future<Map<String, dynamic>?> _sendRequest(
       Map<String, dynamic> request) async {
+    _logger.logRequest(request);
     final requestJson = jsonEncode(request);
     _client.send(requestJson);
     return null;

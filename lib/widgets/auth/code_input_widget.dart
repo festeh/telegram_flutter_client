@@ -22,8 +22,8 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final errorMessage = ref.watch(errorMessageProvider);
-    final isLoading = ref.watch(isLoadingProvider);
+    final errorMessage = ref.errorMessage;
+    final isLoading = ref.isLoading;
 
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -151,15 +151,13 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
 
   void _submitCode() {
     if (_formKey.currentState?.validate() ?? false) {
-      final authRepository = ref.read(authenticationRepositoryProvider);
-      authRepository.clearError();
-      authRepository.submitVerificationCode(_codeController.text.trim());
+      ref.clearError();
+      ref.submitVerificationCode(_codeController.text.trim());
     }
   }
 
   void _resendCode() {
-    final authRepository = ref.read(authenticationRepositoryProvider);
-    authRepository.clearError();
-    authRepository.resendCode();
+    ref.clearError();
+    ref.resendCode();
   }
 }

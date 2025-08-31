@@ -23,8 +23,8 @@ class _RegistrationWidgetState extends ConsumerState<RegistrationWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final errorMessage = ref.watch(errorMessageProvider);
-    final isLoading = ref.watch(isLoadingProvider);
+    final errorMessage = ref.errorMessage;
+    final isLoading = ref.isLoading;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -140,9 +140,8 @@ class _RegistrationWidgetState extends ConsumerState<RegistrationWidget> {
 
   void _submitRegistration() {
     if (_formKey.currentState?.validate() ?? false) {
-      final authRepository = ref.read(authenticationRepositoryProvider);
-      authRepository.clearError();
-      authRepository.registerUser(
+      ref.clearError();
+      ref.registerUser(
         _firstNameController.text.trim(),
         _lastNameController.text.trim(),
       );

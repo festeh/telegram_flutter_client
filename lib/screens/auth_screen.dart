@@ -115,17 +115,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Widget _buildPhoneAuthTab() {
-    final authRepository = ref.watch(authenticationRepositoryProvider);
-
-    if (authRepository.needsPhoneNumber) {
-      return PhoneInputWidget();
-    } else if (authRepository.needsCode) {
-      return CodeInputWidget();
-    } else if (authRepository.needsPassword) {
-      return PasswordInputWidget();
-    } else if (authRepository.needsRegistration) {
-      return RegistrationWidget();
-    } else if (authRepository.isLoading) {
+    if (ref.needsPhoneNumber) {
+      return const PhoneInputWidget();
+    } else if (ref.needsCode) {
+      return const CodeInputWidget();
+    } else if (ref.needsPassword) {
+      return const PasswordInputWidget();
+    } else if (ref.needsRegistration) {
+      return const RegistrationWidget();
+    } else if (ref.isLoading) {
       return _buildLoadingState('Connecting to Telegram...');
     } else {
       return _buildSkeletonLoader();
@@ -133,7 +131,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Widget _buildQrAuthTab() {
-    return QrAuthWidget();
+    return const QrAuthWidget();
   }
 
   Widget _buildLoadingState(String message) {

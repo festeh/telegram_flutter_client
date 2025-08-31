@@ -7,9 +7,9 @@ class QrAuthWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final errorMessage = ref.watch(errorMessageProvider);
-    final isLoading = ref.watch(isLoadingProvider);
-    final qrCodeInfo = ref.watch(qrCodeInfoProvider);
+    final errorMessage = ref.errorMessage;
+    final isLoading = ref.isLoading;
+    final qrCodeInfo = ref.qrCodeInfo;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -172,7 +172,6 @@ class QrAuthWidget extends ConsumerWidget {
   }
 
   void _requestQrCode(WidgetRef ref) {
-    final authRepository = ref.read(authenticationRepositoryProvider);
-    authRepository.requestQrCode();
+    ref.requestQrCode();
   }
 }
