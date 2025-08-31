@@ -1,8 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:telegram_flutter_client/core/auth_manager.dart';
-import 'package:telegram_flutter_client/core/tdlib_client.dart';
-import 'package:telegram_flutter_client/models/auth_state.dart';
-import 'package:telegram_flutter_client/models/user_session.dart';
+import 'package:telegram_flutter_client/domain/entities/auth_state.dart';
+import 'package:telegram_flutter_client/domain/entities/user_session.dart';
+import 'package:telegram_flutter_client/data/repositories/tdlib_telegram_client.dart';
 
 void main() {
   group('Models', () {
@@ -50,7 +49,7 @@ void main() {
 
   group('TelegramClient', () {
     test('should create client instance', () {
-      final client = TelegramClient();
+      final client = TdlibTelegramClient();
       expect(client, isNotNull);
       expect(client.currentAuthState.state, AuthorizationState.unknown);
     });

@@ -1,12 +1,14 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'tdlib_client.dart';
-import '../models/auth_state.dart';
-import '../models/user_session.dart';
+import 'dart:convert';
+import '../../domain/repositories/authentication_repository.dart';
+import '../../domain/repositories/telegram_client_repository.dart';
+import '../../domain/repositories/storage_repository.dart';
+import '../../domain/entities/auth_state.dart';
+import '../../domain/entities/user_session.dart';
 
-class AuthManager extends ChangeNotifier {
-  final TelegramClient _client;
+class TdlibAuthentication implements AuthenticationRepository {
+  final TelegramClientRepository _client;
+  final StorageRepository _storage;
   late StreamSubscription _authSubscription;
   late StreamSubscription _updateSubscription;
 
@@ -19,28 +21,59 @@ class AuthManager extends ChangeNotifier {
   bool _isLoading = false;
   bool _isInitialized = false;
 
-  AuthenticationState get authState => _authState;
-  bool get isInitialized => _isInitialized;
-  UserSession? get currentUser => _currentUser;
-  CodeInfo? get codeInfo => _codeInfo;
-  QrCodeInfo? get qrCodeInfo => _qrCodeInfo;
-  String? get errorMessage => _errorMessage;
-  bool get isLoading => _isLoading;
+  final StreamController<AuthenticationState> _authStateController =
+      StreamController<AuthenticationState>.broadcast();
 
-  bool get isAuthenticated => _authState.state == AuthorizationState.ready;
-  bool get needsPhoneNumber =>
-      _authState.state == AuthorizationState.waitPhoneNumber;
-  bool get needsCode => _authState.state == AuthorizationState.waitCode;
-  bool get needsPassword => _authState.state == AuthorizationState.waitPassword;
-  bool get needsRegistration =>
-      _authState.state == AuthorizationState.waitRegistration;
-  bool get needsQrConfirmation =>
-      _authState.state == AuthorizationState.waitOtherDeviceConfirmation;
-
-  AuthManager(this._client) {
+  TdlibAuthentication(this._client, this._storage) {
     _authSubscription = _client.authUpdates.listen(_onAuthUpdate);
     _updateSubscription = _client.updates.listen(_onUpdate);
   }
+
+  @override
+  AuthenticationState get authState => _authState;
+
+  @override
+  bool get isInitialized => _isInitialized;
+
+  @override
+  UserSession? get currentUser => _currentUser;
+
+  @override
+  CodeInfo? get codeInfo => _codeInfo;
+
+  @override
+  QrCodeInfo? get qrCodeInfo => _qrCodeInfo;
+
+  @override
+  String? get errorMessage => _errorMessage;
+
+  @override
+  bool get isLoading => _isLoading;
+
+  @override
+  bool get isAuthenticated => _authState.state == AuthorizationState.ready;
+
+  @override
+  bool get needsPhoneNumber =>
+      _authState.state == AuthorizationState.waitPhoneNumber;
+
+  @override
+  bool get needsCode => _authState.state == AuthorizationState.waitCode;
+
+  @override
+  bool get needsPassword => _authState.state == AuthorizationState.waitPassword;
+
+  @override
+  bool get needsRegistration =>
+      _authState.state == AuthorizationState.waitRegistration;
+
+  @override
+  bool get needsQrConfirmation =>
+      _authState.state == AuthorizationState.waitOtherDeviceConfirmation;
+
+  @override
+  Stream<AuthenticationState> get authStateChanges =>
+      _authStateController.stream;
 
   void _onAuthUpdate(AuthenticationState state) {
     print('Auth state changed to: ${state.state}');
@@ -48,7 +81,6 @@ class AuthManager extends ChangeNotifier {
     _errorMessage = null;
     _isLoading = false;
 
-    // Reset specific state info when changing states
     if (state.state != AuthorizationState.waitCode) {
       _codeInfo = null;
     }
@@ -56,7 +88,7 @@ class AuthManager extends ChangeNotifier {
       _qrCodeInfo = null;
     }
 
-    notifyListeners();
+    _authStateController.add(_authState);
   }
 
   void _onUpdate(Map<String, dynamic> update) {
@@ -70,11 +102,11 @@ class AuthManager extends ChangeNotifier {
 
         if (authStateType == 'authorizationStateWaitCode') {
           _codeInfo = CodeInfo.fromJson(authStateData);
-          notifyListeners();
+          _authStateController.add(_authState);
         } else if (authStateType ==
             'authorizationStateWaitOtherDeviceConfirmation') {
           _qrCodeInfo = QrCodeInfo.fromJson(authStateData);
-          notifyListeners();
+          _authStateController.add(_authState);
         }
         break;
 
@@ -83,148 +115,151 @@ class AuthManager extends ChangeNotifier {
           _currentUser = UserSession.fromJson(update['user']);
           _saveUserSession();
           print('User session updated: ${_currentUser?.displayName}');
-          notifyListeners();
+          _authStateController.add(_authState);
         }
         break;
 
       case 'error':
         _errorMessage = update['message'] ?? 'Unknown error occurred';
         _isLoading = false;
-        notifyListeners();
+        _authStateController.add(_authState);
         break;
     }
   }
 
+  @override
   Future<void> initialize() async {
     try {
-      // Step 1: Load cached user session (fast)
       await _loadUserSession();
-
-      // Step 2: Start TDLib client (slower but essential)
       await _client.start();
-
-      // Step 3: Mark as initialized
       _isInitialized = true;
-      notifyListeners();
+      _authStateController.add(_authState);
     } catch (e) {
       print('Initialization failed: $e');
-      _isInitialized = true; // Allow app to continue even if init fails
-      notifyListeners();
+      _isInitialized = true;
+      _authStateController.add(_authState);
       rethrow;
     }
   }
 
+  @override
   Future<void> submitPhoneNumber(String phoneNumber) async {
     if (phoneNumber.isEmpty) {
       _errorMessage = 'Phone number is required';
-      notifyListeners();
+      _authStateController.add(_authState);
       return;
     }
 
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _authStateController.add(_authState);
 
     try {
       await _client.setPhoneNumber(phoneNumber);
     } catch (e) {
       _errorMessage = 'Failed to send phone number: $e';
       _isLoading = false;
-      notifyListeners();
+      _authStateController.add(_authState);
     }
   }
 
+  @override
   Future<void> submitVerificationCode(String code) async {
     if (code.isEmpty) {
       _errorMessage = 'Verification code is required';
-      notifyListeners();
+      _authStateController.add(_authState);
       return;
     }
 
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _authStateController.add(_authState);
 
     try {
       await _client.checkAuthenticationCode(code);
     } catch (e) {
       _errorMessage = 'Invalid verification code: $e';
       _isLoading = false;
-      notifyListeners();
+      _authStateController.add(_authState);
     }
   }
 
+  @override
   Future<void> submitPassword(String password) async {
     if (password.isEmpty) {
       _errorMessage = 'Password is required';
-      notifyListeners();
+      _authStateController.add(_authState);
       return;
     }
 
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _authStateController.add(_authState);
 
     try {
       await _client.checkAuthenticationPassword(password);
     } catch (e) {
       _errorMessage = 'Invalid password: $e';
       _isLoading = false;
-      notifyListeners();
+      _authStateController.add(_authState);
     }
   }
 
+  @override
   Future<void> requestQrCode() async {
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _authStateController.add(_authState);
 
     try {
       await _client.requestQrCodeAuthentication();
     } catch (e) {
       _errorMessage = 'Failed to request QR code: $e';
       _isLoading = false;
-      notifyListeners();
+      _authStateController.add(_authState);
     }
   }
 
+  @override
   Future<void> resendCode() async {
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _authStateController.add(_authState);
 
     try {
       await _client.resendAuthenticationCode();
     } catch (e) {
       _errorMessage = 'Failed to resend code: $e';
       _isLoading = false;
-      notifyListeners();
+      _authStateController.add(_authState);
     }
   }
 
+  @override
   Future<void> registerUser(String firstName, String lastName) async {
     if (firstName.isEmpty) {
       _errorMessage = 'First name is required';
-      notifyListeners();
+      _authStateController.add(_authState);
       return;
     }
 
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    _authStateController.add(_authState);
 
     try {
       await _client.registerUser(firstName, lastName);
     } catch (e) {
       _errorMessage = 'Failed to register: $e';
       _isLoading = false;
-      notifyListeners();
+      _authStateController.add(_authState);
     }
   }
 
+  @override
   Future<void> logOut() async {
     _isLoading = true;
-    notifyListeners();
+    _authStateController.add(_authState);
 
     try {
       await _client.logOut();
@@ -232,21 +267,22 @@ class AuthManager extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Failed to log out: $e';
       _isLoading = false;
-      notifyListeners();
+      _authStateController.add(_authState);
     }
   }
 
+  @override
   void clearError() {
     _errorMessage = null;
-    notifyListeners();
+    _authStateController.add(_authState);
   }
 
   Future<void> _saveUserSession() async {
     if (_currentUser == null) return;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_session', _currentUser!.toJson().toString());
+      await _storage.setString(
+          'user_session', jsonEncode(_currentUser!.toJson()));
     } catch (e) {
       print('Failed to save user session: $e');
     }
@@ -254,24 +290,18 @@ class AuthManager extends ChangeNotifier {
 
   Future<void> _loadUserSession() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final sessionData = prefs.getString('user_session');
+      final sessionData = await _storage.getString('user_session');
       if (sessionData != null) {
-        // Note: In a real implementation, you'd parse this properly
-        // For now, we'll let TDLib handle session restoration
         print('Found cached user session');
       }
-      // This completes quickly regardless, allowing UI to show sooner
     } catch (e) {
       print('Failed to load user session: $e');
-      // Don't rethrow - this shouldn't block initialization
     }
   }
 
   Future<void> _clearUserSession() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('user_session');
+      await _storage.remove('user_session');
       _currentUser = null;
     } catch (e) {
       print('Failed to clear user session: $e');
@@ -282,7 +312,7 @@ class AuthManager extends ChangeNotifier {
   void dispose() {
     _authSubscription.cancel();
     _updateSubscription.cancel();
+    _authStateController.close();
     _client.dispose();
-    super.dispose();
   }
 }

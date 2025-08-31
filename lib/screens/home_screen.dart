@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../core/auth_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../presentation/providers/app_providers.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Telegram Flutter Client'),
@@ -16,7 +16,7 @@ class HomeScreen extends StatelessWidget {
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') {
-                _showLogoutDialog(context);
+                _showLogoutDialog(context, ref);
               }
             },
             itemBuilder: (context) => [
@@ -34,9 +34,9 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<AuthManager>(
-        builder: (context, authManager, child) {
-          final user = authManager.currentUser;
+      body: Builder(
+        builder: (context) {
+          final user = ref.watch(currentUserProvider);
 
           return Center(
             child: Padding(
@@ -131,7 +131,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -145,7 +145,7 @@ class HomeScreen extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.read<AuthManager>().logOut();
+              ref.read(authenticationRepositoryProvider).logOut();
             },
             child: const Text('Logout'),
           ),

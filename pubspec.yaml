@@ -31,7 +31,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   ffi: ^2.1.0
   path_provider: ^2.1.0
-  provider: ^6.1.0
+  flutter_riverpod: ^2.5.0
   qr_code_scanner: ^1.0.1
   shared_preferences: ^2.2.0
   path: ^1.8.0

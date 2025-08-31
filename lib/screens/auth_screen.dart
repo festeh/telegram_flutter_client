@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../core/auth_manager.dart';
-import '../widgets/auth_widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../presentation/providers/app_providers.dart';
+import '../widgets/auth/phone_input_widget.dart';
+import '../widgets/auth/code_input_widget.dart';
+import '../widgets/auth/password_input_widget.dart';
+import '../widgets/auth/registration_widget.dart';
+import '../widgets/auth/qr_auth_widget.dart';
 
-class AuthScreen extends StatefulWidget {
+class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
+class _AuthScreenState extends ConsumerState<AuthScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -110,31 +115,25 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildPhoneAuthTab() {
-    return Consumer<AuthManager>(
-      builder: (context, authManager, child) {
-        if (authManager.needsPhoneNumber) {
-          return PhoneInputWidget();
-        } else if (authManager.needsCode) {
-          return CodeInputWidget();
-        } else if (authManager.needsPassword) {
-          return PasswordInputWidget();
-        } else if (authManager.needsRegistration) {
-          return RegistrationWidget();
-        } else if (authManager.isLoading) {
-          return _buildLoadingState('Connecting to Telegram...');
-        } else {
-          return _buildSkeletonLoader();
-        }
-      },
-    );
+    final authRepository = ref.watch(authenticationRepositoryProvider);
+
+    if (authRepository.needsPhoneNumber) {
+      return PhoneInputWidget();
+    } else if (authRepository.needsCode) {
+      return CodeInputWidget();
+    } else if (authRepository.needsPassword) {
+      return PasswordInputWidget();
+    } else if (authRepository.needsRegistration) {
+      return RegistrationWidget();
+    } else if (authRepository.isLoading) {
+      return _buildLoadingState('Connecting to Telegram...');
+    } else {
+      return _buildSkeletonLoader();
+    }
   }
 
   Widget _buildQrAuthTab() {
-    return Consumer<AuthManager>(
-      builder: (context, authManager, child) {
-        return QrAuthWidget();
-      },
-    );
+    return QrAuthWidget();
   }
 
   Widget _buildLoadingState(String message) {

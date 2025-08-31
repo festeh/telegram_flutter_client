@@ -2,38 +2,45 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import '../utils/tdlib_bindings.dart';
-import '../models/auth_state.dart';
-import '../models/user_session.dart';
+import '../../domain/repositories/telegram_client_repository.dart';
+import '../../domain/entities/auth_state.dart';
+import '../../domain/entities/user_session.dart';
+import '../../utils/tdlib_bindings.dart';
 
-class TelegramClient {
-  static const int apiId = 94575; // Default test API ID
-  static const String apiHash =
-      'a3406de8d171bb422bb6ddf3bbd800e2'; // Default test API hash
+class TdlibTelegramClient implements TelegramClientRepository {
+  static const int apiId = 94575;
+  static const String apiHash = 'a3406de8d171bb422bb6ddf3bbd800e2';
 
   late TdJsonClient _client;
   late StreamController<Map<String, dynamic>> _updateController;
   late StreamController<AuthenticationState> _authController;
 
+  @override
   Stream<Map<String, dynamic>> get updates => _updateController.stream;
+
+  @override
   Stream<AuthenticationState> get authUpdates => _authController.stream;
 
   AuthenticationState _currentAuthState =
       const AuthenticationState(state: AuthorizationState.unknown);
   UserSession? _currentUser;
 
+  @override
   AuthenticationState get currentAuthState => _currentAuthState;
+
+  @override
   UserSession? get currentUser => _currentUser;
 
   bool _isStarted = false;
   Timer? _receiveTimer;
   final List<Map<String, dynamic>> _pendingUpdates = [];
 
-  TelegramClient() {
+  TdlibTelegramClient() {
     _updateController = StreamController<Map<String, dynamic>>.broadcast();
     _authController = StreamController<AuthenticationState>.broadcast();
   }
 
+  @override
   Future<void> start() async {
     if (_isStarted) return;
 
@@ -44,7 +51,6 @@ class TelegramClient {
 
     final dbPath = await _getDatabasePath();
 
-    // Send tdlibParameters
     await _sendRequest({
       '@type': 'setTdlibParameters',
       'database_directory': dbPath,
@@ -64,10 +70,9 @@ class TelegramClient {
 
   void _startReceiving() {
     _receiveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      // Batch receive multiple updates in one cycle
       bool hasUpdates = false;
       while (true) {
-        final response = _client.receive(0.0); // Non-blocking receive
+        final response = _client.receive(0.0);
         if (response != null) {
           try {
             final update = jsonDecode(response) as Map<String, dynamic>;
@@ -77,11 +82,10 @@ class TelegramClient {
             print('Error parsing update: $e');
           }
         } else {
-          break; // No more updates available
+          break;
         }
       }
 
-      // Process all pending updates in batch
       if (hasUpdates) {
         _processBatchedUpdates();
       }
@@ -92,7 +96,6 @@ class TelegramClient {
     final updates = List<Map<String, dynamic>>.from(_pendingUpdates);
     _pendingUpdates.clear();
 
-    // Process high-priority updates first (auth state changes)
     final authUpdates = updates
         .where((update) => update['@type'] == 'updateAuthorizationState')
         .toList();
@@ -100,12 +103,10 @@ class TelegramClient {
         .where((update) => update['@type'] != 'updateAuthorizationState')
         .toList();
 
-    // Process auth updates immediately
     for (final update in authUpdates) {
       _handleUpdate(update);
     }
 
-    // Process other updates
     for (final update in otherUpdates) {
       _handleUpdate(update);
     }
@@ -159,10 +160,10 @@ class TelegramClient {
       Map<String, dynamic> request) async {
     final requestJson = jsonEncode(request);
     _client.send(requestJson);
-    return null; // For async operations, we handle responses in updates
+    return null;
   }
 
-  // Authentication methods
+  @override
   Future<void> setPhoneNumber(String phoneNumber) async {
     await _sendRequest({
       '@type': 'setAuthenticationPhoneNumber',
@@ -170,6 +171,7 @@ class TelegramClient {
     });
   }
 
+  @override
   Future<void> checkAuthenticationCode(String code) async {
     await _sendRequest({
       '@type': 'checkAuthenticationCode',
@@ -177,6 +179,7 @@ class TelegramClient {
     });
   }
 
+  @override
   Future<void> checkAuthenticationPassword(String password) async {
     await _sendRequest({
       '@type': 'checkAuthenticationPassword',
@@ -184,6 +187,7 @@ class TelegramClient {
     });
   }
 
+  @override
   Future<void> requestQrCodeAuthentication() async {
     await _sendRequest({
       '@type': 'requestQrCodeAuthentication',
@@ -191,6 +195,7 @@ class TelegramClient {
     });
   }
 
+  @override
   Future<void> confirmQrCodeAuthentication(String link) async {
     await _sendRequest({
       '@type': 'confirmQrCodeAuthentication',
@@ -198,6 +203,7 @@ class TelegramClient {
     });
   }
 
+  @override
   Future<void> registerUser(String firstName, String lastName) async {
     await _sendRequest({
       '@type': 'registerUser',
@@ -206,18 +212,21 @@ class TelegramClient {
     });
   }
 
+  @override
   Future<void> resendAuthenticationCode() async {
     await _sendRequest({
       '@type': 'resendAuthenticationCode',
     });
   }
 
+  @override
   Future<void> logOut() async {
     await _sendRequest({
       '@type': 'logOut',
     });
   }
 
+  @override
   void dispose() {
     _receiveTimer?.cancel();
     _updateController.close();
