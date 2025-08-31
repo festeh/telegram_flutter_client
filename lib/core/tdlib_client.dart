@@ -61,7 +61,7 @@ class TelegramClient {
   }
   
   void _startReceiving() {
-    _receiveTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
+    _receiveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       // Batch receive multiple updates in one cycle
       bool hasUpdates = false;
       while (true) {
@@ -114,6 +114,7 @@ class TelegramClient {
     
     if (type == 'updateAuthorizationState') {
       final authState = AuthenticationState.fromJson(update['authorization_state']);
+      print('TDLib auth state: ${authState.state}');
       _currentAuthState = authState;
       _authController.add(authState);
       

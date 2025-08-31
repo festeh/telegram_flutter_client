@@ -26,7 +26,7 @@ class AuthManager extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
   
-  bool get isAuthenticated => _authState.state == AuthorizationState.ready && _currentUser != null;
+  bool get isAuthenticated => _authState.state == AuthorizationState.ready;
   bool get needsPhoneNumber => _authState.state == AuthorizationState.waitPhoneNumber;
   bool get needsCode => _authState.state == AuthorizationState.waitCode;
   bool get needsPassword => _authState.state == AuthorizationState.waitPassword;
@@ -39,6 +39,7 @@ class AuthManager extends ChangeNotifier {
   }
   
   void _onAuthUpdate(AuthenticationState state) {
+    print('Auth state changed to: ${state.state}');
     _authState = state;
     _errorMessage = null;
     _isLoading = false;
@@ -75,6 +76,7 @@ class AuthManager extends ChangeNotifier {
         if (update['user']?['is_self'] == true) {
           _currentUser = UserSession.fromJson(update['user']);
           _saveUserSession();
+          print('User session updated: ${_currentUser?.displayName}');
           notifyListeners();
         }
         break;
