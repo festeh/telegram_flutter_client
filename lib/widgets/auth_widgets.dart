@@ -56,8 +56,8 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                 Text(
                   'You\'ll receive a verification code',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
-                  ),
+                        color: Colors.grey.shade600,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -67,7 +67,8 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                     InkWell(
                       onTap: _showCountryPicker,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 12),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade400),
                           borderRadius: const BorderRadius.only(
@@ -101,7 +102,9 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                       child: TextFormField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                         decoration: InputDecoration(
                           labelText: 'Phone number',
                           hintText: '1234567890',
@@ -187,7 +190,8 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -204,10 +208,10 @@ class _PhoneInputWidgetState extends State<PhoneInputWidget> {
     );
   }
 
-void _showCountryPicker() {
+  void _showCountryPicker() {
     final screenHeight = MediaQuery.of(context).size.height;
     final maxHeight = screenHeight * 0.7; // Use 70% of screen height
-    
+
     showCountryPicker(
       context: context,
       showPhoneCode: true,
@@ -230,7 +234,8 @@ void _showCountryPicker() {
           hintText: 'Start typing to search',
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: const Color(0xFF8C98A8).withOpacity(0.2)),
+            borderSide:
+                BorderSide(color: const Color(0xFF8C98A8).withOpacity(0.2)),
           ),
         ),
       ),
@@ -270,7 +275,7 @@ class _CodeInputWidgetState extends State<CodeInputWidget> {
     return Consumer<AuthManager>(
       builder: (context, authManager, child) {
         final codeInfo = authManager.codeInfo;
-        
+
         return Padding(
           padding: const EdgeInsets.all(12),
           child: Form(
@@ -294,8 +299,8 @@ class _CodeInputWidgetState extends State<CodeInputWidget> {
                 Text(
                   'Code sent via Telegram',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
-                  ),
+                        color: Colors.grey.shade600,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -383,7 +388,8 @@ class _CodeInputWidgetState extends State<CodeInputWidget> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -453,8 +459,8 @@ class _PasswordInputWidgetState extends State<PasswordInputWidget> {
                 Text(
                   'Your account has two-step verification enabled',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade600,
-                  ),
+                        color: Colors.grey.shade600,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -465,8 +471,11 @@ class _PasswordInputWidgetState extends State<PasswordInputWidget> {
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscureText = !_obscureText),
+                      icon: Icon(_obscureText
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () =>
+                          setState(() => _obscureText = !_obscureText),
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -523,7 +532,8 @@ class _PasswordInputWidgetState extends State<PasswordInputWidget> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -594,8 +604,8 @@ class _RegistrationWidgetState extends State<RegistrationWidget> {
                 Text(
                   'Enter your name to complete registration',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade600,
-                  ),
+                        color: Colors.grey.shade600,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -670,7 +680,8 @@ class _RegistrationWidgetState extends State<RegistrationWidget> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : const Text(
@@ -731,8 +742,8 @@ class _QrAuthWidgetState extends State<QrAuthWidget> {
               Text(
                 'Scan a QR code from another logged-in device',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey.shade600,
-                ),
+                      color: Colors.grey.shade600,
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -776,8 +787,8 @@ class _QrAuthWidgetState extends State<QrAuthWidget> {
                       Text(
                         'Waiting for confirmation...',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.orange.shade600,
-                        ),
+                              color: Colors.orange.shade600,
+                            ),
                       ),
                     ],
                   ),
@@ -805,8 +816,8 @@ class _QrAuthWidgetState extends State<QrAuthWidget> {
                       Text(
                         'Click the button below to generate a QR code for authentication',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
+                              color: Colors.grey.shade600,
+                            ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -857,7 +868,8 @@ class _QrAuthWidgetState extends State<QrAuthWidget> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : Text(

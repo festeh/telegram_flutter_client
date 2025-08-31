@@ -17,16 +17,16 @@ class AuthenticationState {
   final AuthorizationState state;
   final Map<String, dynamic>? extra;
   final String? error;
-  
+
   const AuthenticationState({
     required this.state,
     this.extra,
     this.error,
   });
-  
+
   factory AuthenticationState.fromJson(Map<String, dynamic> json) {
     final type = json['@type'] as String;
-    
+
     AuthorizationState state;
     switch (type) {
       case 'authorizationStateWaitTdlibParameters':
@@ -65,13 +65,13 @@ class AuthenticationState {
       default:
         state = AuthorizationState.unknown;
     }
-    
+
     return AuthenticationState(
       state: state,
       extra: json,
     );
   }
-  
+
   @override
   String toString() {
     return 'AuthenticationState(state: $state, error: $error)';
@@ -83,14 +83,14 @@ class CodeInfo {
   final String type;
   final String nextType;
   final int timeout;
-  
+
   const CodeInfo({
     required this.phoneNumber,
     required this.type,
     required this.nextType,
     required this.timeout,
   });
-  
+
   factory CodeInfo.fromJson(Map<String, dynamic> json) {
     return CodeInfo(
       phoneNumber: json['phone_number'] ?? '',
@@ -103,9 +103,9 @@ class CodeInfo {
 
 class QrCodeInfo {
   final String link;
-  
+
   const QrCodeInfo({required this.link});
-  
+
   factory QrCodeInfo.fromJson(Map<String, dynamic> json) {
     return QrCodeInfo(
       link: json['link'] ?? '',

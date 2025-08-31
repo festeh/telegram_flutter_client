@@ -10,7 +10,7 @@ void main() {
       final authState = AuthenticationState.fromJson({
         '@type': 'authorizationStateWaitPhoneNumber',
       });
-      
+
       expect(authState.state, AuthorizationState.waitPhoneNumber);
     });
 
@@ -23,7 +23,7 @@ void main() {
         'phone_number': '+1234567890',
         'is_authorized': true,
       });
-      
+
       expect(session.userId, 123456789);
       expect(session.firstName, 'John');
       expect(session.lastName, 'Doe');
@@ -40,14 +40,14 @@ void main() {
         'next_type': {'@type': 'authenticationCodeTypeCall'},
         'timeout': 60,
       });
-      
+
       expect(codeInfo.phoneNumber, '+1234567890');
       expect(codeInfo.type, 'authenticationCodeTypeSms');
       expect(codeInfo.nextType, 'authenticationCodeTypeCall');
       expect(codeInfo.timeout, 60);
     });
   });
-  
+
   group('TelegramClient', () {
     test('should create client instance', () {
       final client = TelegramClient();

@@ -9,15 +9,16 @@ class AuthManager extends ChangeNotifier {
   final TelegramClient _client;
   late StreamSubscription _authSubscription;
   late StreamSubscription _updateSubscription;
-  
-  AuthenticationState _authState = const AuthenticationState(state: AuthorizationState.unknown);
+
+  AuthenticationState _authState =
+      const AuthenticationState(state: AuthorizationState.unknown);
   UserSession? _currentUser;
   CodeInfo? _codeInfo;
   QrCodeInfo? _qrCodeInfo;
   String? _errorMessage;
   bool _isLoading = false;
   bool _isInitialized = false;
-  
+
   AuthenticationState get authState => _authState;
   bool get isInitialized => _isInitialized;
   UserSession? get currentUser => _currentUser;
@@ -25,25 +26,28 @@ class AuthManager extends ChangeNotifier {
   QrCodeInfo? get qrCodeInfo => _qrCodeInfo;
   String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
-  
+
   bool get isAuthenticated => _authState.state == AuthorizationState.ready;
-  bool get needsPhoneNumber => _authState.state == AuthorizationState.waitPhoneNumber;
+  bool get needsPhoneNumber =>
+      _authState.state == AuthorizationState.waitPhoneNumber;
   bool get needsCode => _authState.state == AuthorizationState.waitCode;
   bool get needsPassword => _authState.state == AuthorizationState.waitPassword;
-  bool get needsRegistration => _authState.state == AuthorizationState.waitRegistration;
-  bool get needsQrConfirmation => _authState.state == AuthorizationState.waitOtherDeviceConfirmation;
-  
+  bool get needsRegistration =>
+      _authState.state == AuthorizationState.waitRegistration;
+  bool get needsQrConfirmation =>
+      _authState.state == AuthorizationState.waitOtherDeviceConfirmation;
+
   AuthManager(this._client) {
     _authSubscription = _client.authUpdates.listen(_onAuthUpdate);
     _updateSubscription = _client.updates.listen(_onUpdate);
   }
-  
+
   void _onAuthUpdate(AuthenticationState state) {
     print('Auth state changed to: ${state.state}');
     _authState = state;
     _errorMessage = null;
     _isLoading = false;
-    
+
     // Reset specific state info when changing states
     if (state.state != AuthorizationState.waitCode) {
       _codeInfo = null;
@@ -51,27 +55,29 @@ class AuthManager extends ChangeNotifier {
     if (state.state != AuthorizationState.waitOtherDeviceConfirmation) {
       _qrCodeInfo = null;
     }
-    
+
     notifyListeners();
   }
-  
+
   void _onUpdate(Map<String, dynamic> update) {
     final type = update['@type'] as String;
-    
+
     switch (type) {
       case 'updateAuthorizationState':
-        final authStateData = update['authorization_state'] as Map<String, dynamic>;
+        final authStateData =
+            update['authorization_state'] as Map<String, dynamic>;
         final authStateType = authStateData['@type'] as String;
-        
+
         if (authStateType == 'authorizationStateWaitCode') {
           _codeInfo = CodeInfo.fromJson(authStateData);
           notifyListeners();
-        } else if (authStateType == 'authorizationStateWaitOtherDeviceConfirmation') {
+        } else if (authStateType ==
+            'authorizationStateWaitOtherDeviceConfirmation') {
           _qrCodeInfo = QrCodeInfo.fromJson(authStateData);
           notifyListeners();
         }
         break;
-        
+
       case 'updateUser':
         if (update['user']?['is_self'] == true) {
           _currentUser = UserSession.fromJson(update['user']);
@@ -80,7 +86,7 @@ class AuthManager extends ChangeNotifier {
           notifyListeners();
         }
         break;
-        
+
       case 'error':
         _errorMessage = update['message'] ?? 'Unknown error occurred';
         _isLoading = false;
@@ -88,15 +94,15 @@ class AuthManager extends ChangeNotifier {
         break;
     }
   }
-  
+
   Future<void> initialize() async {
     try {
       // Step 1: Load cached user session (fast)
       await _loadUserSession();
-      
+
       // Step 2: Start TDLib client (slower but essential)
       await _client.start();
-      
+
       // Step 3: Mark as initialized
       _isInitialized = true;
       notifyListeners();
@@ -107,18 +113,18 @@ class AuthManager extends ChangeNotifier {
       rethrow;
     }
   }
-  
+
   Future<void> submitPhoneNumber(String phoneNumber) async {
     if (phoneNumber.isEmpty) {
       _errorMessage = 'Phone number is required';
       notifyListeners();
       return;
     }
-    
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       await _client.setPhoneNumber(phoneNumber);
     } catch (e) {
@@ -127,18 +133,18 @@ class AuthManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> submitVerificationCode(String code) async {
     if (code.isEmpty) {
       _errorMessage = 'Verification code is required';
       notifyListeners();
       return;
     }
-    
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       await _client.checkAuthenticationCode(code);
     } catch (e) {
@@ -147,18 +153,18 @@ class AuthManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> submitPassword(String password) async {
     if (password.isEmpty) {
       _errorMessage = 'Password is required';
       notifyListeners();
       return;
     }
-    
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       await _client.checkAuthenticationPassword(password);
     } catch (e) {
@@ -167,12 +173,12 @@ class AuthManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> requestQrCode() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       await _client.requestQrCodeAuthentication();
     } catch (e) {
@@ -181,12 +187,12 @@ class AuthManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> resendCode() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       await _client.resendAuthenticationCode();
     } catch (e) {
@@ -195,18 +201,18 @@ class AuthManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> registerUser(String firstName, String lastName) async {
     if (firstName.isEmpty) {
       _errorMessage = 'First name is required';
       notifyListeners();
       return;
     }
-    
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    
+
     try {
       await _client.registerUser(firstName, lastName);
     } catch (e) {
@@ -215,11 +221,11 @@ class AuthManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   Future<void> logOut() async {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
       await _client.logOut();
       await _clearUserSession();
@@ -229,15 +235,15 @@ class AuthManager extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();
   }
-  
+
   Future<void> _saveUserSession() async {
     if (_currentUser == null) return;
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_session', _currentUser!.toJson().toString());
@@ -245,7 +251,7 @@ class AuthManager extends ChangeNotifier {
       print('Failed to save user session: $e');
     }
   }
-  
+
   Future<void> _loadUserSession() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -261,7 +267,7 @@ class AuthManager extends ChangeNotifier {
       // Don't rethrow - this shouldn't block initialization
     }
   }
-  
+
   Future<void> _clearUserSession() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -271,7 +277,7 @@ class AuthManager extends ChangeNotifier {
       print('Failed to clear user session: $e');
     }
   }
-  
+
   @override
   void dispose() {
     _authSubscription.cancel();

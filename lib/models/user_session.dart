@@ -5,7 +5,7 @@ class UserSession {
   final String username;
   final String phoneNumber;
   final bool isAuthorized;
-  
+
   const UserSession({
     required this.userId,
     required this.firstName,
@@ -14,11 +14,12 @@ class UserSession {
     required this.phoneNumber,
     required this.isAuthorized,
   });
-  
+
   factory UserSession.fromJson(Map<String, dynamic> json) {
     // Extract username from TDLib format
     String username = '';
-    if (json['usernames'] != null && json['usernames']['active_usernames'] != null) {
+    if (json['usernames'] != null &&
+        json['usernames']['active_usernames'] != null) {
       final List activeUsernames = json['usernames']['active_usernames'];
       if (activeUsernames.isNotEmpty) {
         username = activeUsernames[0];
@@ -26,7 +27,7 @@ class UserSession {
     } else if (json['username'] != null) {
       username = json['username'];
     }
-    
+
     return UserSession(
       userId: json['id'] ?? 0,
       firstName: json['first_name'] ?? '',
@@ -36,7 +37,7 @@ class UserSession {
       isAuthorized: true, // If we're creating a UserSession, user is authorized
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': userId,
@@ -47,7 +48,7 @@ class UserSession {
       'is_authorized': isAuthorized,
     };
   }
-  
+
   String get displayName {
     if (firstName.isNotEmpty && lastName.isNotEmpty) {
       return '$firstName $lastName';
@@ -59,7 +60,7 @@ class UserSession {
       return phoneNumber;
     }
   }
-  
+
   @override
   String toString() {
     return 'UserSession(userId: $userId, displayName: $displayName, username: $username)';

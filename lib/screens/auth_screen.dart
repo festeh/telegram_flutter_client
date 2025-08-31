@@ -12,13 +12,13 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
   }
-  
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -59,19 +59,19 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   Text(
                     'Telegram Flutter Client',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade600,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade600,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Sign in to your account',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey.shade600,
-                    ),
+                          color: Colors.grey.shade600,
+                        ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Tab Bar
                   TabBar(
                     controller: _tabController,
@@ -89,7 +89,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  
+
                   // Tab Content
                   Expanded(
                     child: TabBarView(
@@ -108,7 +108,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       ),
     );
   }
-  
+
   Widget _buildPhoneAuthTab() {
     return Consumer<AuthManager>(
       builder: (context, authManager, child) {
@@ -128,7 +128,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       },
     );
   }
-  
+
   Widget _buildQrAuthTab() {
     return Consumer<AuthManager>(
       builder: (context, authManager, child) {
@@ -136,7 +136,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       },
     );
   }
-  
+
   Widget _buildLoadingState(String message) {
     return Center(
       child: Column(
@@ -157,7 +157,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       ),
     );
   }
-  
+
   Widget _buildSkeletonLoader() {
     return Padding(
       padding: const EdgeInsets.all(32.0),
@@ -184,7 +184,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Skeleton for button
           Container(
             width: double.infinity,
@@ -195,7 +195,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Loading text
           const Text(
             'Initializing authentication...',

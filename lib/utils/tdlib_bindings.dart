@@ -6,24 +6,31 @@ import 'package:path/path.dart' as path;
 typedef TdJsonClientCreateC = Pointer Function();
 typedef TdJsonClientCreateDart = Pointer Function();
 
-typedef TdJsonClientSendC = Void Function(Pointer client, Pointer<Utf8> request);
-typedef TdJsonClientSendDart = void Function(Pointer client, Pointer<Utf8> request);
+typedef TdJsonClientSendC = Void Function(
+    Pointer client, Pointer<Utf8> request);
+typedef TdJsonClientSendDart = void Function(
+    Pointer client, Pointer<Utf8> request);
 
-typedef TdJsonClientReceiveC = Pointer<Utf8> Function(Pointer client, Double timeout);
-typedef TdJsonClientReceiveDart = Pointer<Utf8> Function(Pointer client, double timeout);
+typedef TdJsonClientReceiveC = Pointer<Utf8> Function(
+    Pointer client, Double timeout);
+typedef TdJsonClientReceiveDart = Pointer<Utf8> Function(
+    Pointer client, double timeout);
 
-typedef TdJsonClientExecuteC = Pointer<Utf8> Function(Pointer client, Pointer<Utf8> request);
-typedef TdJsonClientExecuteDart = Pointer<Utf8> Function(Pointer client, Pointer<Utf8> request);
+typedef TdJsonClientExecuteC = Pointer<Utf8> Function(
+    Pointer client, Pointer<Utf8> request);
+typedef TdJsonClientExecuteDart = Pointer<Utf8> Function(
+    Pointer client, Pointer<Utf8> request);
 
 typedef TdJsonClientDestroyC = Void Function(Pointer client);
 typedef TdJsonClientDestroyDart = void Function(Pointer client);
 
 class TdLibBindings {
   static final DynamicLibrary _dylib = _loadLibrary();
-  
+
   static DynamicLibrary _loadLibrary() {
     if (Platform.isLinux) {
-      final libraryPath = path.join(Directory.current.path, 'linux', 'lib', 'libtdjson.so');
+      final libraryPath =
+          path.join(Directory.current.path, 'linux', 'lib', 'libtdjson.so');
       if (File(libraryPath).existsSync()) {
         return DynamicLibrary.open(libraryPath);
       }
@@ -59,36 +66,36 @@ class TdLibBindings {
 
 class TdJsonClient {
   late Pointer _client;
-  
+
   TdJsonClient() {
     _client = TdLibBindings.tdJsonClientCreate();
   }
-  
+
   void send(String request) {
     final requestPtr = request.toNativeUtf8();
     TdLibBindings.tdJsonClientSend(_client, requestPtr);
     calloc.free(requestPtr);
   }
-  
+
   String? receive([double timeout = 1.0]) {
     final responsePtr = TdLibBindings.tdJsonClientReceive(_client, timeout);
     if (responsePtr == nullptr) return null;
-    
+
     final response = responsePtr.toDartString();
     return response;
   }
-  
+
   String? execute(String request) {
     final requestPtr = request.toNativeUtf8();
     final responsePtr = TdLibBindings.tdJsonClientExecute(_client, requestPtr);
     calloc.free(requestPtr);
-    
+
     if (responsePtr == nullptr) return null;
-    
+
     final response = responsePtr.toDartString();
     return response;
   }
-  
+
   void destroy() {
     TdLibBindings.tdJsonClientDestroy(_client);
   }

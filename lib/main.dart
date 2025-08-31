@@ -46,9 +46,9 @@ class _AppWrapperState extends State<AppWrapper> {
     try {
       final client = TelegramClient();
       final authManager = AuthManager(client);
-      
+
       await authManager.initialize();
-      
+
       return authManager;
     } catch (e) {
       print('Failed to initialize app: $e');
@@ -58,7 +58,9 @@ class _AppWrapperState extends State<AppWrapper> {
 
   @override
   void dispose() {
-    _initializationFuture.then((authManager) => authManager.dispose()).catchError((_) {});
+    _initializationFuture
+        .then((authManager) => authManager.dispose())
+        .catchError((_) {});
     super.dispose();
   }
 
@@ -92,7 +94,8 @@ class _AppWrapperState extends State<AppWrapper> {
                       height: 2,
                       child: LinearProgressIndicator(
                         backgroundColor: Colors.grey[300],
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.blue),
                       ),
                     ),
                   ],

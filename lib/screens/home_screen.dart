@@ -37,7 +37,7 @@ class HomeScreen extends StatelessWidget {
       body: Consumer<AuthManager>(
         builder: (context, authManager, child) {
           final user = authManager.currentUser;
-          
+
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -65,24 +65,26 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 24),
                       Text(
                         'Welcome, ${user?.displayName ?? 'User'}!',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                       const SizedBox(height: 8),
                       if (user?.username.isNotEmpty == true)
                         Text(
                           '@${user!.username}',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.blue.shade600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.blue.shade600,
+                                  ),
                         ),
                       const SizedBox(height: 8),
                       Text(
                         user?.phoneNumber ?? '',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
+                              color: Colors.grey.shade600,
+                            ),
                       ),
                       const SizedBox(height: 32),
                       Container(
@@ -115,8 +117,8 @@ class HomeScreen extends StatelessWidget {
                         'This is a basic authentication demo.\nFull messaging features will be implemented next.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
+                              color: Colors.grey.shade600,
+                            ),
                       ),
                     ],
                   ),
@@ -128,7 +130,7 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
