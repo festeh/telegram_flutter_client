@@ -1,10 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../notifiers/auth_notifier.dart';
+import '../notifiers/chat_notifier.dart';
 import '../state/unified_auth_state.dart';
+import '../state/chat_state.dart';
+import '../../domain/entities/chat.dart';
 
 // Single source of truth for all authentication state
 final authProvider = AsyncNotifierProvider<AuthNotifier, UnifiedAuthState>(
   () => AuthNotifier(),
+);
+
+// Single source of truth for all chat state
+final chatProvider = AsyncNotifierProvider<ChatNotifier, ChatState>(
+  () => ChatNotifier(),
 );
 
 // Clean extension methods for convenient UI access
@@ -74,6 +82,28 @@ extension AuthX on WidgetRef {
   Future<void> logout() => authActions.logout();
 
   void clearError() => authActions.clearError();
+}
+
+// Chat extension methods for convenient UI access
+extension ChatX on WidgetRef {
+  // State access
+  ChatState? get chatState => watch(chatProvider).valueOrNull;
+  bool get isChatLoading => watch(chatProvider).isLoading;
+  bool get hasChatError => watch(chatProvider).hasError;
+  String? get chatError => watch(chatProvider).error?.toString();
+
+  // Computed properties
+  List<Chat> get chats => watch(chatProvider.select((state) => state.valueOrNull?.chats ?? []));
+  int get chatCount => watch(chatProvider.select((state) => state.valueOrNull?.chatCount ?? 0));
+  bool get hasChats => watch(chatProvider.select((state) => state.valueOrNull?.chats.isNotEmpty ?? false));
+
+  // Action shortcuts
+  ChatNotifier get chatActions => read(chatProvider.notifier);
+
+  // Convenience action methods
+  Future<void> refreshChats() => chatActions.refreshChats();
+  Future<void> loadMoreChats() => chatActions.loadMoreChats();
+  void clearChatError() => chatActions.clearError();
 }
 
 // Legacy provider names for backward compatibility during migration (optional)

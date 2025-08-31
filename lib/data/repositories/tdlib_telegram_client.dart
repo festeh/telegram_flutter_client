@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'package:path/path.dart' as path;
 import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
+import '../../domain/entities/chat.dart';
 import '../../utils/tdlib_bindings.dart';
 import '../../core/logging/specialized_loggers.dart';
 import '../../core/logging/logging_config.dart';
@@ -159,8 +160,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   Future<String> _getDatabasePath() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final dbPath = path.join(appDir.path, 'telegram_flutter_client');
+    final homeDir = Platform.environment['HOME'] ?? '';
+    final dbPath = path.join(homeDir, '.local', 'share', 'telegram_flutter_client');
     return dbPath;
   }
 
@@ -233,6 +234,87 @@ class TdlibTelegramClient implements TelegramClientRepository {
     await _sendRequest({
       '@type': 'logOut',
     });
+  }
+
+  @override
+  Future<List<Chat>> loadChats({int limit = 20, int offsetOrder = 0, int offsetChatId = 0}) async {
+    final completer = Completer<List<Chat>>();
+    
+    // Generate unique request id for tracking response
+    final requestId = DateTime.now().millisecondsSinceEpoch.toString();
+    
+    // Listen for the response
+    late StreamSubscription subscription;
+    subscription = updates.listen((update) {
+      if (update['@type'] == 'chats' && update['@extra'] == requestId) {
+        // final chatIds = List<int>.from(update['chat_ids'] ?? []);
+        final chats = <Chat>[];
+        
+        // We need to get full chat info for each chat ID
+        // For now, return empty list and let individual getChat calls populate
+        completer.complete(chats);
+        subscription.cancel();
+      }
+    });
+    
+    // Send the request
+    await _sendRequest({
+      '@type': 'getChats',
+      'chat_list': {'@type': 'chatListMain'},
+      'limit': limit,
+      '@extra': requestId,
+    });
+    
+    // Set timeout
+    Timer(const Duration(seconds: 10), () {
+      if (!completer.isCompleted) {
+        completer.completeError('Timeout loading chats');
+        subscription.cancel();
+      }
+    });
+    
+    return completer.future;
+  }
+
+  @override
+  Future<Chat?> getChat(int chatId) async {
+    final completer = Completer<Chat?>();
+    
+    // Generate unique request id for tracking response
+    final requestId = DateTime.now().millisecondsSinceEpoch.toString();
+    
+    // Listen for the response
+    late StreamSubscription subscription;
+    subscription = updates.listen((update) {
+      if (update['@type'] == 'chat' && 
+          update['id'] == chatId && 
+          update['@extra'] == requestId) {
+        try {
+          final chat = Chat.fromJson(update);
+          completer.complete(chat);
+        } catch (e) {
+          completer.completeError('Error parsing chat: $e');
+        }
+        subscription.cancel();
+      }
+    });
+    
+    // Send the request
+    await _sendRequest({
+      '@type': 'getChat',
+      'chat_id': chatId,
+      '@extra': requestId,
+    });
+    
+    // Set timeout
+    Timer(const Duration(seconds: 5), () {
+      if (!completer.isCompleted) {
+        completer.complete(null);
+        subscription.cancel();
+      }
+    });
+    
+    return completer.future;
   }
 
   /// Sets TDLib's native C++ logging verbosity level

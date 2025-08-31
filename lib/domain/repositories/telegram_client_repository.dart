@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../entities/auth_state.dart';
 import '../entities/user_session.dart';
+import '../entities/chat.dart';
 
 abstract class TelegramClientRepository {
   Stream<Map<String, dynamic>> get updates;
@@ -20,6 +21,10 @@ abstract class TelegramClientRepository {
   Future<void> registerUser(String firstName, String lastName);
   Future<void> resendAuthenticationCode();
   Future<void> logOut();
+
+  // Chat methods
+  Future<List<Chat>> loadChats({int limit = 20, int offsetOrder = 0, int offsetChatId = 0});
+  Future<Chat?> getChat(int chatId);
 
   void dispose();
 }
