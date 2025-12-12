@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/providers/app_providers.dart';
 
 class PasswordInputWidget extends ConsumerStatefulWidget {
-  const PasswordInputWidget({Key? key}) : super(key: key);
+  const PasswordInputWidget({super.key});
 
   @override
   ConsumerState<PasswordInputWidget> createState() =>

@@ -11,13 +11,13 @@ class MessageBubble extends ConsumerWidget {
   final VoidCallback? onTap;
 
   const MessageBubble({
-    Key? key,
+    super.key,
     required this.message,
     this.showTime = true,
     this.showSender = false,
     this.onLongPress,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -150,8 +150,6 @@ class MessageBubble extends ConsumerWidget {
         return _buildMediaMessage(context, Icons.emoji_emotions, 'Sticker');
       case MessageType.animation:
         return _buildMediaMessage(context, Icons.gif, 'GIF');
-      default:
-        return _buildTextMessage(context);
     }
   }
 

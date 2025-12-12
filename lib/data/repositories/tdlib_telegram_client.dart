@@ -10,6 +10,7 @@ import '../../domain/entities/chat.dart';
 import '../../utils/tdlib_bindings.dart';
 import '../../core/logging/specialized_loggers.dart';
 import '../../core/logging/logging_config.dart';
+import '../../core/config/app_config.dart';
 
 /// Event for when a file download completes
 class FileDownloadComplete {
@@ -93,7 +94,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   void _startReceiving() {
-    _receiveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _receiveTimer = Timer.periodic(AppConfig.updatePollingInterval, (timer) {
       bool hasUpdates = false;
       while (true) {
         final response = _client.receive(0.0);
@@ -317,7 +318,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     });
 
     // Wait a moment for updates to arrive
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(AppConfig.chatLoadDelay);
 
     // Return currently cached chats
     final chatList = _chats.values.toList();
@@ -349,7 +350,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     });
 
     // Wait a moment for the update to arrive
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(AppConfig.singleChatFetchDelay);
 
     // Return from cache if it's now available
     return _chats[chatId];
@@ -385,14 +386,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
       if (_messages.containsKey(chatId) && fromMessageId == 0) {
         final cachedMessages = _messages[chatId]!;
         // If we have enough messages cached, return them
-        if (cachedMessages.length >= 30) {
+        if (cachedMessages.length >= AppConfig.minCachedMessages) {
           return cachedMessages;
         }
         // Otherwise, continue to load more messages
       }
 
-      // For initial load, try to get at least 30 messages
-      final minMessages = fromMessageId == 0 ? 30 : limit;
+      // For initial load, try to get at least minCachedMessages
+      final minMessages = fromMessageId == 0 ? AppConfig.minCachedMessages : limit;
       return await _loadMessagesRecursively(chatId, minMessages, fromMessageId);
     } catch (e) {
       _logger.logError('Failed to load messages for chat $chatId', error: e);
@@ -401,11 +402,12 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   Future<List<Message>> _loadMessagesRecursively(
-    int chatId, 
-    int minMessages, 
+    int chatId,
+    int minMessages,
     int fromMessageId,
-    {int maxAttempts = 5}
+    {int? maxAttempts}
   ) async {
+    maxAttempts ??= AppConfig.messageLoadRetries;
     int attempts = 0;
     int currentFromMessageId = fromMessageId;
     
@@ -425,14 +427,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
       await _sendRequest({
         '@type': 'getChatHistory',
         'chat_id': chatId,
-        'limit': 50,
+        'limit': AppConfig.messagePageSize,
         'from_message_id': currentFromMessageId,
         'offset': 0,
         'only_local': false,
       });
 
       // Wait for messages to be received via updates
-      await Future.delayed(const Duration(milliseconds: 800));
+      await Future.delayed(AppConfig.messageLoadDelay);
 
       final currentMessages = _messages[chatId] ?? [];
       
@@ -451,7 +453,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
       currentFromMessageId = oldestMessage.id;
       
       // Small delay to avoid overwhelming TDLib
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(AppConfig.retryDelay);
     }
 
     final finalMessages = _messages[chatId] ?? [];
@@ -574,9 +576,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
         _messages[chatId]![existingIndex] = messageObj;
       } else {
         _messages[chatId]!.insert(0, messageObj);
-        // Keep only the most recent 100 messages per chat
-        if (_messages[chatId]!.length > 100) {
-          _messages[chatId] = _messages[chatId]!.take(100).toList();
+        // Keep only the most recent messages per chat
+        if (_messages[chatId]!.length > AppConfig.maxMessagesPerChat) {
+          _messages[chatId] = _messages[chatId]!.take(AppConfig.maxMessagesPerChat).toList();
         }
       }
 
@@ -628,9 +630,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
       // Sort messages by date for each chat
       for (final chatId in _messages.keys) {
         _messages[chatId]!.sort((a, b) => a.date.compareTo(b.date));
-        // Keep only the most recent 100 messages per chat
-        if (_messages[chatId]!.length > 100) {
-          _messages[chatId] = _messages[chatId]!.skip(_messages[chatId]!.length - 100).toList();
+        // Keep only the most recent messages per chat
+        if (_messages[chatId]!.length > AppConfig.maxMessagesPerChat) {
+          _messages[chatId] = _messages[chatId]!.skip(_messages[chatId]!.length - AppConfig.maxMessagesPerChat).toList();
         }
       }
 

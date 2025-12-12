@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/providers/app_providers.dart';
 
 class CodeInputWidget extends ConsumerStatefulWidget {
-  const CodeInputWidget({Key? key}) : super(key: key);
+  const CodeInputWidget({super.key});
 
   @override
   ConsumerState<CodeInputWidget> createState() => _CodeInputWidgetState();

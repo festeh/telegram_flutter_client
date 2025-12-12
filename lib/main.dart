@@ -27,7 +27,7 @@ void main() async {
 }
 
 class TelegramFlutterApp extends ConsumerWidget {
-  const TelegramFlutterApp({Key? key}) : super(key: key);
+  const TelegramFlutterApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,7 +43,7 @@ class TelegramFlutterApp extends ConsumerWidget {
 }
 
 class AppWrapper extends ConsumerWidget {
-  const AppWrapper({Key? key}) : super(key: key);
+  const AppWrapper({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

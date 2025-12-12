@@ -7,9 +7,9 @@ class LeftPane extends ConsumerStatefulWidget {
   final Function(Chat)? onChatSelected;
 
   const LeftPane({
-    Key? key,
+    super.key,
     this.onChatSelected,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<LeftPane> createState() => _LeftPaneState();

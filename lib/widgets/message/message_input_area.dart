@@ -7,9 +7,9 @@ class MessageInputArea extends ConsumerStatefulWidget {
   final Chat chat;
 
   const MessageInputArea({
-    Key? key,
+    super.key,
     required this.chat,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<MessageInputArea> createState() => _MessageInputAreaState();

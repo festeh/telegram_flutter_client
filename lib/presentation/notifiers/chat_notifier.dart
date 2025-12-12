@@ -5,6 +5,7 @@ import '../../domain/entities/chat.dart';
 import '../state/chat_state.dart';
 import '../../core/logging/app_logger.dart';
 import '../providers/telegram_client_provider.dart';
+import '../../core/config/app_config.dart';
 
 class ChatNotifier extends AsyncNotifier<ChatState> {
   late final TelegramClientRepository _client;
@@ -270,7 +271,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       _setLoading(true);
 
       // Load chats from the client
-      final chats = await _client.loadChats(limit: 50);
+      final chats = await _client.loadChats(limit: AppConfig.chatPageSize);
 
       _logger.info(
           'Chat loading result: ${chats.length} chats loaded from client');

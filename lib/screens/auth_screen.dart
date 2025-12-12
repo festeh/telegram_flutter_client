@@ -8,7 +8,7 @@ import '../widgets/auth/registration_widget.dart';
 import '../widgets/auth/qr_auth_widget.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
-  const AuthScreen({Key? key}) : super(key: key);
+  const AuthScreen({super.key});
 
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();

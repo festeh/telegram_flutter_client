@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/providers/app_providers.dart';
 
 class QrAuthWidget extends ConsumerWidget {
-  const QrAuthWidget({Key? key}) : super(key: key);
+  const QrAuthWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

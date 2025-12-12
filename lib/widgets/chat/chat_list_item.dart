@@ -9,11 +9,11 @@ class ChatListItem extends StatefulWidget {
   final VoidCallback? onTap;
 
   const ChatListItem({
-    Key? key,
+    super.key,
     required this.chat,
     this.isSelected = false,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatListItem> createState() => _ChatListItemState();

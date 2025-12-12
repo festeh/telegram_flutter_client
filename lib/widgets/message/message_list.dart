@@ -8,9 +8,9 @@ class MessageList extends ConsumerStatefulWidget {
   final Chat chat;
 
   const MessageList({
-    Key? key,
+    super.key,
     required this.chat,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<MessageList> createState() => _MessageListState();

@@ -5,7 +5,7 @@ import 'package:country_picker/country_picker.dart';
 import '../../presentation/providers/app_providers.dart';
 
 class PhoneInputWidget extends ConsumerStatefulWidget {
-  const PhoneInputWidget({Key? key}) : super(key: key);
+  const PhoneInputWidget({super.key});
 
   @override
   ConsumerState<PhoneInputWidget> createState() => _PhoneInputWidgetState();

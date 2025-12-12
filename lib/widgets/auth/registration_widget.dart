@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/providers/app_providers.dart';
 
 class RegistrationWidget extends ConsumerStatefulWidget {
-  const RegistrationWidget({Key? key}) : super(key: key);
+  const RegistrationWidget({super.key});
 
   @override
   ConsumerState<RegistrationWidget> createState() => _RegistrationWidgetState();

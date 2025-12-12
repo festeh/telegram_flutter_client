@@ -8,9 +8,9 @@ class ChatList extends ConsumerStatefulWidget {
   final Function(Chat)? onChatSelected;
 
   const ChatList({
-    Key? key,
+    super.key,
     this.onChatSelected,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ChatList> createState() => _ChatListState();
