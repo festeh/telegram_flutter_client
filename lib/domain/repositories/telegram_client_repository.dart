@@ -2,10 +2,12 @@ import 'dart:async';
 import '../entities/auth_state.dart';
 import '../entities/user_session.dart';
 import '../entities/chat.dart';
+import '../events/chat_events.dart';
 
 abstract class TelegramClientRepository {
   Stream<Map<String, dynamic>> get updates;
   Stream<AuthenticationState> get authUpdates;
+  Stream<ChatEvent> get chatEvents;
 
   AuthenticationState get currentAuthState;
   UserSession? get currentUser;

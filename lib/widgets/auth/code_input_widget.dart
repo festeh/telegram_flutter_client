@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/providers/app_providers.dart';
+import '../common/error_container.dart';
+import '../common/loading_button.dart';
 
 class CodeInputWidget extends ConsumerStatefulWidget {
   const CodeInputWidget({super.key});
@@ -84,28 +86,7 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error, color: colorScheme.onErrorContainer, size: 18),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        errorMessage,
-                        style: TextStyle(
-                          color: colorScheme.onErrorContainer,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ErrorContainer(message: errorMessage),
             ],
             const SizedBox(height: 12),
             TextButton(
@@ -116,33 +97,10 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
               ),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 40,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : _submitCode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: isLoading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
-                        ),
-                      )
-                    : const Text(
-                        'Verify',
-                        style: TextStyle(fontSize: 16),
-                      ),
-              ),
+            LoadingButton(
+              label: 'Verify',
+              onPressed: _submitCode,
+              isLoading: isLoading,
             ),
           ],
         ),

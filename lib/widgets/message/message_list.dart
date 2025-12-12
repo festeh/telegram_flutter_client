@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/chat.dart';
 import '../../presentation/providers/app_providers.dart';
+import '../common/state_widgets.dart';
 import 'message_bubble.dart';
 
 class MessageList extends ConsumerStatefulWidget {
@@ -164,105 +165,23 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   Widget _buildLoadingState() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: colorScheme.primary),
-          const SizedBox(height: 16),
-          Text(
-            'Loading messages...',
-            style: TextStyle(
-              fontSize: 16,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const LoadingStateWidget(message: 'Loading messages...');
   }
 
   Widget _buildEmptyState() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 64,
-            color: colorScheme.onSurface.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No messages yet',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start the conversation by sending a message',
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return const EmptyStateWidget(
+      icon: Icons.chat_bubble_outline,
+      title: 'No messages yet',
+      subtitle: 'Start the conversation by sending a message',
     );
   }
 
   Widget _buildErrorState(String error) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: colorScheme.error,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Failed to load messages',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.error,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            error,
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.error.withValues(alpha: 0.8),
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _refreshMessages,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.error,
-              foregroundColor: colorScheme.onError,
-            ),
-          ),
-        ],
-      ),
+    return ErrorStateWidget(
+      title: 'Failed to load messages',
+      error: error,
+      onRetry: _refreshMessages,
+      useErrorColor: true,
     );
   }
 

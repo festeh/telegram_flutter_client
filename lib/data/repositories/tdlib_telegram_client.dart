@@ -7,6 +7,7 @@ import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
 import '../../domain/entities/chat.dart';
+import '../../domain/events/chat_events.dart';
 import '../../utils/tdlib_bindings.dart';
 import '../../core/logging/specialized_loggers.dart';
 import '../../core/logging/logging_config.dart';
@@ -28,6 +29,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   late StreamController<Map<String, dynamic>> _updateController;
   late StreamController<AuthenticationState> _authController;
   late StreamController<FileDownloadComplete> _fileDownloadController;
+  late StreamController<ChatEvent> _chatEventController;
   final TdlibLogger _logger = TdlibLogger.instance;
 
   @override
@@ -35,6 +37,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
   @override
   Stream<AuthenticationState> get authUpdates => _authController.stream;
+
+  @override
+  Stream<ChatEvent> get chatEvents => _chatEventController.stream;
 
   AuthenticationState _currentAuthState =
       const AuthenticationState(state: AuthorizationState.unknown);
@@ -56,6 +61,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _updateController = StreamController<Map<String, dynamic>>.broadcast();
     _authController = StreamController<AuthenticationState>.broadcast();
     _fileDownloadController = StreamController<FileDownloadComplete>.broadcast();
+    _chatEventController = StreamController<ChatEvent>.broadcast();
   }
 
   /// Stream of file download completion events
@@ -167,6 +173,16 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _handleMessagesResponse(update);
     } else if (type == 'updateFile') {
       _handleFileUpdate(update);
+    } else if (type == 'updateChatTitle') {
+      _handleChatTitleUpdate(update);
+    } else if (type == 'updateChatPhoto') {
+      _handleChatPhotoUpdate(update);
+    } else if (type == 'updateChatOrder') {
+      _chatEventController.add(ChatOrderChangedEvent());
+    } else if (type == 'updateChatReadInbox') {
+      _handleChatReadInboxUpdate(update);
+    } else if (type == 'updateChatPosition') {
+      _handleChatPositionUpdate(update);
     }
   }
 
@@ -182,6 +198,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
           'chat_title': chat.title,
           'total_chats': _chats.length,
         });
+        // Emit typed event for presentation layer
+        _chatEventController.add(ChatAddedEvent(chat));
       }
     } catch (e) {
       _logger.logError('Error processing updateNewChat', error: e);
@@ -193,20 +211,97 @@ class TdlibTelegramClient implements TelegramClientRepository {
       final chatId = update['chat_id'] as int?;
       final lastMessageData = update['last_message'] as Map<String, dynamic>?;
 
-      if (chatId != null &&
-          lastMessageData != null &&
-          _chats.containsKey(chatId)) {
+      if (chatId != null && lastMessageData != null) {
         final message = Message.fromJson(lastMessageData);
-        final existingChat = _chats[chatId]!;
-        final updatedChat = existingChat.copyWith(
-          lastMessage: message,
-          lastActivity: message.date,
+
+        // Update cache if chat exists
+        if (_chats.containsKey(chatId)) {
+          final existingChat = _chats[chatId]!;
+          final updatedChat = existingChat.copyWith(
+            lastMessage: message,
+            lastActivity: message.date,
+          );
+          _chats[chatId] = updatedChat;
+        }
+
+        // Emit typed event for presentation layer
+        _chatEventController.add(
+          ChatLastMessageUpdatedEvent(chatId, message, message.date),
         );
-        _chats[chatId] = updatedChat;
       }
     } catch (e) {
       _logger.logError('Error processing updateChatLastMessage', error: e);
     }
+  }
+
+  void _handleChatTitleUpdate(Map<String, dynamic> update) {
+    final chatId = update['chat_id'] as int?;
+    final title = update['title'] as String?;
+
+    if (chatId != null && title != null) {
+      // Update cache if chat exists
+      if (_chats.containsKey(chatId)) {
+        _chats[chatId] = _chats[chatId]!.copyWith(title: title);
+      }
+      // Emit typed event
+      _chatEventController.add(ChatTitleUpdatedEvent(chatId, title));
+    }
+  }
+
+  void _handleChatPhotoUpdate(Map<String, dynamic> update) {
+    final chatId = update['chat_id'] as int?;
+    final photo = update['photo'] as Map<String, dynamic>?;
+
+    if (chatId != null) {
+      String? photoPath;
+      if (photo != null) {
+        final small = photo['small'] as Map<String, dynamic>?;
+        photoPath = small?['local']?['path'] as String?;
+      }
+
+      // Update cache if chat exists
+      if (_chats.containsKey(chatId)) {
+        _chats[chatId] = _chats[chatId]!.copyWith(photoPath: photoPath);
+      }
+      // Emit typed event
+      _chatEventController.add(ChatPhotoUpdatedEvent(chatId, photoPath));
+    }
+  }
+
+  void _handleChatReadInboxUpdate(Map<String, dynamic> update) {
+    final chatId = update['chat_id'] as int?;
+    final unreadCount = update['unread_count'] as int?;
+
+    if (chatId != null && unreadCount != null) {
+      // Update cache if chat exists
+      if (_chats.containsKey(chatId)) {
+        _chats[chatId] = _chats[chatId]!.copyWith(unreadCount: unreadCount);
+      }
+      // Emit typed event
+      _chatEventController.add(ChatUnreadCountUpdatedEvent(chatId, unreadCount));
+    }
+  }
+
+  void _handleChatPositionUpdate(Map<String, dynamic> update) {
+    final chatId = update['chat_id'] as int?;
+    final position = update['position'] as Map<String, dynamic>?;
+
+    if (chatId == null) return;
+
+    // Check if position is in main list
+    final list = position?['list'] as Map<String, dynamic>?;
+    final isInMainList = list?['@type'] == 'chatListMain';
+    final order = position?['order'] as String?;
+
+    // If order is "0" or position is removed, chat is not in the list
+    final hasValidPosition = isInMainList && order != null && order != '0';
+
+    // Update cache if chat exists
+    if (_chats.containsKey(chatId)) {
+      _chats[chatId] = _chats[chatId]!.copyWith(isInMainList: hasValidPosition);
+    }
+    // Emit typed event
+    _chatEventController.add(ChatPositionChangedEvent(chatId, hasValidPosition));
   }
 
   void _handleAuthorizationState(AuthenticationState state) {
@@ -555,6 +650,26 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
   }
 
+  /// Adds a message to the cache for a chat.
+  /// [insertAtStart] - if true, inserts at beginning (for new incoming messages)
+  ///                   if false, appends at end (for batch history loading)
+  void _addMessageToCache(int chatId, Message message, {bool insertAtStart = false}) {
+    if (!_messages.containsKey(chatId)) {
+      _messages[chatId] = <Message>[];
+    }
+
+    final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == message.id);
+    if (existingIndex != -1) {
+      _messages[chatId]![existingIndex] = message;
+    } else {
+      if (insertAtStart) {
+        _messages[chatId]!.insert(0, message);
+      } else {
+        _messages[chatId]!.add(message);
+      }
+    }
+  }
+
   void _handleMessageUpdate(Map<String, dynamic> update) {
     try {
       final message = update['message'] as Map<String, dynamic>?;
@@ -564,22 +679,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
       if (chatId == null) return;
 
       final messageObj = Message.fromJson(message);
+      _addMessageToCache(chatId, messageObj, insertAtStart: true);
 
-      // Add to message cache
-      if (!_messages.containsKey(chatId)) {
-        _messages[chatId] = <Message>[];
-      }
-
-      // Check if message already exists (to avoid duplicates)
-      final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == messageObj.id);
-      if (existingIndex != -1) {
-        _messages[chatId]![existingIndex] = messageObj;
-      } else {
-        _messages[chatId]!.insert(0, messageObj);
-        // Keep only the most recent messages per chat
-        if (_messages[chatId]!.length > AppConfig.maxMessagesPerChat) {
-          _messages[chatId] = _messages[chatId]!.take(AppConfig.maxMessagesPerChat).toList();
-        }
+      // Keep only the most recent messages per chat
+      if (_messages[chatId]!.length > AppConfig.maxMessagesPerChat) {
+        _messages[chatId] = _messages[chatId]!.take(AppConfig.maxMessagesPerChat).toList();
       }
 
       _logger.logRequest({
@@ -603,6 +707,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'message_count': messages.length,
       });
 
+      // Track which chats were updated
+      final updatedChatIds = <int>{};
+
       // Process each message in the batch
       for (final messageData in messages) {
         if (messageData is Map<String, dynamic>) {
@@ -610,35 +717,24 @@ class TdlibTelegramClient implements TelegramClientRepository {
           if (chatId == null) continue;
 
           final messageObj = Message.fromJson(messageData);
-
-          // Add to message cache
-          if (!_messages.containsKey(chatId)) {
-            _messages[chatId] = <Message>[];
-          }
-
-          // Check if message already exists (to avoid duplicates)
-          final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == messageObj.id);
-          if (existingIndex != -1) {
-            _messages[chatId]![existingIndex] = messageObj;
-          } else {
-            // Insert messages in chronological order (oldest first)
-            _messages[chatId]!.add(messageObj);
-          }
+          _addMessageToCache(chatId, messageObj, insertAtStart: false);
+          updatedChatIds.add(chatId);
         }
       }
 
-      // Sort messages by date for each chat
-      for (final chatId in _messages.keys) {
+      // Sort and trim messages for updated chats only
+      for (final chatId in updatedChatIds) {
         _messages[chatId]!.sort((a, b) => a.date.compareTo(b.date));
-        // Keep only the most recent messages per chat
         if (_messages[chatId]!.length > AppConfig.maxMessagesPerChat) {
-          _messages[chatId] = _messages[chatId]!.skip(_messages[chatId]!.length - AppConfig.maxMessagesPerChat).toList();
+          _messages[chatId] = _messages[chatId]!
+              .skip(_messages[chatId]!.length - AppConfig.maxMessagesPerChat)
+              .toList();
         }
       }
 
       _logger.logRequest({
         '@type': 'messages_batch_processed',
-        'total_chats_updated': _messages.length,
+        'total_chats_updated': updatedChatIds.length,
       });
     } catch (e) {
       _logger.logError('Error handling messages response', error: e);
@@ -684,6 +780,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
           'file_id': fileId,
           'path': path,
         });
+        // Emit typed event for presentation layer
+        _chatEventController.add(ChatPhotoUpdatedEvent(chatId, path));
       }
     }
   }
@@ -704,6 +802,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _updateController.close();
     _authController.close();
     _fileDownloadController.close();
+    _chatEventController.close();
     if (_isStarted) {
       _client.destroy();
     }

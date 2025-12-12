@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/providers/app_providers.dart';
+import '../common/error_container.dart';
+import '../common/loading_button.dart';
 
 class QrAuthWidget extends ConsumerWidget {
   const QrAuthWidget({super.key});
@@ -118,55 +120,18 @@ class QrAuthWidget extends ConsumerWidget {
           ],
           if (errorMessage != null) ...[
             const SizedBox(height: 16),
-            Container(
+            ErrorContainer(
+              message: errorMessage,
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.errorContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error, color: colorScheme.onErrorContainer),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      errorMessage,
-                      style: TextStyle(color: colorScheme.onErrorContainer),
-                    ),
-                  ),
-                ],
-              ),
+              borderRadius: 8,
             ),
           ],
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
+          LoadingButton(
+            label: qrCodeInfo != null ? 'Generate New QR Code' : 'Generate QR Code',
+            onPressed: () => _requestQrCode(ref),
+            isLoading: isLoading,
             height: 50,
-            child: ElevatedButton(
-              onPressed: isLoading ? null : () => _requestQrCode(ref),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: isLoading
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
-                      ),
-                    )
-                  : Text(
-                      qrCodeInfo != null
-                          ? 'Generate New QR Code'
-                          : 'Generate QR Code',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-            ),
           ),
         ],
       ),
