@@ -61,6 +61,12 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       case 'updateChatReadInbox':
         _handleChatReadUpdate(update);
         break;
+      case 'updateFile':
+        _handleFileUpdate(update);
+        break;
+      case 'updateChatPosition':
+        _handleChatPositionUpdate(update);
+        break;
       default:
         // Ignore other update types for now
         break;
@@ -74,6 +80,9 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
 
       final chat = Chat.fromJson(chatData);
       _logger.info('New chat received: ${chat.title} (ID: ${chat.id})');
+
+      // Trigger photo download if needed
+      _downloadChatPhoto(chat);
 
       final currentState = state.valueOrNull;
       if (currentState != null) {
@@ -154,6 +163,76 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
     }
   }
 
+  void _handleChatPositionUpdate(Map<String, dynamic> update) {
+    final chatId = update['chat_id'] as int?;
+    final position = update['position'] as Map<String, dynamic>?;
+
+    if (chatId == null) return;
+
+    // Check if position is in main list
+    final list = position?['list'] as Map<String, dynamic>?;
+    final isInMainList = list?['@type'] == 'chatListMain';
+    final order = position?['order'] as String?;
+
+    // If order is "0" or position is removed, chat is not in the list
+    final hasValidPosition = isInMainList && order != null && order != '0';
+
+    _updateChatProperty(
+        chatId, (chat) => chat.copyWith(isInMainList: hasValidPosition));
+  }
+
+  void _handleFileUpdate(Map<String, dynamic> update) {
+    try {
+      final file = update['file'] as Map<String, dynamic>?;
+      if (file == null) return;
+
+      final fileId = file['id'] as int?;
+      final local = file['local'] as Map<String, dynamic>?;
+      final isComplete = local?['is_downloading_completed'] as bool? ?? false;
+      final filePath = local?['path'] as String?;
+
+      if (isComplete && fileId != null && filePath != null && filePath.isNotEmpty) {
+        _logger.info('File download completed: fileId=$fileId, path=$filePath');
+        _updateChatPhotoByFileId(fileId, filePath);
+      }
+    } catch (e) {
+      _logger.error('Error handling file update', error: e);
+    }
+  }
+
+  void _updateChatPhotoByFileId(int fileId, String path) {
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
+
+    bool updated = false;
+    final updatedChats = currentState.chats.map((chat) {
+      if (chat.photoFileId == fileId) {
+        _logger.info('Updating photo for chat ${chat.title} (ID: ${chat.id})');
+        updated = true;
+        return chat.copyWith(photoPath: path);
+      }
+      return chat;
+    }).toList();
+
+    if (updated) {
+      state = AsyncData(ChatState.loaded(updatedChats).sortByLastActivity());
+    }
+  }
+
+  void _downloadChatPhotos(List<Chat> chats) {
+    for (final chat in chats) {
+      _downloadChatPhoto(chat);
+    }
+  }
+
+  void _downloadChatPhoto(Chat chat) {
+    if (chat.photoFileId != null &&
+        (chat.photoPath == null || chat.photoPath!.isEmpty)) {
+      _logger.info('Requesting photo download for chat ${chat.title} (fileId: ${chat.photoFileId})');
+      _client.downloadFile(chat.photoFileId!);
+    }
+  }
+
   void _updateChatFromMessage(int chatId, Map<String, dynamic> messageData) {
     try {
       final message = Message.fromJson(messageData);
@@ -195,6 +274,9 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
 
       _logger.info(
           'Chat loading result: ${chats.length} chats loaded from client');
+
+      // Trigger photo downloads for chats that need them
+      _downloadChatPhotos(chats);
 
       // Return the chats (could be empty initially if updates haven't arrived yet)
       final chatState = ChatState.loaded(chats);

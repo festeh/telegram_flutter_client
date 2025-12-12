@@ -30,6 +30,7 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final errorMessage = ref.errorMessage;
     final isLoading = ref.isLoading;
 
@@ -44,7 +45,7 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
             Icon(
               Icons.phone,
               size: 32,
-              color: Colors.blue.shade600,
+              color: colorScheme.primary,
             ),
             const SizedBox(height: 12),
             Text(
@@ -56,7 +57,7 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
             Text(
               'You\'ll receive a verification code',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
               textAlign: TextAlign.center,
             ),
@@ -69,7 +70,7 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade400),
+                      border: Border.all(color: colorScheme.outline),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(12),
                         bottomLeft: Radius.circular(12),
@@ -85,13 +86,14 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
                         const SizedBox(width: 8),
                         Text(
                           '+${_selectedCountry?.phoneCode ?? '49'}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.arrow_drop_down, size: 20),
+                        Icon(Icons.arrow_drop_down, size: 20, color: colorScheme.onSurface),
                       ],
                     ),
                   ),
@@ -109,21 +111,21 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
                           topRight: Radius.circular(12),
                           bottomRight: Radius.circular(12),
                         ),
-                        borderSide: BorderSide(color: Colors.grey.shade400),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(12),
                           bottomRight: Radius.circular(12),
                         ),
-                        borderSide: BorderSide(color: Colors.grey.shade400),
+                        borderSide: BorderSide(color: colorScheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(12),
                           bottomRight: Radius.circular(12),
                         ),
-                        borderSide: BorderSide(color: Colors.blue.shade600),
+                        borderSide: BorderSide(color: colorScheme.primary),
                       ),
                     ),
                     validator: (value) {
@@ -144,19 +146,18 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.red.shade200),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error, color: Colors.red.shade600, size: 18),
+                    Icon(Icons.error, color: colorScheme.onErrorContainer, size: 18),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         errorMessage,
                         style: TextStyle(
-                          color: Colors.red.shade800,
+                          color: colorScheme.onErrorContainer,
                           fontSize: 13,
                         ),
                       ),
@@ -172,20 +173,20 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
               child: ElevatedButton(
                 onPressed: isLoading ? null : _submitPhoneNumber,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                              AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                         ),
                       )
                     : const Text(
@@ -201,6 +202,7 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
   }
 
   void _showCountryPicker() {
+    final colorScheme = Theme.of(context).colorScheme;
     final screenHeight = MediaQuery.of(context).size.height;
     final maxHeight = screenHeight * 0.7;
 
@@ -214,8 +216,8 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
       },
       countryListTheme: CountryListThemeData(
         flagSize: 25,
-        backgroundColor: Colors.white,
-        textStyle: const TextStyle(fontSize: 16, color: Colors.blueGrey),
+        backgroundColor: colorScheme.surface,
+        textStyle: TextStyle(fontSize: 16, color: colorScheme.onSurface),
         bottomSheetHeight: maxHeight,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20.0),
@@ -226,8 +228,7 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
           hintText: 'Start typing to search',
           prefixIcon: const Icon(Icons.search),
           border: OutlineInputBorder(
-            borderSide:
-                BorderSide(color: const Color(0xFF8C98A8).withOpacity(0.2)),
+            borderSide: BorderSide(color: colorScheme.outline),
           ),
         ),
       ),

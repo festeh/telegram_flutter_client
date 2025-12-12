@@ -23,6 +23,7 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final errorMessage = ref.errorMessage;
     final isLoading = ref.isLoading;
 
@@ -36,7 +37,7 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
             Icon(
               Icons.lock,
               size: 48,
-              color: Colors.blue.shade600,
+              color: colorScheme.primary,
             ),
             const SizedBox(height: 24),
             Text(
@@ -48,7 +49,7 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
             Text(
               'Your account has two-step verification enabled',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
               textAlign: TextAlign.center,
             ),
@@ -80,18 +81,17 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error, color: Colors.red.shade600),
+                    Icon(Icons.error, color: colorScheme.onErrorContainer),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         errorMessage,
-                        style: TextStyle(color: Colors.red.shade800),
+                        style: TextStyle(color: colorScheme.onErrorContainer),
                       ),
                     ),
                   ],
@@ -105,20 +105,20 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
               child: ElevatedButton(
                 onPressed: isLoading ? null : _submitPassword,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                              AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                         ),
                       )
                     : const Text(

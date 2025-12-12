@@ -58,7 +58,12 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   Widget _buildChatList(List<Chat> chats, bool isLoadingMore) {
-    if (chats.isEmpty) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Filter to show only chats in the main list (as determined by TDLib positions)
+    final filteredChats = chats.where((chat) => chat.isInMainList).toList();
+
+    if (filteredChats.isEmpty) {
       return _buildEmptyState();
     }
 
@@ -70,23 +75,23 @@ class _ChatListState extends ConsumerState<ChatList> {
             child: ListView.separated(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              itemCount: chats.length + (isLoadingMore ? 1 : 0),
+              itemCount: filteredChats.length + (isLoadingMore ? 1 : 0),
               separatorBuilder: (context, index) => const SizedBox(height: 4),
               itemBuilder: (context, index) {
-                if (index >= chats.length) {
+                if (index >= filteredChats.length) {
                   // Show loading indicator at the bottom when loading more
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
                     child: Center(
                       child: CircularProgressIndicator(
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(Color(0xFF3390EC)),
+                            AlwaysStoppedAnimation<Color>(colorScheme.primary),
                       ),
                     ),
                   );
                 }
 
-                final chat = chats[index];
+                final chat = filteredChats[index];
                 return ChatListItem(
                   chat: chat,
                   isSelected: _selectedChatId == chat.id,
@@ -102,19 +107,21 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3390EC)),
+            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Loading chats...',
             style: TextStyle(
               fontSize: 16,
-              color: Color(0xFF8E8E93),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -123,6 +130,8 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -130,7 +139,7 @@ class _ChatListState extends ConsumerState<ChatList> {
           Icon(
             Icons.chat_outlined,
             size: 64,
-            color: Colors.grey[400],
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
@@ -138,7 +147,7 @@ class _ChatListState extends ConsumerState<ChatList> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 8),
@@ -146,7 +155,7 @@ class _ChatListState extends ConsumerState<ChatList> {
             'Start a conversation to see your chats here',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             textAlign: TextAlign.center,
           ),
@@ -156,8 +165,8 @@ class _ChatListState extends ConsumerState<ChatList> {
             icon: const Icon(Icons.refresh),
             label: const Text('Refresh'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3390EC),
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               elevation: 2,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -168,6 +177,8 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   Widget _buildErrorState(String error) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -175,7 +186,7 @@ class _ChatListState extends ConsumerState<ChatList> {
           Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[400],
+            color: colorScheme.error,
           ),
           const SizedBox(height: 16),
           Text(
@@ -183,15 +194,15 @@ class _ChatListState extends ConsumerState<ChatList> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             error,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.red,
+              color: colorScheme.error,
             ),
             textAlign: TextAlign.center,
           ),
@@ -201,8 +212,8 @@ class _ChatListState extends ConsumerState<ChatList> {
             icon: const Icon(Icons.refresh),
             label: const Text('Retry'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3390EC),
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               elevation: 2,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -213,19 +224,20 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   Widget _buildErrorBanner() {
+    final colorScheme = Theme.of(context).colorScheme;
     final error = ref.chatError;
     if (error == null) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
-      color: Colors.red[50],
+      color: colorScheme.errorContainer,
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
           Icon(
             Icons.error_outline,
             size: 20,
-            color: Colors.red[700],
+            color: colorScheme.onErrorContainer,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -233,7 +245,7 @@ class _ChatListState extends ConsumerState<ChatList> {
               error,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.red[700],
+                color: colorScheme.onErrorContainer,
               ),
             ),
           ),
@@ -242,7 +254,7 @@ class _ChatListState extends ConsumerState<ChatList> {
             icon: Icon(
               Icons.close,
               size: 20,
-              color: Colors.red[700],
+              color: colorScheme.onErrorContainer,
             ),
           ),
         ],

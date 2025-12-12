@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
@@ -10,13 +11,22 @@ import '../../utils/tdlib_bindings.dart';
 import '../../core/logging/specialized_loggers.dart';
 import '../../core/logging/logging_config.dart';
 
+/// Event for when a file download completes
+class FileDownloadComplete {
+  final int fileId;
+  final String path;
+
+  FileDownloadComplete(this.fileId, this.path);
+}
+
 class TdlibTelegramClient implements TelegramClientRepository {
-  static const int apiId = 94575;
-  static const String apiHash = 'a3406de8d171bb422bb6ddf3bbd800e2';
+  static int get apiId => int.parse(dotenv.env['TELEGRAM_API_ID'] ?? '0');
+  static String get apiHash => dotenv.env['TELEGRAM_API_HASH'] ?? '';
 
   late TdJsonClient _client;
   late StreamController<Map<String, dynamic>> _updateController;
   late StreamController<AuthenticationState> _authController;
+  late StreamController<FileDownloadComplete> _fileDownloadController;
   final TdlibLogger _logger = TdlibLogger.instance;
 
   @override
@@ -44,7 +54,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
   TdlibTelegramClient() {
     _updateController = StreamController<Map<String, dynamic>>.broadcast();
     _authController = StreamController<AuthenticationState>.broadcast();
+    _fileDownloadController = StreamController<FileDownloadComplete>.broadcast();
   }
+
+  /// Stream of file download completion events
+  Stream<FileDownloadComplete> get fileDownloads => _fileDownloadController.stream;
 
   @override
   Future<void> start() async {
@@ -150,6 +164,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
     } else if (type == 'messages') {
       // Handle batch messages response from getChatHistory
       _handleMessagesResponse(update);
+    } else if (type == 'updateFile') {
+      _handleFileUpdate(update);
     }
   }
 
@@ -420,8 +436,13 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       final currentMessages = _messages[chatId] ?? [];
       
-      // If we have enough messages or no new messages were received, stop
-      if (currentMessages.length >= minMessages || currentMessages.isEmpty) {
+      // Check if we have enough messages
+      if (currentMessages.length >= minMessages) {
+        break;
+      }
+      
+      // After first attempt, if no messages were received at all, stop trying
+      if (attempts > 1 && currentMessages.isEmpty) {
         break;
       }
       
@@ -622,11 +643,65 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
   }
 
+  void _handleFileUpdate(Map<String, dynamic> update) {
+    try {
+      final file = update['file'] as Map<String, dynamic>?;
+      if (file == null) return;
+
+      final fileId = file['id'] as int?;
+      final local = file['local'] as Map<String, dynamic>?;
+      final isComplete = local?['is_downloading_completed'] as bool? ?? false;
+      final filePath = local?['path'] as String?;
+
+      if (isComplete && fileId != null && filePath != null && filePath.isNotEmpty) {
+        _logger.logRequest({
+          '@type': 'file_download_completed',
+          'file_id': fileId,
+          'path': filePath,
+        });
+
+        // Emit event for completed download
+        _fileDownloadController.add(FileDownloadComplete(fileId, filePath));
+
+        // Update any chats that have this file ID as their photo
+        _updateChatPhotoByFileId(fileId, filePath);
+      }
+    } catch (e) {
+      _logger.logError('Error handling file update', error: e);
+    }
+  }
+
+  void _updateChatPhotoByFileId(int fileId, String path) {
+    for (final chatId in _chats.keys) {
+      final chat = _chats[chatId]!;
+      if (chat.photoFileId == fileId) {
+        _chats[chatId] = chat.copyWith(photoPath: path);
+        _logger.logRequest({
+          '@type': 'chat_photo_updated',
+          'chat_id': chatId,
+          'file_id': fileId,
+          'path': path,
+        });
+      }
+    }
+  }
+
+  @override
+  Future<void> downloadFile(int fileId) async {
+    await _sendRequest({
+      '@type': 'downloadFile',
+      'file_id': fileId,
+      'priority': 1,
+      'synchronous': false,
+    });
+  }
+
   @override
   void dispose() {
     _receiveTimer?.cancel();
     _updateController.close();
     _authController.close();
+    _fileDownloadController.close();
     if (_isStarted) {
       _client.destroy();
     }

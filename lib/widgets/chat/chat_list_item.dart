@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../domain/entities/chat.dart';
+import '../../core/theme/app_theme.dart';
 
 class ChatListItem extends StatefulWidget {
   final Chat chat;
@@ -24,6 +25,8 @@ class _ChatListItemState extends State<ChatListItem>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -32,49 +35,47 @@ class _ChatListItemState extends State<ChatListItem>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
-            color: _getBackgroundColor(),
+            color: _getBackgroundColor(colorScheme),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // Avatar
                 _buildAvatar(),
                 const SizedBox(width: 12),
-                // Chat info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title and timestamp row
                       Row(
                         children: [
                           Expanded(
                             child: Text(
                               widget.chat.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF000000),
+                                color: widget.isSelected
+                                    ? colorScheme.onPrimary
+                                    : colorScheme.onSurface,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _buildTimestamp(),
+                          _buildTimestamp(colorScheme),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      // Last message and unread count row
                       Row(
                         children: [
                           Expanded(
-                            child: _buildLastMessage(),
+                            child: _buildLastMessage(colorScheme),
                           ),
                           const SizedBox(width: 8),
-                          _buildUnreadBadge(),
+                          _buildUnreadBadge(colorScheme),
                         ],
                       ),
                     ],
@@ -88,12 +89,12 @@ class _ChatListItemState extends State<ChatListItem>
     );
   }
 
-  Color _getBackgroundColor() {
+  Color _getBackgroundColor(ColorScheme colorScheme) {
     if (widget.isSelected) {
-      return const Color(0xFF3390EC); // Telegram blue for selected
+      return colorScheme.primary;
     }
     if (_isHovered) {
-      return const Color(0xFFF1F1F1); // Light gray for hover
+      return colorScheme.surfaceContainerHigh;
     }
     return Colors.transparent;
   }
@@ -109,9 +110,7 @@ class _ChatListItemState extends State<ChatListItem>
             ? DecorationImage(
                 image: _getImageProvider(widget.chat.photoPath!),
                 fit: BoxFit.cover,
-                onError: (exception, stackTrace) {
-                  // Handle image loading error silently, fallback to initials
-                },
+                onError: (exception, stackTrace) {},
               )
             : null,
       ),
@@ -131,26 +130,14 @@ class _ChatListItemState extends State<ChatListItem>
   }
 
   ImageProvider _getImageProvider(String path) {
-    // Check if the path is a network URL
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return NetworkImage(path);
     }
-    // Otherwise, treat it as a local file path
     return FileImage(File(path));
   }
 
   Color _getAvatarColor() {
-    // Generate a color based on the chat ID for consistency
-    final colors = [
-      const Color(0xFFE57373), // Red
-      const Color(0xFF81C784), // Green
-      const Color(0xFF64B5F6), // Blue
-      const Color(0xFFFFB74D), // Orange
-      const Color(0xFFBA68C8), // Purple
-      const Color(0xFF4DB6AC), // Teal
-      const Color(0xFFF06292), // Pink
-      const Color(0xFF9575CD), // Deep purple
-    ];
+    final colors = AppTheme.avatarColors;
     return colors[widget.chat.id.abs() % colors.length];
   }
 
@@ -167,7 +154,7 @@ class _ChatListItemState extends State<ChatListItem>
     return title[0].toUpperCase();
   }
 
-  Widget _buildTimestamp() {
+  Widget _buildTimestamp(ColorScheme colorScheme) {
     final lastActivity = widget.chat.lastActivity;
     if (lastActivity == null) return const SizedBox.shrink();
 
@@ -175,8 +162,9 @@ class _ChatListItemState extends State<ChatListItem>
     final diff = now.difference(lastActivity);
 
     String timeText;
-    Color timeColor =
-        widget.isSelected ? Colors.white70 : const Color(0xFF8E8E93);
+    final timeColor = widget.isSelected
+        ? colorScheme.onPrimary.withValues(alpha: 0.7)
+        : colorScheme.onSurface.withValues(alpha: 0.5);
 
     if (diff.inDays > 0) {
       if (diff.inDays == 1) {
@@ -203,14 +191,18 @@ class _ChatListItemState extends State<ChatListItem>
     );
   }
 
-  Widget _buildLastMessage() {
+  Widget _buildLastMessage(ColorScheme colorScheme) {
     final lastMessage = widget.chat.lastMessage;
+    final textColor = widget.isSelected
+        ? colorScheme.onPrimary.withValues(alpha: 0.7)
+        : colorScheme.onSurface.withValues(alpha: 0.5);
+
     if (lastMessage == null) {
       return Text(
         'No messages yet',
         style: TextStyle(
           fontSize: 14,
-          color: widget.isSelected ? Colors.white70 : const Color(0xFF8E8E93),
+          color: textColor,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -226,32 +218,34 @@ class _ChatListItemState extends State<ChatListItem>
       '$messagePrefix${lastMessage.content}',
       style: TextStyle(
         fontSize: 14,
-        color: widget.isSelected ? Colors.white70 : const Color(0xFF8E8E93),
+        color: textColor,
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
   }
 
-  Widget _buildUnreadBadge() {
+  Widget _buildUnreadBadge(ColorScheme colorScheme) {
     if (widget.chat.unreadCount <= 0) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: widget.chat.isMuted
-            ? const Color(0xFF8E8E93)
-            : const Color(0xFF3390EC),
+            ? colorScheme.secondary
+            : colorScheme.primary,
         borderRadius: BorderRadius.circular(10),
       ),
       constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
       child: Center(
         child: Text(
           widget.chat.unreadCount > 99 ? '99+' : '${widget.chat.unreadCount}',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Colors.white,
+            color: widget.chat.isMuted
+                ? colorScheme.onSecondary
+                : colorScheme.onPrimary,
           ),
         ),
       ),

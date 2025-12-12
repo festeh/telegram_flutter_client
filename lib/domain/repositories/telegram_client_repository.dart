@@ -27,6 +27,9 @@ abstract class TelegramClientRepository {
       {int limit = 20, int offsetOrder = 0, int offsetChatId = 0});
   Future<Chat?> getChat(int chatId);
 
+  // File methods
+  Future<void> downloadFile(int fileId);
+
   // Message methods
   Future<List<Message>> loadMessages(int chatId, {int limit = 50, int fromMessageId = 0});
   Future<Message?> sendMessage(int chatId, String text);

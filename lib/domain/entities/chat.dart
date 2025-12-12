@@ -11,24 +11,28 @@ class Chat {
   final String title;
   final ChatType type;
   final String? photoPath;
+  final int? photoFileId;
   final Message? lastMessage;
   final int unreadCount;
   final bool isPinned;
   final DateTime? lastActivity;
   final bool isMuted;
   final int totalCount;
+  final bool isInMainList;
 
   const Chat({
     required this.id,
     required this.title,
     required this.type,
     this.photoPath,
+    this.photoFileId,
     this.lastMessage,
     this.unreadCount = 0,
     this.isPinned = false,
     this.lastActivity,
     this.isMuted = false,
     this.totalCount = 0,
+    this.isInMainList = true,
   });
 
   factory Chat.fromJson(Map<String, dynamic> json) {
@@ -62,7 +66,25 @@ class Chat {
       if (photoMap == null) return null;
       final small = photoMap['small'] as Map<String, dynamic>?;
       if (small == null) return null;
-      return small['local']?['path'] as String?;
+      final path = small['local']?['path'] as String?;
+      // Return null for empty paths (file not downloaded yet)
+      return (path != null && path.isNotEmpty) ? path : null;
+    }
+
+    // Parse photo file ID for download
+    int? parsePhotoFileId(Map<String, dynamic>? photoMap) {
+      if (photoMap == null) return null;
+      final small = photoMap['small'] as Map<String, dynamic>?;
+      return small?['id'] as int?;
+    }
+
+    // Check if chat has position in main list
+    bool parseIsInMainList(List<dynamic>? positions) {
+      if (positions == null || positions.isEmpty) return false; // Empty = not in main list yet
+      return positions.any((pos) {
+        final list = pos['list'] as Map<String, dynamic>?;
+        return list?['@type'] == 'chatListMain';
+      });
     }
 
     return Chat(
@@ -70,6 +92,7 @@ class Chat {
       title: json['title'] as String? ?? '',
       type: parseChatType(json['type'] as Map<String, dynamic>),
       photoPath: parsePhotoPath(json['photo']),
+      photoFileId: parsePhotoFileId(json['photo']),
       lastMessage: parseLastMessage(json['last_message']),
       unreadCount: json['unread_count'] as int? ?? 0,
       isPinned: json['is_pinned'] as bool? ?? false,
@@ -80,6 +103,7 @@ class Chat {
       isMuted: json['notification_settings']?['mute_for'] != null &&
           (json['notification_settings']['mute_for'] as int) > 0,
       totalCount: json['message_count'] as int? ?? 0,
+      isInMainList: parseIsInMainList(json['positions'] as List<dynamic>?),
     );
   }
 
@@ -89,12 +113,14 @@ class Chat {
       'title': title,
       'type': type.toString().split('.').last,
       'photo_path': photoPath,
+      'photo_file_id': photoFileId,
       'last_message': lastMessage?.toJson(),
       'unread_count': unreadCount,
       'is_pinned': isPinned,
       'last_activity': lastActivity?.millisecondsSinceEpoch,
       'is_muted': isMuted,
       'total_count': totalCount,
+      'is_in_main_list': isInMainList,
     };
   }
 
@@ -103,24 +129,28 @@ class Chat {
     String? title,
     ChatType? type,
     String? photoPath,
+    int? photoFileId,
     Message? lastMessage,
     int? unreadCount,
     bool? isPinned,
     DateTime? lastActivity,
     bool? isMuted,
     int? totalCount,
+    bool? isInMainList,
   }) {
     return Chat(
       id: id ?? this.id,
       title: title ?? this.title,
       type: type ?? this.type,
       photoPath: photoPath ?? this.photoPath,
+      photoFileId: photoFileId ?? this.photoFileId,
       lastMessage: lastMessage ?? this.lastMessage,
       unreadCount: unreadCount ?? this.unreadCount,
       isPinned: isPinned ?? this.isPinned,
       lastActivity: lastActivity ?? this.lastActivity,
       isMuted: isMuted ?? this.isMuted,
       totalCount: totalCount ?? this.totalCount,
+      isInMainList: isInMainList ?? this.isInMainList,
     );
   }
 

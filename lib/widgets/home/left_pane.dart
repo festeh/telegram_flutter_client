@@ -29,21 +29,23 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
         border: Border(
           right: BorderSide(
-            color: Color(0xFFE4E4E7),
+            color: colorScheme.outlineVariant,
             width: 1,
           ),
         ),
       ),
       child: Column(
         children: [
-          _buildHeader(),
-          _buildSearchBar(),
-          _buildFilterTabs(),
+          _buildHeader(colorScheme),
+          _buildSearchBar(colorScheme),
+          _buildFilterTabs(colorScheme),
           Expanded(
             child: ChatList(
               onChatSelected: widget.onChatSelected,
@@ -54,15 +56,15 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ColorScheme colorScheme) {
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFFE4E4E7),
+            color: colorScheme.outlineVariant,
             width: 1,
           ),
         ),
@@ -74,22 +76,22 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
             onPressed: () {
               // TODO: Implement menu functionality
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.menu,
               size: 24,
-              color: Color(0xFF6B7280),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             tooltip: 'Menu',
           ),
           const SizedBox(width: 8),
           // Title
-          const Expanded(
+          Expanded(
             child: Text(
               'Chats',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF111827),
+                color: colorScheme.onSurface,
               ),
             ),
           ),
@@ -98,10 +100,10 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
             onPressed: () {
               // TODO: Implement new chat functionality
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.edit_outlined,
               size: 24,
-              color: Color(0xFF6B7280),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             tooltip: 'New Chat',
           ),
@@ -110,7 +112,9 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(ColorScheme colorScheme) {
+    final mutedColor = colorScheme.onSurface.withValues(alpha: 0.5);
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: TextField(
@@ -124,13 +128,13 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
         },
         decoration: InputDecoration(
           hintText: 'Search',
-          hintStyle: const TextStyle(
-            color: Color(0xFF9CA3AF),
+          hintStyle: TextStyle(
+            color: mutedColor,
             fontSize: 16,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search,
-            color: Color(0xFF9CA3AF),
+            color: mutedColor,
             size: 20,
           ),
           suffixIcon: _searchQuery.isNotEmpty
@@ -142,33 +146,33 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
                     });
                     _searchFocusNode.unfocus();
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.clear,
-                    color: Color(0xFF9CA3AF),
+                    color: mutedColor,
                     size: 20,
                   ),
                 )
               : null,
           filled: true,
-          fillColor: const Color(0xFFF9FAFB),
+          fillColor: colorScheme.surfaceContainerHigh,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
-            borderSide: const BorderSide(
-              color: Color(0xFFE5E7EB),
+            borderSide: BorderSide(
+              color: colorScheme.outline,
               width: 1,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
-            borderSide: const BorderSide(
-              color: Color(0xFFE5E7EB),
+            borderSide: BorderSide(
+              color: colorScheme.outline,
               width: 1,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
-            borderSide: const BorderSide(
-              color: Color(0xFF3390EC),
+            borderSide: BorderSide(
+              color: colorScheme.primary,
               width: 2,
             ),
           ),
@@ -177,15 +181,15 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
             vertical: 12,
           ),
         ),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
-          color: Color(0xFF111827),
+          color: colorScheme.onSurface,
         ),
       ),
     );
   }
 
-  Widget _buildFilterTabs() {
+  Widget _buildFilterTabs(ColorScheme colorScheme) {
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -196,11 +200,11 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildFilterTab('All', true),
+                  _buildFilterTab('All', true, colorScheme),
                   const SizedBox(width: 6),
-                  _buildFilterTab('Unread', false),
+                  _buildFilterTab('Unread', false, colorScheme),
                   const SizedBox(width: 6),
-                  _buildFilterTab('Favorites', false),
+                  _buildFilterTab('Favorites', false, colorScheme),
                 ],
               ),
             ),
@@ -210,10 +214,10 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
             onPressed: () {
               // TODO: Implement archive functionality
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.archive_outlined,
               size: 18,
-              color: Color(0xFF6B7280),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             tooltip: 'Archive',
             padding: const EdgeInsets.all(4),
@@ -224,7 +228,7 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
     );
   }
 
-  Widget _buildFilterTab(String label, bool isActive) {
+  Widget _buildFilterTab(String label, bool isActive, ColorScheme colorScheme) {
     return GestureDetector(
       onTap: () {
         // TODO: Implement filter functionality
@@ -232,12 +236,12 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF3390EC) : Colors.transparent,
+          color: isActive ? colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           border: isActive
               ? null
               : Border.all(
-                  color: const Color(0xFFE5E7EB),
+                  color: colorScheme.outline,
                   width: 1,
                 ),
         ),
@@ -246,7 +250,9 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
-            color: isActive ? Colors.white : const Color(0xFF6B7280),
+            color: isActive
+                ? colorScheme.onPrimary
+                : colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),

@@ -35,6 +35,19 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   @override
+  void didUpdateWidget(MessageList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When chat changes, load messages for the new chat
+    if (oldWidget.chat.id != widget.chat.id) {
+      // Delay the provider modification to avoid modifying during build
+      Future(() {
+        ref.read(messageProvider.notifier).selectChat(widget.chat.id);
+        ref.read(messageProvider.notifier).loadMessages(widget.chat.id);
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -114,32 +127,36 @@ class _MessageListState extends ConsumerState<MessageList> {
       return _buildEmptyState();
     }
 
-    return Column(
+    return Stack(
       children: [
-        if (isLoadingMore) _buildLoadingMoreIndicator(),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () => _refreshMessages(),
-            child: ListView.builder(
-              controller: _scrollController,
-              reverse: true, // Show newest messages at bottom
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                final isLastInGroup = _isLastInGroup(messages, index);
-                final showSender = !message.isOutgoing && isLastInGroup;
-                
-                return MessageBubble(
-                  key: ValueKey(message.id),
-                  message: message,
-                  showTime: isLastInGroup,
-                  showSender: showSender,
-                  onLongPress: () => _showMessageOptions(context, message),
-                );
-              },
+        Column(
+          children: [
+            if (isLoadingMore) _buildLoadingMoreIndicator(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => _refreshMessages(),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  reverse: true, // Show newest messages at bottom
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    final isLastInGroup = _isLastInGroup(messages, index);
+                    final showSender = !message.isOutgoing && isLastInGroup;
+
+                    return MessageBubble(
+                      key: ValueKey(message.id),
+                      message: message,
+                      showTime: isLastInGroup,
+                      showSender: showSender,
+                      onLongPress: () => _showMessageOptions(context, message),
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
+          ],
         ),
         if (!_shouldAutoScroll) _buildScrollToBottomButton(),
       ],
@@ -147,17 +164,19 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
+          CircularProgressIndicator(color: colorScheme.primary),
+          const SizedBox(height: 16),
           Text(
             'Loading messages...',
             style: TextStyle(
               fontSize: 16,
-              color: Color(0xFF6B7280),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -166,6 +185,8 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   Widget _buildEmptyState() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -173,7 +194,7 @@ class _MessageListState extends ConsumerState<MessageList> {
           Icon(
             Icons.chat_bubble_outline,
             size: 64,
-            color: Colors.grey[400],
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
@@ -181,7 +202,7 @@ class _MessageListState extends ConsumerState<MessageList> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 8),
@@ -189,7 +210,7 @@ class _MessageListState extends ConsumerState<MessageList> {
             'Start the conversation by sending a message',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             textAlign: TextAlign.center,
           ),
@@ -199,6 +220,8 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   Widget _buildErrorState(String error) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -206,7 +229,7 @@ class _MessageListState extends ConsumerState<MessageList> {
           Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[400],
+            color: colorScheme.error,
           ),
           const SizedBox(height: 16),
           Text(
@@ -214,7 +237,7 @@ class _MessageListState extends ConsumerState<MessageList> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.red[600],
+              color: colorScheme.error,
             ),
           ),
           const SizedBox(height: 8),
@@ -222,7 +245,7 @@ class _MessageListState extends ConsumerState<MessageList> {
             error,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.red[500],
+              color: colorScheme.error.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
             maxLines: 3,
@@ -234,8 +257,8 @@ class _MessageListState extends ConsumerState<MessageList> {
             icon: const Icon(Icons.refresh),
             label: const Text('Retry'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
             ),
           ),
         ],
@@ -244,22 +267,27 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   Widget _buildLoadingMoreIndicator() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
             width: 16,
             height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: colorScheme.primary,
+            ),
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           Text(
             'Loading more messages...',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF6B7280),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -268,13 +296,15 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   Widget _buildScrollToBottomButton() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Positioned(
       bottom: 16,
       right: 16,
       child: FloatingActionButton.small(
         onPressed: () => _scrollToBottom(),
-        backgroundColor: const Color(0xFF3390EC),
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         child: const Icon(Icons.keyboard_arrow_down),
       ),
     );
@@ -360,42 +390,51 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   void _editMessage(Message message) {
-    // TODO: Show edit dialog
+    final textController = TextEditingController(text: message.content);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Edit Message'),
         content: TextFormField(
-          initialValue: message.content,
+          controller: textController,
           decoration: const InputDecoration(
             hintText: 'Enter new message...',
           ),
+          autofocus: true,
           onFieldSubmitted: (newText) {
             if (newText.trim().isNotEmpty) {
               ref.read(messageProvider.notifier).editMessage(
-                widget.chat.id, 
-                message.id, 
+                widget.chat.id,
+                message.id,
                 newText.trim(),
               );
             }
-            Navigator.pop(context);
+            Navigator.pop(dialogContext);
           },
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              // TODO: Get text from form and edit
-              Navigator.pop(context);
+              final newText = textController.text.trim();
+              if (newText.isNotEmpty && newText != message.content) {
+                ref.read(messageProvider.notifier).editMessage(
+                  widget.chat.id,
+                  message.id,
+                  newText,
+                );
+              }
+              Navigator.pop(dialogContext);
             },
             child: const Text('Save'),
           ),
         ],
       ),
-    );
+    ).then((_) => textController.dispose());
   }
 
   void _deleteMessage(Message message) {

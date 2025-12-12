@@ -22,6 +22,7 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final errorMessage = ref.errorMessage;
     final isLoading = ref.isLoading;
 
@@ -36,7 +37,7 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
             Icon(
               Icons.message,
               size: 32,
-              color: Colors.blue.shade600,
+              color: colorScheme.primary,
             ),
             const SizedBox(height: 12),
             Text(
@@ -48,7 +49,7 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
             Text(
               'Code sent via Telegram',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
               textAlign: TextAlign.center,
             ),
@@ -58,10 +59,11 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 4,
+                color: colorScheme.onSurface,
               ),
               decoration: InputDecoration(
                 labelText: 'Verification code',
@@ -85,19 +87,18 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.red.shade200),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error, color: Colors.red.shade600, size: 18),
+                    Icon(Icons.error, color: colorScheme.onErrorContainer, size: 18),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         errorMessage,
                         style: TextStyle(
-                          color: Colors.red.shade800,
+                          color: colorScheme.onErrorContainer,
                           fontSize: 13,
                         ),
                       ),
@@ -111,7 +112,7 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
               onPressed: isLoading ? null : _resendCode,
               child: Text(
                 'Didn\'t receive the code? Resend',
-                style: TextStyle(color: Colors.blue.shade600),
+                style: TextStyle(color: colorScheme.primary),
               ),
             ),
             const SizedBox(height: 12),
@@ -121,20 +122,20 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
               child: ElevatedButton(
                 onPressed: isLoading ? null : _submitCode,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                              AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                         ),
                       )
                     : const Text(

@@ -52,16 +52,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildChatInterface(Chat chat) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      color: const Color(0xFFF8F9FA),
+      color: colorScheme.surface,
       child: Column(
         children: [
           // Chat Header
-          _buildChatHeader(chat),
+          _buildChatHeader(chat, colorScheme),
           // Messages Area
           Expanded(
             child: Container(
-              color: const Color(0xFFF8F9FA),
+              color: colorScheme.surface,
               child: MessageList(chat: chat),
             ),
           ),
@@ -72,15 +74,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildChatHeader(Chat chat) {
+  Widget _buildChatHeader(Chat chat, ColorScheme colorScheme) {
+    final mutedColor = colorScheme.onSurface.withValues(alpha: 0.6);
+
     return Container(
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFFE4E4E7),
+            color: colorScheme.outlineVariant,
             width: 1,
           ),
         ),
@@ -91,17 +95,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFF3390EC),
+              color: colorScheme.primary,
             ),
             child: Center(
               child: Text(
                 chat.title.isNotEmpty ? chat.title[0].toUpperCase() : '?',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                 ),
               ),
             ),
@@ -115,19 +119,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   chat.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827),
+                    color: colorScheme.onSurface,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const Text(
+                Text(
                   'online', // Placeholder - will implement proper online status later
                   style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF6B7280),
+                    color: mutedColor,
                   ),
                 ),
               ],
@@ -138,9 +142,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: () {
               // TODO: Implement search in chat
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.search,
-              color: Color(0xFF6B7280),
+              color: mutedColor,
             ),
             tooltip: 'Search in chat',
           ),
@@ -172,9 +176,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ],
-            child: const Icon(
+            child: Icon(
               Icons.more_vert,
-              color: Color(0xFF6B7280),
+              color: mutedColor,
             ),
           ),
         ],
@@ -184,8 +188,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 
   Widget _buildWelcomeScreen() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      color: const Color(0xFFF8F9FA),
+      color: colorScheme.surface,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -198,34 +204,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundColor: const Color(0xFF3390EC),
+                      backgroundColor: colorScheme.primary,
                       child: Text(
                         user?.displayName.isNotEmpty == true
                             ? user!.displayName[0].toUpperCase()
                             : 'U',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
                     Text(
                       'Welcome, ${user?.displayName ?? 'User'}!',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF111827),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
                     if (user?.username.isNotEmpty == true)
                       Text(
                         '@${user!.username}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: Color(0xFF3390EC),
+                          color: colorScheme.primary,
                         ),
                       ),
                     const SizedBox(height: 32),
@@ -237,7 +243,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Icon(
               Icons.chat_outlined,
               size: 80,
-              color: Colors.grey[400],
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 24),
             Text(
@@ -245,7 +251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 8),
@@ -253,7 +259,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               'Choose a conversation from the list to begin chatting',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               textAlign: TextAlign.center,
             ),
@@ -264,12 +270,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               icon: const Icon(Icons.logout),
               label: const Text('Logout'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF6B7280),
-                elevation: 2,
+                backgroundColor: colorScheme.surfaceContainerHigh,
+                foregroundColor: colorScheme.onSurface.withValues(alpha: 0.7),
+                elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                side: const BorderSide(color: Color(0xFFE5E7EB)),
+                side: BorderSide(color: colorScheme.outline),
               ),
             ),
           ],

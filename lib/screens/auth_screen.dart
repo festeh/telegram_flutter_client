@@ -32,6 +32,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -39,8 +41,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade400,
-              Colors.blue.shade600,
+              colorScheme.primary.withValues(alpha: 0.8),
+              colorScheme.primary,
             ],
           ),
         ),
@@ -58,21 +60,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                   Icon(
                     Icons.telegram,
                     size: 64,
-                    color: Colors.blue.shade600,
+                    color: colorScheme.primary,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Telegram Flutter Client',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade600,
+                          color: colorScheme.primary,
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Sign in to your account',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey.shade600,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                   ),
                   const SizedBox(height: 32),
@@ -80,9 +82,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                   // Tab Bar
                   TabBar(
                     controller: _tabController,
-                    labelColor: Colors.blue.shade600,
-                    unselectedLabelColor: Colors.grey.shade600,
-                    indicatorColor: Colors.blue.shade600,
+                    labelColor: colorScheme.primary,
+                    unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.6),
+                    indicatorColor: colorScheme.primary,
                     tabs: const [
                       Tab(
                         icon: Icon(Icons.phone),
@@ -135,19 +137,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Widget _buildLoadingState(String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
           ),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: Colors.grey,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -156,6 +160,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Widget _buildSkeletonLoader() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(32.0),
       child: Column(
@@ -166,16 +172,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
             width: double.infinity,
             height: 56,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Center(
+            child: Center(
               child: SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
                 ),
               ),
             ),
@@ -187,17 +195,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
             width: double.infinity,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(8),
             ),
           ),
           const SizedBox(height: 16),
 
           // Loading text
-          const Text(
+          Text(
             'Initializing authentication...',
             style: TextStyle(
-              color: Colors.grey,
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
               fontSize: 14,
             ),
           ),

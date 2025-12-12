@@ -47,32 +47,29 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    // Clear the input immediately for better UX
     _textController.clear();
     setState(() {
       _currentText = '';
       _isMultiline = false;
     });
 
-    // Send the message
     try {
       await ref.read(messageProvider.notifier).sendMessage(widget.chat.id, text);
     } catch (e) {
-      // If sending fails, restore the text
       _textController.text = text;
       setState(() {
         _currentText = text;
       });
-      
-      // Show error
+
       if (mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to send message: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
             action: SnackBarAction(
               label: 'Retry',
-              textColor: Colors.white,
+              textColor: colorScheme.onError,
               onPressed: () => _sendMessage(),
             ),
           ),
@@ -83,15 +80,16 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isSending = ref.watch(messageProvider.select((state) => state.valueOrNull?.isSending ?? false));
     final hasError = ref.watch(messageProvider.select((state) => state.hasError));
-    
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: Color(0xFFE4E4E7),
+            color: colorScheme.outlineVariant,
             width: 1,
           ),
         ),
@@ -107,18 +105,19 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   Widget _buildErrorBanner() {
+    final colorScheme = Theme.of(context).colorScheme;
     final error = ref.watch(messageProvider.select((state) => state.error?.toString()));
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.red[50],
+      color: colorScheme.errorContainer,
       child: Row(
         children: [
           Icon(
             Icons.error_outline,
             size: 16,
-            color: Colors.red[600],
+            color: colorScheme.onErrorContainer,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -126,7 +125,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
               error ?? 'An error occurred',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.red[700],
+                color: colorScheme.onErrorContainer,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -138,7 +137,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
               'Dismiss',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.red[700],
+                color: colorScheme.onErrorContainer,
               ),
             ),
           ),
@@ -148,21 +147,21 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   Widget _buildInputArea(bool isSending) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Attachment button
           IconButton(
             onPressed: isSending ? null : _showAttachmentOptions,
-            icon: const Icon(
+            icon: Icon(
               Icons.attach_file,
-              color: Color(0xFF6B7280),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             tooltip: 'Attach file',
           ),
-          // Text input
           Expanded(
             child: Container(
               constraints: const BoxConstraints(
@@ -170,12 +169,12 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                 maxHeight: 120,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
+                color: colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: _focusNode.hasFocus 
-                      ? const Color(0xFF3390EC)
-                      : const Color(0xFFE5E7EB),
+                  color: _focusNode.hasFocus
+                      ? colorScheme.primary
+                      : colorScheme.outline,
                   width: _focusNode.hasFocus ? 2 : 1,
                 ),
               ),
@@ -188,8 +187,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                       focusNode: _focusNode,
                       enabled: !isSending,
                       maxLines: null,
-                      textInputAction: _isMultiline 
-                          ? TextInputAction.newline 
+                      textInputAction: _isMultiline
+                          ? TextInputAction.newline
                           : TextInputAction.send,
                       onSubmitted: (_) {
                         if (!_isMultiline) {
@@ -199,9 +198,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                       decoration: InputDecoration(
                         hintText: isSending ? 'Sending...' : 'Type a message...',
                         hintStyle: TextStyle(
-                          color: isSending 
-                              ? const Color(0xFFD1D5DB)
-                              : const Color(0xFF9CA3AF),
+                          color: colorScheme.onSurface.withValues(alpha: isSending ? 0.3 : 0.5),
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -209,20 +206,18 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                           vertical: 12,
                         ),
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         height: 1.3,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
-                  // Emoji button
                   IconButton(
                     onPressed: isSending ? null : _showEmojiPicker,
                     icon: Icon(
                       Icons.emoji_emotions_outlined,
-                      color: isSending 
-                          ? const Color(0xFFD1D5DB)
-                          : const Color(0xFF6B7280),
+                      color: colorScheme.onSurface.withValues(alpha: isSending ? 0.3 : 0.6),
                     ),
                     tooltip: 'Add emoji',
                   ),
@@ -231,7 +226,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
             ),
           ),
           const SizedBox(width: 8),
-          // Send button
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             child: _currentText.trim().isNotEmpty || isSending
@@ -244,13 +238,15 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   Widget _buildSendButton(bool isSending) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 40,
       width: 40,
       decoration: BoxDecoration(
-        color: isSending 
-            ? const Color(0xFFD1D5DB)
-            : const Color(0xFF3390EC),
+        color: isSending
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primary,
         shape: BoxShape.circle,
       ),
       child: IconButton(
@@ -262,13 +258,13 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    Colors.white.withOpacity(0.7),
+                    colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               )
-            : const Icon(
+            : Icon(
                 Icons.send,
-                color: Colors.white,
+                color: colorScheme.onPrimary,
                 size: 20,
               ),
         tooltip: isSending ? 'Sending...' : 'Send message',
@@ -278,18 +274,20 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   Widget _buildVoiceButton() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       height: 40,
       width: 40,
-      decoration: const BoxDecoration(
-        color: Color(0xFF6B7280),
+      decoration: BoxDecoration(
+        color: colorScheme.secondary,
         shape: BoxShape.circle,
       ),
       child: IconButton(
         onPressed: _startVoiceRecording,
-        icon: const Icon(
+        icon: Icon(
           Icons.mic,
-          color: Colors.white,
+          color: colorScheme.onSecondary,
           size: 20,
         ),
         tooltip: 'Voice message',
@@ -299,6 +297,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   void _showAttachmentOptions() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -306,11 +306,12 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Send Attachment',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 20),
@@ -323,16 +324,14 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                   color: Colors.purple,
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Implement gallery picker
                   },
                 ),
                 _buildAttachmentOption(
                   icon: Icons.camera_alt,
                   label: 'Camera',
-                  color: Colors.blue,
+                  color: colorScheme.primary,
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Implement camera
                   },
                 ),
                 _buildAttachmentOption(
@@ -341,7 +340,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                   color: Colors.orange,
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Implement file picker
                   },
                 ),
                 _buildAttachmentOption(
@@ -350,7 +348,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                   color: Colors.green,
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Implement location sharing
                   },
                 ),
               ],
@@ -368,6 +365,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -388,9 +387,9 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
           const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF6B7280),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -399,7 +398,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   void _showEmojiPicker() {
-    // TODO: Implement emoji picker
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Emoji picker coming soon!'),
@@ -409,7 +407,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   void _startVoiceRecording() {
-    // TODO: Implement voice recording
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Voice messages coming soon!'),

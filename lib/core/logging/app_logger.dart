@@ -51,25 +51,10 @@ class AppLogger {
   }
 
   LogPrinter _createPrinter() {
-    if (kDebugMode) {
-      return PrettyPrinter(
-        methodCount: 2,
-        errorMethodCount: 8,
-        lineLength: 120,
-        colors: true,
-        printEmojis: false, // Disabled emojis for cleaner output
-        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-      );
-    } else {
-      return PrettyPrinter(
-        methodCount: 0,
-        errorMethodCount: 3,
-        lineLength: 200,
-        colors: false,
-        printEmojis: false,
-        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-      );
-    }
+    return SimplePrinter(
+      colors: false,
+      printTime: true,
+    );
   }
 
   Future<FileOutput?> _createFileOutput(String? customDirectory) async {

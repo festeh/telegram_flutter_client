@@ -48,3 +48,6 @@ app.*.map.json
 libtdjson.so
 
 log.txt
+
+# Environment files with secrets
+.env

@@ -13,9 +13,6 @@ class ConsoleFormatter extends LogPrinter {
 
   @override
   List<String> log(LogEvent event) {
-    final color = PrettyPrinter.defaultLevelColors[event.level];
-    final emoji = PrettyPrinter.defaultLevelEmojis[event.level];
-
     final buffer = StringBuffer();
 
     // Add timestamp
@@ -23,18 +20,9 @@ class ConsoleFormatter extends LogPrinter {
       buffer.write('${DateTime.now().toIso8601String()} ');
     }
 
-    // Add level with emoji
-    if (includeEmojis && emoji != null) {
-      buffer.write('$emoji ');
-    }
-
-    // Add level name with color
+    // Add level name without color
     final levelName = event.level.name.toUpperCase().padRight(5);
-    if (color != null) {
-      buffer.write('${color(levelName)} ');
-    } else {
-      buffer.write('$levelName ');
-    }
+    buffer.write('$levelName ');
 
     // Add module info if available
     if (includeModule && event.message is Map) {
@@ -51,7 +39,7 @@ class ConsoleFormatter extends LogPrinter {
       final actualMessage = messageMap['message'] ?? messageMap.toString();
       buffer.write(actualMessage);
 
-      // Add context if available
+      // Add context if available on same line
       if (messageMap.containsKey('context') && messageMap['context'] != null) {
         final context = messageMap['context'] as Map<String, dynamic>;
         buffer.write(' | Context: ${_formatContext(context)}');
@@ -60,14 +48,16 @@ class ConsoleFormatter extends LogPrinter {
       buffer.write(event.message);
     }
 
-    // Add error if present
+    // Add error on same line
     if (event.error != null) {
-      buffer.write('\nError: ${event.error}');
+      buffer.write(' | Error: ${event.error}');
     }
 
-    // Add stack trace if present
+    // Add stack trace on same line (truncated for readability)
     if (event.stackTrace != null) {
-      buffer.write('\nStack trace:\n${event.stackTrace}');
+      final stackLines = event.stackTrace.toString().split('\n');
+      final firstLine = stackLines.isNotEmpty ? stackLines[0] : '';
+      buffer.write(' | Stack: $firstLine');
     }
 
     return [buffer.toString()];
