@@ -8,10 +8,12 @@ import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
 import '../../domain/entities/chat.dart';
 import '../../domain/events/chat_events.dart';
+import '../../domain/events/message_events.dart';
 import '../../utils/tdlib_bindings.dart';
 import '../../core/logging/specialized_loggers.dart';
 import '../../core/logging/logging_config.dart';
 import '../../core/config/app_config.dart';
+import '../../core/constants/tdlib_constants.dart';
 
 /// Event for when a file download completes
 class FileDownloadComplete {
@@ -30,6 +32,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   late StreamController<AuthenticationState> _authController;
   late StreamController<FileDownloadComplete> _fileDownloadController;
   late StreamController<ChatEvent> _chatEventController;
+  late StreamController<MessageEvent> _messageEventController;
   final TdlibLogger _logger = TdlibLogger.instance;
 
   @override
@@ -41,11 +44,19 @@ class TdlibTelegramClient implements TelegramClientRepository {
   @override
   Stream<ChatEvent> get chatEvents => _chatEventController.stream;
 
+  @override
+  Stream<MessageEvent> get messageEvents => _messageEventController.stream;
+
   AuthenticationState _currentAuthState =
       const AuthenticationState(state: AuthorizationState.unknown);
   UserSession? _currentUser;
   final Map<int, Chat> _chats = <int, Chat>{};
   final Map<int, List<Message>> _messages = <int, List<Message>>{};
+  final Map<int, String> _userNames = <int, String>{};
+  // Track file ID to message ID mapping for photo updates
+  final Map<int, ({int chatId, int messageId})> _photoFileToMessage = {};
+  // Track file ID to message ID mapping for sticker updates
+  final Map<int, ({int chatId, int messageId})> _stickerFileToMessage = {};
 
   @override
   AuthenticationState get currentAuthState => _currentAuthState;
@@ -62,6 +73,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _authController = StreamController<AuthenticationState>.broadcast();
     _fileDownloadController = StreamController<FileDownloadComplete>.broadcast();
     _chatEventController = StreamController<ChatEvent>.broadcast();
+    _messageEventController = StreamController<MessageEvent>.broadcast();
   }
 
   /// Stream of file download completion events
@@ -147,9 +159,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _logger.logUpdate(update);
     _updateController.add(update);
 
-    final type = update['@type'] as String;
+    final type = update[TdlibFields.type] as String;
 
-    if (type == 'updateAuthorizationState') {
+    if (type == TdlibUpdateTypes.authorizationState) {
       final authState =
           AuthenticationState.fromJson(update['authorization_state']);
       _logger.logAuthState(authState.state.toString());
@@ -157,32 +169,94 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _authController.add(authState);
 
       _handleAuthorizationState(authState);
-    } else if (type == 'updateUser' && update['user']?['is_self'] == true) {
-      _currentUser = UserSession.fromJson(update['user']);
-    } else if (type == 'updateNewChat') {
+    } else if (type == TdlibUpdateTypes.user) {
+      _handleUserUpdate(update);
+    } else if (type == TdlibUpdateTypes.newChat) {
       _handleNewChatUpdate(update);
-    } else if (type == 'updateChatLastMessage') {
+    } else if (type == TdlibUpdateTypes.chatLastMessage) {
       _handleChatLastMessageUpdate(update);
-    } else if (type == 'updateNewMessage') {
+    } else if (type == TdlibUpdateTypes.newMessage) {
       _handleMessageUpdate(update);
-    } else if (type == 'message') {
+    } else if (type == TdlibUpdateTypes.message) {
       // Handle single message response (from getChatHistory)
       _handleMessageUpdate(update);
-    } else if (type == 'messages') {
+    } else if (type == TdlibUpdateTypes.messages) {
       // Handle batch messages response from getChatHistory
       _handleMessagesResponse(update);
-    } else if (type == 'updateFile') {
+    } else if (type == TdlibUpdateTypes.file) {
       _handleFileUpdate(update);
-    } else if (type == 'updateChatTitle') {
+    } else if (type == TdlibUpdateTypes.chatTitle) {
       _handleChatTitleUpdate(update);
-    } else if (type == 'updateChatPhoto') {
+    } else if (type == TdlibUpdateTypes.chatPhoto) {
       _handleChatPhotoUpdate(update);
-    } else if (type == 'updateChatOrder') {
+    } else if (type == TdlibUpdateTypes.chatOrder) {
       _chatEventController.add(ChatOrderChangedEvent());
-    } else if (type == 'updateChatReadInbox') {
+    } else if (type == TdlibUpdateTypes.chatReadInbox) {
       _handleChatReadInboxUpdate(update);
-    } else if (type == 'updateChatPosition') {
+    } else if (type == TdlibUpdateTypes.chatPosition) {
       _handleChatPositionUpdate(update);
+    } else if (type == TdlibUpdateTypes.messageEdited) {
+      _handleMessageEditedUpdate(update);
+    } else if (type == TdlibUpdateTypes.deleteMessages) {
+      _handleDeleteMessagesUpdate(update);
+    } else if (type == TdlibUpdateTypes.messageContent) {
+      _handleMessageContentUpdate(update);
+    } else if (type == TdlibUpdateTypes.messageSendSucceeded) {
+      _handleMessageSendSucceededUpdate(update);
+    } else if (type == TdlibUpdateTypes.messageSendFailed) {
+      _handleMessageSendFailedUpdate(update);
+    }
+  }
+
+  /// Creates a Message from JSON, looking up the sender name from cache
+  Message _createMessageFromJson(Map<String, dynamic> json) {
+    // sender_id can be messageSenderUser (has user_id) or messageSenderChat (has chat_id)
+    final senderIdMap = json['sender_id'] as Map<String, dynamic>?;
+    int senderId = 0;
+    String? senderName;
+
+    if (senderIdMap != null) {
+      final userId = senderIdMap['user_id'] as int?;
+      if (userId != null) {
+        senderId = userId;
+        senderName = _userNames[senderId];
+      } else {
+        // It's a chat sender - use chat title if available
+        final chatId = senderIdMap['chat_id'] as int?;
+        if (chatId != null) {
+          senderId = chatId;
+          // Try to get chat title as sender name
+          final chat = _chats[chatId];
+          senderName = chat?.title;
+        }
+      }
+    }
+
+    return Message.fromJson(json, senderName: senderName);
+  }
+
+  void _handleUserUpdate(Map<String, dynamic> update) {
+    try {
+      final userData = update['user'] as Map<String, dynamic>?;
+      if (userData == null) return;
+
+      final userId = userData['id'] as int?;
+      if (userId == null) return;
+
+      // Cache user name (first_name + last_name)
+      final firstName = userData['first_name'] as String? ?? '';
+      final lastName = userData['last_name'] as String? ?? '';
+      final fullName = lastName.isNotEmpty ? '$firstName $lastName' : firstName;
+      if (fullName.isNotEmpty) {
+        _userNames[userId] = fullName;
+      }
+
+      // Set current user if this is self
+      if (userData[TdlibFields.isSelf] == true) {
+        _currentUser = UserSession.fromJson(userData);
+      }
+    } catch (e) {
+      _logger.logError('Error processing updateUser', error: e);
     }
   }
 
@@ -212,7 +286,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
       final lastMessageData = update['last_message'] as Map<String, dynamic>?;
 
       if (chatId != null && lastMessageData != null) {
-        final message = Message.fromJson(lastMessageData);
+        final message = _createMessageFromJson(lastMessageData);
 
         // Update cache if chat exists
         if (_chats.containsKey(chatId)) {
@@ -290,7 +364,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
     // Check if position is in main list
     final list = position?['list'] as Map<String, dynamic>?;
-    final isInMainList = list?['@type'] == 'chatListMain';
+    final isInMainList = list?[TdlibFields.type] == TdlibChatListTypes.main;
     final order = position?['order'] as String?;
 
     // If order is "0" or position is removed, chat is not in the list
@@ -408,7 +482,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     // Send the getChats request to trigger TDLib to send updateNewChat events
     await _sendRequest({
       '@type': 'getChats',
-      'chat_list': {'@type': 'chatListMain'},
+      'chat_list': {TdlibFields.type: TdlibChatListTypes.main},
       'limit': limit,
     });
 
@@ -668,6 +742,16 @@ class TdlibTelegramClient implements TelegramClientRepository {
         _messages[chatId]!.add(message);
       }
     }
+
+    // Track photo file ID for download completion updates
+    if (message.photoFileId != null) {
+      _photoFileToMessage[message.photoFileId!] = (chatId: chatId, messageId: message.id);
+    }
+
+    // Track sticker file ID for download completion updates
+    if (message.stickerFileId != null) {
+      _stickerFileToMessage[message.stickerFileId!] = (chatId: chatId, messageId: message.id);
+    }
   }
 
   void _handleMessageUpdate(Map<String, dynamic> update) {
@@ -678,7 +762,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
       final chatId = message['chat_id'] as int?;
       if (chatId == null) return;
 
-      final messageObj = Message.fromJson(message);
+      final messageObj = _createMessageFromJson(message);
       _addMessageToCache(chatId, messageObj, insertAtStart: true);
 
       // Keep only the most recent messages per chat
@@ -692,8 +776,99 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'message_id': messageObj.id,
         'total_messages': _messages[chatId]!.length,
       });
+
+      // Emit typed event for presentation layer
+      _messageEventController.add(MessageAddedEvent(chatId, messageObj));
     } catch (e) {
       _logger.logError('Error handling message update', error: e);
+    }
+  }
+
+  void _handleMessageEditedUpdate(Map<String, dynamic> update) {
+    try {
+      final messageData = update['message'] as Map<String, dynamic>?;
+      if (messageData == null) return;
+
+      final message = _createMessageFromJson(messageData);
+      final chatId = message.chatId;
+
+      // Update cache
+      _addMessageToCache(chatId, message, insertAtStart: false);
+
+      // Emit typed event
+      _messageEventController.add(MessageEditedEvent(chatId, message));
+    } catch (e) {
+      _logger.logError('Error handling message edited update', error: e);
+    }
+  }
+
+  void _handleDeleteMessagesUpdate(Map<String, dynamic> update) {
+    try {
+      final chatId = update['chat_id'] as int?;
+      final messageIds = update['message_ids'] as List?;
+      final fromCache = update['from_cache'] as bool? ?? false;
+
+      if (chatId == null || messageIds == null) return;
+
+      // Ignore cache cleanup events - these are just TDLib unloading messages
+      if (fromCache) return;
+
+      final ids = messageIds.whereType<int>().toList();
+
+      // Remove from cache
+      if (_messages.containsKey(chatId)) {
+        _messages[chatId]!.removeWhere((msg) => ids.contains(msg.id));
+      }
+
+      // Emit typed event
+      _messageEventController.add(MessagesDeletedEvent(chatId, ids));
+    } catch (e) {
+      _logger.logError('Error handling delete messages update', error: e);
+    }
+  }
+
+  void _handleMessageContentUpdate(Map<String, dynamic> update) {
+    try {
+      final chatId = update['chat_id'] as int?;
+      final messageId = update['message_id'] as int?;
+      final newContent = update['new_content'] as Map<String, dynamic>?;
+
+      if (chatId == null || messageId == null || newContent == null) return;
+
+      // Emit typed event
+      _messageEventController.add(MessageContentChangedEvent(chatId, messageId, newContent));
+    } catch (e) {
+      _logger.logError('Error handling message content update', error: e);
+    }
+  }
+
+  void _handleMessageSendSucceededUpdate(Map<String, dynamic> update) {
+    try {
+      final messageData = update['message'] as Map<String, dynamic>?;
+      if (messageData == null) return;
+
+      final message = _createMessageFromJson(messageData);
+      final chatId = message.chatId;
+
+      // Update cache
+      _addMessageToCache(chatId, message, insertAtStart: false);
+
+      // Emit typed event
+      _messageEventController.add(MessageSendSucceededEvent(chatId, message));
+    } catch (e) {
+      _logger.logError('Error handling message send succeeded update', error: e);
+    }
+  }
+
+  void _handleMessageSendFailedUpdate(Map<String, dynamic> update) {
+    try {
+      final error = update['error'] as Map<String, dynamic>?;
+      final errorMessage = error?['message'] as String? ?? 'Unknown error';
+
+      // Emit typed event
+      _messageEventController.add(MessageSendFailedEvent(errorMessage));
+    } catch (e) {
+      _logger.logError('Error handling message send failed update', error: e);
     }
   }
 
@@ -707,34 +882,40 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'message_count': messages.length,
       });
 
-      // Track which chats were updated
-      final updatedChatIds = <int>{};
+      // Group messages by chat
+      final messagesByChat = <int, List<Message>>{};
 
-      // Process each message in the batch
       for (final messageData in messages) {
         if (messageData is Map<String, dynamic>) {
           final chatId = messageData['chat_id'] as int?;
           if (chatId == null) continue;
 
-          final messageObj = Message.fromJson(messageData);
+          final messageObj = _createMessageFromJson(messageData);
           _addMessageToCache(chatId, messageObj, insertAtStart: false);
-          updatedChatIds.add(chatId);
+
+          messagesByChat.putIfAbsent(chatId, () => []);
+          messagesByChat[chatId]!.add(messageObj);
         }
       }
 
       // Sort and trim messages for updated chats only
-      for (final chatId in updatedChatIds) {
+      for (final chatId in messagesByChat.keys) {
         _messages[chatId]!.sort((a, b) => a.date.compareTo(b.date));
         if (_messages[chatId]!.length > AppConfig.maxMessagesPerChat) {
           _messages[chatId] = _messages[chatId]!
               .skip(_messages[chatId]!.length - AppConfig.maxMessagesPerChat)
               .toList();
         }
+
+        // Emit typed event for each chat
+        _messageEventController.add(
+          MessagesBatchReceivedEvent(chatId, messagesByChat[chatId]!),
+        );
       }
 
       _logger.logRequest({
         '@type': 'messages_batch_processed',
-        'total_chats_updated': updatedChatIds.length,
+        'total_chats_updated': messagesByChat.length,
       });
     } catch (e) {
       _logger.logError('Error handling messages response', error: e);
@@ -763,6 +944,12 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
         // Update any chats that have this file ID as their photo
         _updateChatPhotoByFileId(fileId, filePath);
+
+        // Update any messages that have this file ID as their photo
+        _updateMessagePhotoByFileId(fileId, filePath);
+
+        // Update any messages that have this file ID as their sticker
+        _updateMessageStickerByFileId(fileId, filePath);
       }
     } catch (e) {
       _logger.logError('Error handling file update', error: e);
@@ -786,6 +973,70 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
   }
 
+  void _updateMessagePhotoByFileId(int fileId, String path) {
+    final messageInfo = _photoFileToMessage[fileId];
+    if (messageInfo == null) return;
+
+    final chatId = messageInfo.chatId;
+    final messageId = messageInfo.messageId;
+
+    // Find and update the message in cache
+    final messages = _messages[chatId];
+    if (messages == null) return;
+
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final updatedMessage = messages[index].copyWith(photoPath: path);
+    messages[index] = updatedMessage;
+
+    _logger.logRequest({
+      '@type': 'message_photo_updated',
+      'chat_id': chatId,
+      'message_id': messageId,
+      'file_id': fileId,
+      'path': path,
+    });
+
+    // Emit typed event for presentation layer
+    _messageEventController.add(MessagePhotoUpdatedEvent(chatId, messageId, path));
+
+    // Clean up tracking
+    _photoFileToMessage.remove(fileId);
+  }
+
+  void _updateMessageStickerByFileId(int fileId, String path) {
+    final messageInfo = _stickerFileToMessage[fileId];
+    if (messageInfo == null) return;
+
+    final chatId = messageInfo.chatId;
+    final messageId = messageInfo.messageId;
+
+    // Find and update the message in cache
+    final messages = _messages[chatId];
+    if (messages == null) return;
+
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final updatedMessage = messages[index].copyWith(stickerPath: path);
+    messages[index] = updatedMessage;
+
+    _logger.logRequest({
+      '@type': 'message_sticker_updated',
+      'chat_id': chatId,
+      'message_id': messageId,
+      'file_id': fileId,
+      'path': path,
+    });
+
+    // Emit typed event for presentation layer
+    _messageEventController.add(MessageStickerUpdatedEvent(chatId, messageId, path));
+
+    // Clean up tracking
+    _stickerFileToMessage.remove(fileId);
+  }
+
   @override
   Future<void> downloadFile(int fileId) async {
     await _sendRequest({
@@ -803,6 +1054,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _authController.close();
     _fileDownloadController.close();
     _chatEventController.close();
+    _messageEventController.close();
     if (_isStarted) {
       _client.destroy();
     }

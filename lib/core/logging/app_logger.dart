@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import 'log_level.dart';
+import 'formatters/console_formatter.dart';
 
 class AppLogger {
   static AppLogger? _instance;
@@ -51,9 +52,10 @@ class AppLogger {
   }
 
   LogPrinter _createPrinter() {
-    return SimplePrinter(
-      colors: false,
-      printTime: true,
+    return ConsoleFormatter(
+      includeEmojis: false,
+      includeTimestamp: true,
+      includeModule: true,
     );
   }
 

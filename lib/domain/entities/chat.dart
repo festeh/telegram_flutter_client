@@ -173,22 +173,46 @@ class Message {
   final int id;
   final int chatId;
   final int senderId;
+  final String? senderName;
   final DateTime date;
   final String content;
   final bool isOutgoing;
   final MessageType type;
+  // Photo-specific fields
+  final String? photoPath;
+  final int? photoFileId;
+  final int? photoWidth;
+  final int? photoHeight;
+  // Sticker-specific fields
+  final String? stickerPath;
+  final int? stickerFileId;
+  final int? stickerWidth;
+  final int? stickerHeight;
+  final String? stickerEmoji;
+  final bool stickerIsAnimated;
 
   const Message({
     required this.id,
     required this.chatId,
     required this.senderId,
+    this.senderName,
     required this.date,
     required this.content,
     required this.isOutgoing,
     required this.type,
+    this.photoPath,
+    this.photoFileId,
+    this.photoWidth,
+    this.photoHeight,
+    this.stickerPath,
+    this.stickerFileId,
+    this.stickerWidth,
+    this.stickerHeight,
+    this.stickerEmoji,
+    this.stickerIsAnimated = false,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json) {
+  factory Message.fromJson(Map<String, dynamic> json, {String? senderName}) {
     // Parse message content from TDLib format
     String parseContent(Map<String, dynamic>? contentMap) {
       if (contentMap == null) return '';
@@ -198,7 +222,9 @@ class Message {
         case 'messageText':
           return contentMap['text']?['text'] as String? ?? '';
         case 'messagePhoto':
-          return '📷 Photo';
+          // Include caption if available
+          final caption = contentMap['caption']?['text'] as String?;
+          return caption?.isNotEmpty == true ? caption! : '📷 Photo';
         case 'messageVideo':
           return '🎥 Video';
         case 'messageDocument':
@@ -242,16 +268,129 @@ class Message {
       }
     }
 
+    // Parse photo info from messagePhoto content
+    ({String? path, int? fileId, int? width, int? height}) parsePhotoInfo(
+        Map<String, dynamic>? contentMap) {
+      if (contentMap == null || contentMap['@type'] != 'messagePhoto') {
+        return (path: null, fileId: null, width: null, height: null);
+      }
+
+      final photo = contentMap['photo'] as Map<String, dynamic>?;
+      if (photo == null) {
+        return (path: null, fileId: null, width: null, height: null);
+      }
+
+      // Get the best size (prefer larger sizes for display)
+      final sizes = photo['sizes'] as List?;
+      if (sizes == null || sizes.isEmpty) {
+        return (path: null, fileId: null, width: null, height: null);
+      }
+
+      // Find the largest size (typically 'm' or 'x' type)
+      Map<String, dynamic>? bestSize;
+      int bestArea = 0;
+      for (final size in sizes) {
+        if (size is Map<String, dynamic>) {
+          final width = size['width'] as int? ?? 0;
+          final height = size['height'] as int? ?? 0;
+          final area = width * height;
+          if (area > bestArea) {
+            bestArea = area;
+            bestSize = size;
+          }
+        }
+      }
+
+      if (bestSize == null) {
+        return (path: null, fileId: null, width: null, height: null);
+      }
+
+      final fileInfo = bestSize['photo'] as Map<String, dynamic>?;
+      final localPath = fileInfo?['local']?['path'] as String?;
+      final fileId = fileInfo?['id'] as int?;
+      final width = bestSize['width'] as int?;
+      final height = bestSize['height'] as int?;
+
+      return (
+        path: (localPath?.isNotEmpty == true) ? localPath : null,
+        fileId: fileId,
+        width: width,
+        height: height,
+      );
+    }
+
+    final photoInfo = parsePhotoInfo(json['content']);
+
+    // Parse sticker info from messageSticker content
+    ({String? path, int? fileId, int? width, int? height, String? emoji, bool isAnimated}) parseStickerInfo(
+        Map<String, dynamic>? contentMap) {
+      if (contentMap == null || contentMap['@type'] != 'messageSticker') {
+        return (path: null, fileId: null, width: null, height: null, emoji: null, isAnimated: false);
+      }
+
+      final sticker = contentMap['sticker'] as Map<String, dynamic>?;
+      if (sticker == null) {
+        return (path: null, fileId: null, width: null, height: null, emoji: null, isAnimated: false);
+      }
+
+      // Get sticker file info - the file is in sticker['sticker']
+      final stickerFile = sticker['sticker'] as Map<String, dynamic>?;
+      final localPath = stickerFile?['local']?['path'] as String?;
+      final fileId = stickerFile?['id'] as int?;
+
+      // Get dimensions and emoji
+      final width = sticker['width'] as int?;
+      final height = sticker['height'] as int?;
+      final emoji = sticker['emoji'] as String?;
+
+      // Check if animated (TGS format)
+      final format = sticker['format'] as Map<String, dynamic>?;
+      final isAnimated = format?['@type'] == 'stickerFormatTgs';
+
+      return (
+        path: (localPath?.isNotEmpty == true) ? localPath : null,
+        fileId: fileId,
+        width: width,
+        height: height,
+        emoji: emoji,
+        isAnimated: isAnimated,
+      );
+    }
+
+    final stickerInfo = parseStickerInfo(json['content']);
+
+    // Parse sender ID - can be messageSenderUser or messageSenderChat
+    int parseSenderId(Map<String, dynamic>? senderIdMap) {
+      if (senderIdMap == null) return 0;
+      // Check for user_id first (messageSenderUser)
+      final userId = senderIdMap['user_id'] as int?;
+      if (userId != null) return userId;
+      // Fall back to chat_id (messageSenderChat)
+      final chatId = senderIdMap['chat_id'] as int?;
+      return chatId ?? 0;
+    }
+
     return Message(
       id: json['id'] as int,
       chatId: json['chat_id'] as int,
-      senderId: json['sender_id']?['user_id'] as int? ?? 0,
+      senderId: parseSenderId(json['sender_id'] as Map<String, dynamic>?),
+      senderName: senderName,
       date: DateTime.fromMillisecondsSinceEpoch(
         (json['date'] as int) * 1000,
       ),
       content: parseContent(json['content']),
       isOutgoing: json['is_outgoing'] as bool? ?? false,
       type: parseMessageType(json['content']),
+      photoPath: photoInfo.path,
+      photoFileId: photoInfo.fileId,
+      photoWidth: photoInfo.width,
+      photoHeight: photoInfo.height,
+      stickerPath: stickerInfo.path,
+      stickerFileId: stickerInfo.fileId,
+      stickerWidth: stickerInfo.width,
+      stickerHeight: stickerInfo.height,
+      stickerEmoji: stickerInfo.emoji,
+      stickerIsAnimated: stickerInfo.isAnimated,
     );
   }
 
@@ -260,11 +399,64 @@ class Message {
       'id': id,
       'chat_id': chatId,
       'sender_id': senderId,
+      'sender_name': senderName,
       'date': date.millisecondsSinceEpoch ~/ 1000,
       'content': content,
       'is_outgoing': isOutgoing,
       'type': type.toString().split('.').last,
+      'photo_path': photoPath,
+      'photo_file_id': photoFileId,
+      'photo_width': photoWidth,
+      'photo_height': photoHeight,
+      'sticker_path': stickerPath,
+      'sticker_file_id': stickerFileId,
+      'sticker_width': stickerWidth,
+      'sticker_height': stickerHeight,
+      'sticker_emoji': stickerEmoji,
+      'sticker_is_animated': stickerIsAnimated,
     };
+  }
+
+  Message copyWith({
+    int? id,
+    int? chatId,
+    int? senderId,
+    String? senderName,
+    DateTime? date,
+    String? content,
+    bool? isOutgoing,
+    MessageType? type,
+    String? photoPath,
+    int? photoFileId,
+    int? photoWidth,
+    int? photoHeight,
+    String? stickerPath,
+    int? stickerFileId,
+    int? stickerWidth,
+    int? stickerHeight,
+    String? stickerEmoji,
+    bool? stickerIsAnimated,
+  }) {
+    return Message(
+      id: id ?? this.id,
+      chatId: chatId ?? this.chatId,
+      senderId: senderId ?? this.senderId,
+      senderName: senderName ?? this.senderName,
+      date: date ?? this.date,
+      content: content ?? this.content,
+      isOutgoing: isOutgoing ?? this.isOutgoing,
+      type: type ?? this.type,
+      photoPath: photoPath ?? this.photoPath,
+      photoFileId: photoFileId ?? this.photoFileId,
+      photoWidth: photoWidth ?? this.photoWidth,
+      photoHeight: photoHeight ?? this.photoHeight,
+      stickerPath: stickerPath ?? this.stickerPath,
+      stickerFileId: stickerFileId ?? this.stickerFileId,
+      stickerWidth: stickerWidth ?? this.stickerWidth,
+      stickerHeight: stickerHeight ?? this.stickerHeight,
+      stickerEmoji: stickerEmoji ?? this.stickerEmoji,
+      stickerIsAnimated: stickerIsAnimated ?? this.stickerIsAnimated,
+    );
   }
 
   @override

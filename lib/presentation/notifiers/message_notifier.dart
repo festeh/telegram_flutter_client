@@ -2,13 +2,14 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/chat.dart';
+import '../../domain/events/message_events.dart';
 import '../state/message_state.dart';
 import '../../core/logging/app_logger.dart';
 import '../providers/telegram_client_provider.dart';
 
 class MessageNotifier extends AsyncNotifier<MessageState> {
   late final TelegramClientRepository _client;
-  StreamSubscription<Map<String, dynamic>>? _updateSubscription;
+  StreamSubscription<MessageEvent>? _eventSubscription;
   final AppLogger _logger = AppLogger.instance;
 
   @override
@@ -16,220 +17,143 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     // Use the shared client instance from provider
     _client = ref.read(telegramClientProvider);
 
-    // Start listening to message updates
-    _listenToUpdates();
+    // Start listening to message events
+    _listenToMessageEvents();
 
     // Initialize with empty state
     return MessageState.initial();
   }
 
-  void _listenToUpdates() {
-    _updateSubscription?.cancel();
-    _updateSubscription = _client.updates.listen(
-      (update) {
-        _handleUpdate(update);
-      },
+  void _listenToMessageEvents() {
+    _eventSubscription?.cancel();
+    _eventSubscription = _client.messageEvents.listen(
+      _handleMessageEvent,
       onError: (error) {
-        _setError('Error receiving message updates: $error');
+        _setError('Error receiving message events: $error');
       },
     );
   }
 
-  void _handleUpdate(Map<String, dynamic> update) {
-    final updateType = update['@type'] as String;
-
-    switch (updateType) {
-      case 'updateNewMessage':
-        _handleNewMessage(update);
-        break;
-      case 'updateMessageEdited':
-        _handleMessageEdited(update);
-        break;
-      case 'updateDeleteMessages':
-        _handleDeleteMessages(update);
-        break;
-      case 'updateMessageContent':
-        _handleMessageContentChanged(update);
-        break;
-      case 'updateMessageSendSucceeded':
-        _handleMessageSendSucceeded(update);
-        break;
-      case 'updateMessageSendFailed':
-        _handleMessageSendFailed(update);
-        break;
-      case 'messages':
-        // Handle batch messages response from getChatHistory
-        _handleMessagesResponse(update);
-        break;
-      default:
-        // Ignore other update types
-        break;
+  void _handleMessageEvent(MessageEvent event) {
+    switch (event) {
+      case MessageAddedEvent(:final chatId, :final message):
+        _handleNewMessage(chatId, message);
+      case MessageEditedEvent(:final chatId, :final message):
+        _handleMessageEdited(chatId, message);
+      case MessagesDeletedEvent(:final chatId, :final messageIds):
+        _handleMessagesDeleted(chatId, messageIds);
+      case MessageContentChangedEvent(:final chatId, :final messageId, :final newContent):
+        _handleMessageContentChanged(chatId, messageId, newContent);
+      case MessageSendSucceededEvent(:final chatId, :final message):
+        _handleMessageSendSucceeded(chatId, message);
+      case MessageSendFailedEvent(:final errorMessage):
+        _handleMessageSendFailed(errorMessage);
+      case MessagesBatchReceivedEvent(:final chatId, :final messages):
+        _handleMessagesBatch(chatId, messages);
+      case MessagePhotoUpdatedEvent(:final chatId, :final messageId, :final photoPath):
+        _handleMessagePhotoUpdated(chatId, messageId, photoPath);
+      case MessageStickerUpdatedEvent(:final chatId, :final messageId, :final stickerPath):
+        _handleMessageStickerUpdated(chatId, messageId, stickerPath);
     }
   }
 
-  void _handleNewMessage(Map<String, dynamic> update) {
-    try {
-      final messageData = update['message'] as Map<String, dynamic>?;
-      if (messageData == null) return;
+  void _handleMessagePhotoUpdated(int chatId, int messageId, String photoPath) {
+    _logger.debug('Message photo updated in chat $chatId: $messageId');
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
 
-      final message = Message.fromJson(messageData);
-      final chatId = message.chatId;
+    final messages = currentState.messagesByChat[chatId];
+    if (messages == null) return;
 
-      _logger.info('New message received for chat $chatId: ${message.content}');
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
 
-      final currentState = state.valueOrNull;
-      if (currentState != null) {
-        final newState = currentState.addMessage(chatId, message);
-        state = AsyncData(newState);
-      }
-    } catch (e) {
-      _logger.error('Error handling new message', error: e);
+    final updatedMessage = messages[index].copyWith(photoPath: photoPath);
+    state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
+  }
+
+  void _handleMessageStickerUpdated(int chatId, int messageId, String stickerPath) {
+    _logger.debug('Message sticker updated in chat $chatId: $messageId');
+    final currentState = state.valueOrNull;
+    if (currentState == null) return;
+
+    final messages = currentState.messagesByChat[chatId];
+    if (messages == null) return;
+
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final updatedMessage = messages[index].copyWith(stickerPath: stickerPath);
+    state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
+  }
+
+  void _handleNewMessage(int chatId, Message message) {
+    _logger.debug('New message received for chat $chatId');
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      state = AsyncData(currentState.addMessage(chatId, message));
     }
   }
 
-  void _handleMessageEdited(Map<String, dynamic> update) {
-    try {
-      final messageData = update['message'] as Map<String, dynamic>?;
-      if (messageData == null) return;
-
-      final message = Message.fromJson(messageData);
-      final chatId = message.chatId;
-
-      _logger.info('Message edited in chat $chatId: ${message.id}');
-
-      final currentState = state.valueOrNull;
-      if (currentState != null) {
-        final newState = currentState.updateMessage(chatId, message);
-        state = AsyncData(newState);
-      }
-    } catch (e) {
-      _logger.error('Error handling message edit', error: e);
+  void _handleMessageEdited(int chatId, Message message) {
+    _logger.debug('Message edited in chat $chatId: ${message.id}');
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      state = AsyncData(currentState.updateMessage(chatId, message));
     }
   }
 
-  void _handleDeleteMessages(Map<String, dynamic> update) {
-    try {
-      final chatId = update['chat_id'] as int?;
-      final messageIds = update['message_ids'] as List?;
-      final fromCache = update['from_cache'] as bool? ?? false;
-
-      if (chatId == null || messageIds == null) return;
-
-      // Ignore cache cleanup events - these are just TDLib unloading messages from RAM
-      // to manage memory, not actual deletions from Telegram
-      if (fromCache) {
-        _logger.info('Ignoring cache cleanup for chat $chatId: ${messageIds.length} messages unloaded from RAM');
-        return;
+  void _handleMessagesDeleted(int chatId, List<int> messageIds) {
+    _logger.debug('Messages deleted in chat $chatId: $messageIds');
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      var newState = currentState;
+      for (final messageId in messageIds) {
+        newState = newState.removeMessage(chatId, messageId);
       }
-
-      // Process real message deletions (from_cache: false or missing)
-      _logger.info('Messages actually deleted in chat $chatId: $messageIds');
-
-      final currentState = state.valueOrNull;
-      if (currentState != null) {
-        var newState = currentState;
-        for (final messageId in messageIds) {
-          if (messageId is int) {
-            newState = newState.removeMessage(chatId, messageId);
-          }
-        }
-        state = AsyncData(newState);
-      }
-    } catch (e) {
-      _logger.error('Error handling message deletion', error: e);
+      state = AsyncData(newState);
     }
   }
 
-  void _handleMessageContentChanged(Map<String, dynamic> update) {
-    try {
-      final chatId = update['chat_id'] as int?;
-      final messageId = update['message_id'] as int?;
-      final newContent = update['new_content'] as Map<String, dynamic>?;
-
-      if (chatId == null || messageId == null || newContent == null) return;
-
-      _logger.info('Message content changed in chat $chatId: $messageId');
-
-      final currentState = state.valueOrNull;
-      if (currentState != null && currentState.messagesByChat.containsKey(chatId)) {
-        final messages = currentState.messagesByChat[chatId]!;
-        final messageIndex = messages.indexWhere((msg) => msg.id == messageId);
-        
-        if (messageIndex != -1) {
-          // Create updated message with new content
-          final oldMessage = messages[messageIndex];
-          // Note: We'd need to extend Message class to handle content updates properly
-          final updatedMessage = oldMessage; // Placeholder for now
-          
-          final newState = currentState.updateMessage(chatId, updatedMessage);
-          state = AsyncData(newState);
-        }
+  void _handleMessageContentChanged(int chatId, int messageId, Map<String, dynamic> newContent) {
+    _logger.debug('Message content changed in chat $chatId: $messageId');
+    // Content update handling - placeholder until Message supports content updates
+    final currentState = state.valueOrNull;
+    if (currentState != null && currentState.messagesByChat.containsKey(chatId)) {
+      final messages = currentState.messagesByChat[chatId]!;
+      final messageIndex = messages.indexWhere((msg) => msg.id == messageId);
+      if (messageIndex != -1) {
+        // Placeholder - message content update would go here
+        state = AsyncData(currentState);
       }
-    } catch (e) {
-      _logger.error('Error handling message content change', error: e);
     }
   }
 
-  void _handleMessageSendSucceeded(Map<String, dynamic> update) {
-    try {
-      final messageData = update['message'] as Map<String, dynamic>?;
-      if (messageData == null) return;
-
-      final message = Message.fromJson(messageData);
-      final chatId = message.chatId;
-
-      _logger.info('Message send succeeded for chat $chatId: ${message.id}');
-
-      final currentState = state.valueOrNull;
-      if (currentState != null) {
-        final newState = currentState.updateMessage(chatId, message).setSending(false);
-        state = AsyncData(newState);
-      }
-    } catch (e) {
-      _logger.error('Error handling message send success', error: e);
+  void _handleMessageSendSucceeded(int chatId, Message message) {
+    _logger.debug('Message send succeeded for chat $chatId: ${message.id}');
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      state = AsyncData(currentState.updateMessage(chatId, message).setSending(false));
     }
   }
 
-  void _handleMessageSendFailed(Map<String, dynamic> update) {
-    try {
-      final error = update['error'] as Map<String, dynamic>?;
-
-      _logger.error('Message send failed', error: error);
-
-      final currentState = state.valueOrNull;
-      if (currentState != null) {
-        final newState = currentState
-            .setSending(false)
-            .setError('Failed to send message: ${error?['message'] ?? 'Unknown error'}');
-        state = AsyncData(newState);
-      }
-    } catch (e) {
-      _logger.error('Error handling message send failure', error: e);
+  void _handleMessageSendFailed(String errorMessage) {
+    _logger.error('Message send failed: $errorMessage');
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      state = AsyncData(
+        currentState.setSending(false).setError('Failed to send message: $errorMessage'),
+      );
     }
   }
 
-  void _handleMessagesResponse(Map<String, dynamic> update) {
-    try {
-      final messages = update['messages'] as List?;
-      if (messages == null) return;
-
-      _logger.info('Received batch of ${messages.length} messages');
-
-      final currentState = state.valueOrNull;
-      if (currentState != null && currentState.selectedChatId != null) {
-        final chatId = currentState.selectedChatId!;
-        final messageObjects = messages
-            .map((msgData) => Message.fromJson(msgData as Map<String, dynamic>))
-            .toList();
-
-        final newState = currentState
-            .addMessages(chatId, messageObjects)
-            .setLoading(false)
-            .setLoadingMore(false);
-        state = AsyncData(newState);
-      }
-    } catch (e) {
-      _logger.error('Error handling messages response', error: e);
+  void _handleMessagesBatch(int chatId, List<Message> messages) {
+    _logger.debug('Received batch of ${messages.length} messages for chat $chatId');
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      state = AsyncData(
+        currentState.addMessages(chatId, messages).setLoading(false).setLoadingMore(false),
+      );
     }
   }
 
@@ -238,14 +162,17 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
   Future<void> loadMessages(int chatId, {bool forceRefresh = false}) async {
     try {
       final currentState = state.valueOrNull ?? MessageState.initial();
-      
+
       // Set loading state
       state = AsyncData(currentState.selectChat(chatId).setLoading(true));
 
       // Load messages from client
       final messages = await _client.loadMessages(chatId);
 
-      _logger.info('Loaded ${messages.length} messages for chat $chatId');
+      _logger.debug('Loaded ${messages.length} messages for chat $chatId');
+
+      // Trigger media downloads for messages that need them
+      _downloadMessageMedia(messages);
 
       // Update state with loaded messages
       final newState = currentState
@@ -257,6 +184,21 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     } catch (e) {
       _logger.error('Failed to load messages for chat $chatId', error: e);
       _setError('Failed to load messages: $e');
+    }
+  }
+
+  void _downloadMessageMedia(List<Message> messages) {
+    for (final message in messages) {
+      // Download photos
+      if (message.photoFileId != null &&
+          (message.photoPath == null || message.photoPath!.isEmpty)) {
+        _client.downloadFile(message.photoFileId!);
+      }
+      // Download stickers
+      if (message.stickerFileId != null &&
+          (message.stickerPath == null || message.stickerPath!.isEmpty)) {
+        _client.downloadFile(message.stickerFileId!);
+      }
     }
   }
 
@@ -277,7 +219,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       // Load more messages from client
       final messages = await _client.loadMessages(chatId, fromMessageId: oldestMessageId);
 
-      _logger.info('Loaded ${messages.length} more messages for chat $chatId');
+      _logger.debug('Loaded ${messages.length} more messages for chat $chatId');
 
       // Update state with additional messages
       final newState = currentState
@@ -303,7 +245,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       // Send message via client
       await _client.sendMessage(chatId, text);
 
-      _logger.info('Message sent to chat $chatId: $text');
+      _logger.debug('Message sent to chat $chatId');
 
       // The actual message will be added via updateNewMessage event
       // Just clear the sending state
@@ -319,7 +261,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
   Future<void> editMessage(int chatId, int messageId, String newText) async {
     try {
       await _client.editMessage(chatId, messageId, newText);
-      _logger.info('Message edited in chat $chatId: $messageId');
+      _logger.debug('Message edited in chat $chatId: $messageId');
     } catch (e) {
       _logger.error('Failed to edit message $messageId in chat $chatId', error: e);
       _setError('Failed to edit message: $e');
@@ -330,7 +272,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     try {
       final success = await _client.deleteMessage(chatId, messageId);
       if (success) {
-        _logger.info('Message deleted in chat $chatId: $messageId');
+        _logger.debug('Message deleted in chat $chatId: $messageId');
       } else {
         _setError('Failed to delete message');
       }
@@ -343,7 +285,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
   Future<void> markAsRead(int chatId, int messageId) async {
     try {
       await _client.markAsRead(chatId, messageId);
-      _logger.info('Message marked as read in chat $chatId: $messageId');
+      _logger.debug('Message marked as read in chat $chatId: $messageId');
     } catch (e) {
       _logger.error('Failed to mark message as read $messageId in chat $chatId', error: e);
     }
@@ -370,6 +312,6 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   // Cleanup
   void dispose() {
-    _updateSubscription?.cancel();
+    _eventSubscription?.cancel();
   }
 }

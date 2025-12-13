@@ -59,83 +59,33 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
 
   // Authentication Actions
 
-  Future<void> submitPhoneNumber(String phoneNumber) async {
-    try {
-      _setLoading(true);
-      clearError();
-      await _authRepository.submitPhoneNumber(phoneNumber);
-    } catch (error) {
-      _setError(error.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
+  Future<void> submitPhoneNumber(String phoneNumber) =>
+      _executeAuthAction(() => _authRepository.submitPhoneNumber(phoneNumber));
 
-  Future<void> submitVerificationCode(String code) async {
-    try {
-      _setLoading(true);
-      clearError();
-      await _authRepository.submitVerificationCode(code);
-    } catch (error) {
-      _setError(error.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
+  Future<void> submitVerificationCode(String code) =>
+      _executeAuthAction(() => _authRepository.submitVerificationCode(code));
 
-  Future<void> submitPassword(String password) async {
-    try {
-      _setLoading(true);
-      clearError();
-      await _authRepository.submitPassword(password);
-    } catch (error) {
-      _setError(error.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
+  Future<void> submitPassword(String password) =>
+      _executeAuthAction(() => _authRepository.submitPassword(password));
 
-  Future<void> requestQrCode() async {
-    try {
-      _setLoading(true);
-      clearError();
-      await _authRepository.requestQrCode();
-    } catch (error) {
-      _setError(error.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
+  Future<void> requestQrCode() =>
+      _executeAuthAction(() => _authRepository.requestQrCode());
 
-  Future<void> resendCode() async {
-    try {
-      _setLoading(true);
-      clearError();
-      await _authRepository.resendCode();
-    } catch (error) {
-      _setError(error.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
+  Future<void> resendCode() =>
+      _executeAuthAction(() => _authRepository.resendCode());
 
-  Future<void> registerUser(String firstName, String lastName) async {
-    try {
-      _setLoading(true);
-      clearError();
-      await _authRepository.registerUser(firstName, lastName);
-    } catch (error) {
-      _setError(error.toString());
-    } finally {
-      _setLoading(false);
-    }
-  }
+  Future<void> registerUser(String firstName, String lastName) =>
+      _executeAuthAction(() => _authRepository.registerUser(firstName, lastName));
 
-  Future<void> logout() async {
+  Future<void> logout() =>
+      _executeAuthAction(() => _authRepository.logOut());
+
+  /// Executes an auth action with standardized loading/error handling.
+  Future<void> _executeAuthAction(Future<void> Function() action) async {
     try {
       _setLoading(true);
       clearError();
-      await _authRepository.logOut();
+      await action();
     } catch (error) {
       _setError(error.toString());
     } finally {

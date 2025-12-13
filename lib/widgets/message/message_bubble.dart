@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/chat.dart';
+import '../../core/theme/app_theme.dart';
+import 'photo_message.dart';
+import 'sticker_message.dart';
 
 class MessageBubble extends ConsumerWidget {
   final Message message;
@@ -50,7 +53,10 @@ class MessageBubble extends ConsumerWidget {
                 children: [
                   if (showSender && !message.isOutgoing)
                     _buildSenderName(context),
-                  _buildMessageBubble(context),
+                  if (message.type == MessageType.sticker)
+                    _buildStickerMessage(context)
+                  else
+                    _buildMessageBubble(context),
                   if (showTime) _buildTimeStamp(context),
                 ],
               ),
@@ -62,37 +68,42 @@ class MessageBubble extends ConsumerWidget {
   }
 
   Widget _buildAvatar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final avatarColor = _getAvatarColor();
     return Container(
       width: 28,
       height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: colorScheme.primary,
+        color: avatarColor,
       ),
       child: Center(
         child: Text(
-          _getSenderInitial(),
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onPrimary,
+          _getSenderInitials(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       ),
     );
   }
 
+  Color _getAvatarColor() {
+    return AppTheme.avatarColors[message.senderId.abs() % AppTheme.avatarColors.length];
+  }
+
   Widget _buildSenderName(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final avatarColor = _getAvatarColor();
+    final displayName = message.senderName ?? 'User ${message.senderId}';
     return Padding(
       padding: const EdgeInsets.only(bottom: 4, left: 12),
       child: Text(
-        'User ${message.senderId}',
+        displayName,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: colorScheme.primary,
+          color: avatarColor,
         ),
       ),
     );
@@ -137,7 +148,7 @@ class MessageBubble extends ConsumerWidget {
       case MessageType.text:
         return _buildTextMessage(context);
       case MessageType.photo:
-        return _buildMediaMessage(context, Icons.photo, 'Photo');
+        return _buildPhotoMessage(context);
       case MessageType.video:
         return _buildMediaMessage(context, Icons.videocam, 'Video');
       case MessageType.document:
@@ -151,6 +162,46 @@ class MessageBubble extends ConsumerWidget {
       case MessageType.animation:
         return _buildMediaMessage(context, Icons.gif, 'GIF');
     }
+  }
+
+  Widget _buildPhotoMessage(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasCaption = message.content.isNotEmpty && message.content != '📷 Photo';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PhotoMessageWidget(
+          photoPath: message.photoPath,
+          photoWidth: message.photoWidth,
+          photoHeight: message.photoHeight,
+          isOutgoing: message.isOutgoing,
+        ),
+        if (hasCaption) ...[
+          const SizedBox(height: 8),
+          Text(
+            message.content,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.3,
+              color: message.isOutgoing
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildStickerMessage(BuildContext context) {
+    return StickerMessageWidget(
+      stickerPath: message.stickerPath,
+      stickerWidth: message.stickerWidth,
+      stickerHeight: message.stickerHeight,
+      isAnimated: message.stickerIsAnimated,
+      emoji: message.stickerEmoji,
+    );
   }
 
   Widget _buildTextMessage(BuildContext context) {
@@ -244,7 +295,20 @@ class MessageBubble extends ConsumerWidget {
     }
   }
 
-  String _getSenderInitial() {
-    return message.senderId.toString()[0];
+  String _getSenderInitials() {
+    final name = message.senderName;
+    if (name == null || name.isEmpty) {
+      return message.senderId.toString()[0];
+    }
+
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      // First letter of first name + first letter of last name
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      // Just first letter of single name
+      return parts[0][0].toUpperCase();
+    }
+    return '?';
   }
 }

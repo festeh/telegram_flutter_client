@@ -58,7 +58,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   }
 
   void _handleChatAdded(Chat chat) {
-    _logger.info('New chat received: ${chat.title} (ID: ${chat.id})');
+    _logger.debug('New chat received: ${chat.title} (ID: ${chat.id})');
 
     // Trigger photo download if needed
     _downloadChatPhoto(chat);
@@ -67,7 +67,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
     if (currentState != null) {
       final newState = currentState.addChat(chat);
       state = AsyncData(newState.sortByLastActivity());
-      _logger.info('Chat added to state. Total chats: ${newState.chatCount}');
+      _logger.debug('Chat added to state. Total chats: ${newState.chatCount}');
     }
   }
 
@@ -87,7 +87,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   void _downloadChatPhoto(Chat chat) {
     if (chat.photoFileId != null &&
         (chat.photoPath == null || chat.photoPath!.isEmpty)) {
-      _logger.info('Requesting photo download for chat ${chat.title} (fileId: ${chat.photoFileId})');
+      _logger.debug('Requesting photo download for chat ${chat.title} (fileId: ${chat.photoFileId})');
       _client.downloadFile(chat.photoFileId!);
     }
   }
@@ -113,7 +113,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       // Load chats from the client
       final chats = await _client.loadChats(limit: AppConfig.chatPageSize);
 
-      _logger.info(
+      _logger.debug(
           'Chat loading result: ${chats.length} chats loaded from client');
 
       // Trigger photo downloads for chats that need them
@@ -129,7 +129,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       _logger.error('Failed to load chats', error: e);
 
       // On error, start with empty state, real chats will still come via updates
-      _logger.info(
+      _logger.debug(
           'Starting with empty state, real chats will arrive via updates');
       final chatState = ChatState.loaded([]);
       _setLoading(false);

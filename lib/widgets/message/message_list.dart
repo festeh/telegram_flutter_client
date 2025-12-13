@@ -4,6 +4,7 @@ import '../../domain/entities/chat.dart';
 import '../../presentation/providers/app_providers.dart';
 import '../common/state_widgets.dart';
 import 'message_bubble.dart';
+import 'date_separator.dart';
 
 class MessageList extends ConsumerStatefulWidget {
   final Chat chat;
@@ -145,13 +146,20 @@ class _MessageListState extends ConsumerState<MessageList> {
                     final message = messages[index];
                     final isLastInGroup = _isLastInGroup(messages, index);
                     final showSender = !message.isOutgoing && isLastInGroup;
+                    final showDateSeparator = _shouldShowDateSeparator(messages, index);
 
-                    return MessageBubble(
-                      key: ValueKey(message.id),
-                      message: message,
-                      showTime: isLastInGroup,
-                      showSender: showSender,
-                      onLongPress: () => _showMessageOptions(context, message),
+                    return Column(
+                      children: [
+                        if (showDateSeparator)
+                          DateSeparator(date: message.date),
+                        MessageBubble(
+                          key: ValueKey(message.id),
+                          message: message,
+                          showTime: isLastInGroup,
+                          showSender: showSender,
+                          onLongPress: () => _showMessageOptions(context, message),
+                        ),
+                      ],
                     );
                   },
                 ),
@@ -231,18 +239,40 @@ class _MessageListState extends ConsumerState<MessageList> {
 
   bool _isLastInGroup(List<Message> messages, int index) {
     if (index == 0) return true;
-    
+
     final currentMessage = messages[index];
     final nextMessage = messages[index - 1]; // Remember: reverse order
-    
+
     // Different sender
     if (currentMessage.senderId != nextMessage.senderId) return true;
-    
+
     // More than 5 minutes apart
     final timeDifference = nextMessage.date.difference(currentMessage.date);
     if (timeDifference.inMinutes > 5) return true;
-    
+
     return false;
+  }
+
+  bool _shouldShowDateSeparator(List<Message> messages, int index) {
+    // In reversed list: index 0 = newest (bottom), higher index = older (top)
+    // Show separator when this message starts a new day compared to the next older message
+    if (index == messages.length - 1) return true; // Always show for oldest message
+
+    final currentMessage = messages[index];
+    final nextOlderMessage = messages[index + 1];
+
+    final currentDay = DateTime(
+      currentMessage.date.year,
+      currentMessage.date.month,
+      currentMessage.date.day,
+    );
+    final nextOlderDay = DateTime(
+      nextOlderMessage.date.year,
+      nextOlderMessage.date.month,
+      nextOlderMessage.date.day,
+    );
+
+    return currentDay != nextOlderDay;
   }
 
   Future<void> _refreshMessages() async {
