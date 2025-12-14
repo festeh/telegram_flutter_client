@@ -7,6 +7,7 @@ import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/auth_state.dart';
 import '../../domain/entities/user_session.dart';
 import '../../domain/entities/chat.dart';
+import '../../domain/entities/sticker.dart';
 import '../../domain/events/chat_events.dart';
 import '../../domain/events/message_events.dart';
 import '../../utils/tdlib_bindings.dart';
@@ -57,6 +58,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
   final Map<int, ({int chatId, int messageId})> _photoFileToMessage = {};
   // Track file ID to message ID mapping for sticker updates
   final Map<int, ({int chatId, int messageId})> _stickerFileToMessage = {};
+
+  // Sticker file cache: fileId -> localPath (for picker caching)
+  final Map<int, String> _stickerFileCache = {};
+  // Track pending downloads to avoid duplicate requests
+  final Set<int> _pendingDownloads = {};
 
   @override
   AuthenticationState get currentAuthState => _currentAuthState;
@@ -161,6 +167,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
     final type = update[TdlibFields.type] as String;
 
+    // Debug log for sticker-related types
+    if (type.toLowerCase().contains('sticker')) {
+      _logger.logResponse({'@type': 'DEBUG_sticker_type_found', 'type': type});
+    }
+
     if (type == TdlibUpdateTypes.authorizationState) {
       final authState =
           AuthenticationState.fromJson(update['authorization_state']);
@@ -205,6 +216,18 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _handleMessageSendSucceededUpdate(update);
     } else if (type == TdlibUpdateTypes.messageSendFailed) {
       _handleMessageSendFailedUpdate(update);
+    } else if (type == 'stickerSets' || type == 'StickerSets') {
+      _logger.logResponse({'@type': 'DEBUG_stickerSets_received', 'type': type, 'sets_count': (update['sets'] as List?)?.length});
+      _handleStickerSetsResponse(update);
+    } else if (type == 'stickerSet' || type == 'StickerSet') {
+      _logger.logResponse({'@type': 'DEBUG_stickerSet_received', 'type': type});
+      _handleStickerSetResponse(update);
+    } else if (type == 'stickers' || type == 'Stickers') {
+      _logger.logResponse({'@type': 'DEBUG_stickers_received', 'type': type});
+      _handleRecentStickersResponse(update);
+    } else if (type == 'error') {
+      // Log errors
+      _logger.logError('TDLib error: ${update['message']}', error: update);
     }
   }
 
@@ -939,6 +962,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
           'path': filePath,
         });
 
+        // Cache the downloaded file path
+        _stickerFileCache[fileId] = filePath;
+        _pendingDownloads.remove(fileId);
+
         // Emit event for completed download
         _fileDownloadController.add(FileDownloadComplete(fileId, filePath));
 
@@ -1037,14 +1064,239 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _stickerFileToMessage.remove(fileId);
   }
 
+  /// Get cached sticker file path if available
+  String? getCachedStickerPath(int fileId) {
+    return _stickerFileCache[fileId];
+  }
+
   @override
   Future<void> downloadFile(int fileId) async {
+    // Check cache first - if already downloaded, emit event immediately
+    final cachedPath = _stickerFileCache[fileId];
+    if (cachedPath != null) {
+      _fileDownloadController.add(FileDownloadComplete(fileId, cachedPath));
+      return;
+    }
+
+    // Skip if download already in progress
+    if (_pendingDownloads.contains(fileId)) {
+      return;
+    }
+
+    // Track this download as pending
+    _pendingDownloads.add(fileId);
+
     await _sendRequest({
       '@type': 'downloadFile',
       'file_id': fileId,
       'priority': 1,
       'synchronous': false,
     });
+  }
+
+  // Sticker methods
+
+  final Map<int, StickerSet> _stickerSetsCache = {};
+  final List<StickerSet> _installedStickerSets = [];
+  Completer<List<StickerSet>>? _stickerSetsCompleter;
+  Completer<StickerSet>? _stickerSetCompleter;
+  Completer<List<Sticker>>? _recentStickersCompleter;
+
+  @override
+  Future<List<StickerSet>> getInstalledStickerSets() async {
+    _logger.logRequest({'@type': 'DEBUG_getInstalledStickerSets_called'});
+
+    // Return cached if available
+    if (_installedStickerSets.isNotEmpty) {
+      _logger.logRequest({'@type': 'DEBUG_returning_cached', 'count': _installedStickerSets.length});
+      return _installedStickerSets;
+    }
+
+    _stickerSetsCompleter = Completer<List<StickerSet>>();
+
+    _logger.logRequest({'@type': 'DEBUG_sending_getInstalledStickerSets'});
+    await _sendRequest({
+      '@type': 'getInstalledStickerSets',
+      'sticker_type': {'@type': 'stickerTypeRegular'},
+    });
+
+    // Wait for response with timeout
+    try {
+      _logger.logRequest({'@type': 'DEBUG_waiting_for_stickerSets_response'});
+      final result = await _stickerSetsCompleter!.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          _logger.logError('getInstalledStickerSets timed out');
+          return <StickerSet>[];
+        },
+      );
+      _logger.logRequest({'@type': 'DEBUG_got_stickerSets', 'count': result.length});
+      return result;
+    } catch (e) {
+      _logger.logError('Failed to get installed sticker sets', error: e);
+      return [];
+    }
+  }
+
+  @override
+  Future<StickerSet?> getStickerSet(int setId) async {
+    // Return cached if available
+    if (_stickerSetsCache.containsKey(setId)) {
+      return _stickerSetsCache[setId];
+    }
+
+    _stickerSetCompleter = Completer<StickerSet>();
+
+    await _sendRequest({
+      '@type': 'getStickerSet',
+      'set_id': setId,
+    });
+
+    // Wait for response with timeout
+    try {
+      final result = await _stickerSetCompleter!.future.timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw TimeoutException('getStickerSet timeout'),
+      );
+      _stickerSetsCache[setId] = result;
+      return result;
+    } catch (e) {
+      _logger.logError('Failed to get sticker set $setId', error: e);
+      return null;
+    }
+  }
+
+  @override
+  Future<List<Sticker>> getRecentStickers() async {
+    _recentStickersCompleter = Completer<List<Sticker>>();
+
+    await _sendRequest({
+      '@type': 'getRecentStickers',
+      'is_attached': false,
+    });
+
+    // Wait for response with timeout
+    try {
+      final result = await _recentStickersCompleter!.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => <Sticker>[],
+      );
+      return result;
+    } catch (e) {
+      _logger.logError('Failed to get recent stickers', error: e);
+      return [];
+    }
+  }
+
+  @override
+  Future<void> sendSticker(int chatId, Sticker sticker) async {
+    try {
+      await _sendRequest({
+        '@type': 'sendMessage',
+        'chat_id': chatId,
+        'input_message_content': {
+          '@type': 'inputMessageSticker',
+          'sticker': {
+            '@type': 'inputFileId',
+            'id': sticker.fileId,
+          },
+          'width': sticker.width,
+          'height': sticker.height,
+          'emoji': sticker.emoji,
+        },
+      });
+    } catch (e) {
+      _logger.logError('Failed to send sticker to chat $chatId', error: e);
+    }
+  }
+
+  void _handleStickerSetsResponse(Map<String, dynamic> update) {
+    try {
+      final setInfos = update['sets'] as List<dynamic>? ?? [];
+      _installedStickerSets.clear();
+
+      _logger.logRequest({
+        '@type': 'DEBUG_parsing_sticker_sets',
+        'raw_count': setInfos.length,
+        'first_type': setInfos.isNotEmpty ? setInfos.first.runtimeType.toString() : 'empty',
+      });
+
+      for (final setInfo in setInfos) {
+        try {
+          // Cast to Map more safely
+          final Map<String, dynamic> setMap = Map<String, dynamic>.from(setInfo as Map);
+          final stickerSet = StickerSet.fromInfoJson(setMap);
+          _installedStickerSets.add(stickerSet);
+        } catch (e) {
+          _logger.logError('Error parsing sticker set', error: e);
+        }
+      }
+
+      _logger.logRequest({
+        '@type': 'sticker_sets_loaded',
+        'count': _installedStickerSets.length,
+      });
+
+      if (_stickerSetsCompleter != null && !_stickerSetsCompleter!.isCompleted) {
+        _stickerSetsCompleter!.complete(_installedStickerSets);
+      }
+    } catch (e) {
+      _logger.logError('Error handling sticker sets response', error: e);
+      if (_stickerSetsCompleter != null && !_stickerSetsCompleter!.isCompleted) {
+        _stickerSetsCompleter!.complete([]);
+      }
+    }
+  }
+
+  void _handleStickerSetResponse(Map<String, dynamic> update) {
+    try {
+      final stickerSet = StickerSet.fromJson(update);
+
+      _logger.logRequest({
+        '@type': 'sticker_set_loaded',
+        'set_id': stickerSet.id,
+        'sticker_count': stickerSet.stickers.length,
+      });
+
+      if (_stickerSetCompleter != null && !_stickerSetCompleter!.isCompleted) {
+        _stickerSetCompleter!.complete(stickerSet);
+      }
+    } catch (e) {
+      _logger.logError('Error handling sticker set response', error: e);
+      if (_stickerSetCompleter != null && !_stickerSetCompleter!.isCompleted) {
+        _stickerSetCompleter!.completeError(e);
+      }
+    }
+  }
+
+  void _handleRecentStickersResponse(Map<String, dynamic> update) {
+    try {
+      final stickersJson = update['stickers'] as List<dynamic>? ?? [];
+      final List<Sticker> stickers = [];
+
+      for (final stickerData in stickersJson) {
+        try {
+          final Map<String, dynamic> stickerMap = Map<String, dynamic>.from(stickerData as Map);
+          stickers.add(Sticker.fromJson(stickerMap));
+        } catch (e) {
+          _logger.logError('Error parsing recent sticker', error: e);
+        }
+      }
+
+      _logger.logRequest({
+        '@type': 'recent_stickers_loaded',
+        'count': stickers.length,
+      });
+
+      if (_recentStickersCompleter != null && !_recentStickersCompleter!.isCompleted) {
+        _recentStickersCompleter!.complete(stickers);
+      }
+    } catch (e) {
+      _logger.logError('Error handling recent stickers response', error: e);
+      if (_recentStickersCompleter != null && !_recentStickersCompleter!.isCompleted) {
+        _recentStickersCompleter!.complete([]);
+      }
+    }
   }
 
   @override

@@ -2,6 +2,7 @@ import 'dart:async';
 import '../entities/auth_state.dart';
 import '../entities/user_session.dart';
 import '../entities/chat.dart';
+import '../entities/sticker.dart';
 import '../events/chat_events.dart';
 import '../events/message_events.dart';
 
@@ -40,6 +41,12 @@ abstract class TelegramClientRepository {
   Future<void> markAsRead(int chatId, int messageId);
   Future<bool> deleteMessage(int chatId, int messageId);
   Future<Message?> editMessage(int chatId, int messageId, String newText);
+
+  // Sticker methods
+  Future<List<StickerSet>> getInstalledStickerSets();
+  Future<StickerSet?> getStickerSet(int setId);
+  Future<List<Sticker>> getRecentStickers();
+  Future<void> sendSticker(int chatId, Sticker sticker);
 
   void dispose();
 }

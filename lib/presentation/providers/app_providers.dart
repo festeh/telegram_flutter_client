@@ -2,10 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../notifiers/auth_notifier.dart';
 import '../notifiers/chat_notifier.dart';
 import '../notifiers/message_notifier.dart';
+import '../notifiers/emoji_sticker_notifier.dart';
 import '../state/unified_auth_state.dart';
 import '../state/chat_state.dart';
 import '../state/message_state.dart';
+import '../state/emoji_sticker_state.dart';
 import '../../domain/entities/chat.dart';
+import '../../domain/entities/sticker.dart';
 
 // Single source of truth for all authentication state
 final authProvider = AsyncNotifierProvider<AuthNotifier, UnifiedAuthState>(
@@ -20,6 +23,11 @@ final chatProvider = AsyncNotifierProvider<ChatNotifier, ChatState>(
 // Single source of truth for all message state
 final messageProvider = AsyncNotifierProvider<MessageNotifier, MessageState>(
   () => MessageNotifier(),
+);
+
+// Single source of truth for emoji/sticker picker state
+final emojiStickerProvider = NotifierProvider<EmojiStickerNotifier, EmojiStickerState>(
+  () => EmojiStickerNotifier(),
 );
 
 // Clean extension methods for convenient UI access
@@ -170,6 +178,53 @@ extension MessageX on WidgetRef {
   
   void selectChatForMessages(int chatId) => messageActions.selectChat(chatId);
   void clearMessageError() => messageActions.clearError();
+}
+
+// Emoji/Sticker picker extension methods
+extension EmojiStickerX on WidgetRef {
+  // State access
+  EmojiStickerState get emojiStickerState => watch(emojiStickerProvider);
+
+  // Computed properties
+  bool get isPickerVisible =>
+      watch(emojiStickerProvider.select((state) => state.isPickerVisible));
+
+  PickerTab get selectedPickerTab =>
+      watch(emojiStickerProvider.select((state) => state.selectedTab));
+
+  List<StickerSet> get installedStickerSets =>
+      watch(emojiStickerProvider.select((state) => state.installedStickerSets));
+
+  List<Sticker> get recentStickers =>
+      watch(emojiStickerProvider.select((state) => state.recentStickers));
+
+  StickerSet? get selectedStickerSet =>
+      watch(emojiStickerProvider.select((state) => state.selectedStickerSet));
+
+  List<Sticker> get displayedStickers =>
+      watch(emojiStickerProvider.select((state) => state.displayedStickers));
+
+  bool get isLoadingStickerSets =>
+      watch(emojiStickerProvider.select((state) => state.isLoadingStickerSets));
+
+  bool get isLoadingStickers =>
+      watch(emojiStickerProvider.select((state) => state.isLoadingStickers));
+
+  double get pickerKeyboardHeight =>
+      watch(emojiStickerProvider.select((state) => state.keyboardHeight));
+
+  // Action shortcuts
+  EmojiStickerNotifier get emojiStickerActions => read(emojiStickerProvider.notifier);
+
+  // Convenience action methods
+  void toggleEmojiPicker() => emojiStickerActions.togglePicker();
+  void showEmojiPicker() => emojiStickerActions.showPicker();
+  void hideEmojiPicker() => emojiStickerActions.hidePicker();
+  void selectPickerTab(PickerTab tab) => emojiStickerActions.selectTab(tab);
+  void setPickerKeyboardHeight(double height) => emojiStickerActions.setKeyboardHeight(height);
+  Future<void> loadStickerSets() => emojiStickerActions.loadInstalledStickerSets();
+  Future<void> selectStickerSet(StickerSet set) => emojiStickerActions.selectStickerSet(set);
+  Future<void> sendSticker(int chatId, Sticker sticker) => emojiStickerActions.sendSticker(chatId, sticker);
 }
 
 // Legacy provider names for backward compatibility during migration (optional)

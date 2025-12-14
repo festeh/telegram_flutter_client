@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/chat.dart';
 import '../../presentation/providers/app_providers.dart';
+import '../emoji_sticker/emoji_sticker_picker.dart';
 
 class MessageInputArea extends ConsumerStatefulWidget {
   final Chat chat;
@@ -15,24 +16,64 @@ class MessageInputArea extends ConsumerStatefulWidget {
   ConsumerState<MessageInputArea> createState() => _MessageInputAreaState();
 }
 
-class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
+class _MessageInputAreaState extends ConsumerState<MessageInputArea>
+    with WidgetsBindingObserver {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isMultiline = false;
   String _currentText = '';
+  bool _wasKeyboardVisible = false;
 
   @override
   void initState() {
     super.initState();
     _textController.addListener(_onTextChanged);
+    _focusNode.addListener(_onFocusChanged);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _textController.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    _updateKeyboardHeight();
+  }
+
+  void _updateKeyboardHeight() {
+    final viewInsets = WidgetsBinding.instance.platformDispatcher.views.first.viewInsets;
+    final devicePixelRatio = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    final keyboardHeight = viewInsets.bottom / devicePixelRatio;
+
+    final isKeyboardVisible = keyboardHeight > 0;
+
+    if (keyboardHeight > 50) {
+      // Store keyboard height for picker
+      ref.read(emojiStickerProvider.notifier).setKeyboardHeight(keyboardHeight);
+    }
+
+    // If keyboard just appeared while picker is visible, hide picker
+    if (isKeyboardVisible && !_wasKeyboardVisible && ref.read(emojiStickerProvider).isPickerVisible) {
+      ref.read(emojiStickerProvider.notifier).hidePicker();
+    }
+
+    _wasKeyboardVisible = isKeyboardVisible;
+  }
+
+  void _onFocusChanged() {
+    // When text field gains focus from tap, hide picker
+    if (_focusNode.hasFocus && ref.read(emojiStickerProvider).isPickerVisible) {
+      ref.read(emojiStickerProvider.notifier).hidePicker();
+    }
+    setState(() {});
   }
 
   void _onTextChanged() {
@@ -83,6 +124,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
     final colorScheme = Theme.of(context).colorScheme;
     final isSending = ref.watch(messageProvider.select((state) => state.valueOrNull?.isSending ?? false));
     final hasError = ref.watch(messageProvider.select((state) => state.hasError));
+    final isPickerVisible = ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible));
+    final pickerHeight = ref.watch(emojiStickerProvider.select((s) => s.keyboardHeight));
 
     return Container(
       decoration: BoxDecoration(
@@ -99,6 +142,19 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
         children: [
           if (hasError) _buildErrorBanner(),
           _buildInputArea(isSending),
+          if (isPickerVisible)
+            EmojiStickerPicker(
+              height: pickerHeight > 0 ? pickerHeight : 300,
+              textController: _textController,
+              chatId: widget.chat.id,
+              onEmojiSelected: () {
+                // Keep focus on text field for continued typing
+              },
+              onStickerSent: () {
+                // Optionally hide picker after sending sticker
+                ref.read(emojiStickerProvider.notifier).hidePicker();
+              },
+            ),
         ],
       ),
     );
@@ -216,10 +272,14 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
                   IconButton(
                     onPressed: isSending ? null : _showEmojiPicker,
                     icon: Icon(
-                      Icons.emoji_emotions_outlined,
+                      ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible))
+                          ? Icons.keyboard_outlined
+                          : Icons.emoji_emotions_outlined,
                       color: colorScheme.onSurface.withValues(alpha: isSending ? 0.3 : 0.6),
                     ),
-                    tooltip: 'Add emoji',
+                    tooltip: ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible))
+                        ? 'Show keyboard'
+                        : 'Add emoji',
                   ),
                 ],
               ),
@@ -398,12 +458,17 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea> {
   }
 
   void _showEmojiPicker() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Emoji picker coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    final isPickerVisible = ref.read(emojiStickerProvider).isPickerVisible;
+
+    if (isPickerVisible) {
+      // Hide picker and show keyboard
+      ref.read(emojiStickerProvider.notifier).hidePicker();
+      _focusNode.requestFocus();
+    } else {
+      // Hide keyboard and show picker
+      _focusNode.unfocus();
+      ref.read(emojiStickerProvider.notifier).showPicker();
+    }
   }
 
   void _startVoiceRecording() {
