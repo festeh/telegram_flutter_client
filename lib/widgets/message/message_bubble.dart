@@ -247,11 +247,21 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildMessageStatus(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Icon(
-      Icons.done,
-      size: 14,
-      color: colorScheme.onSurface.withValues(alpha: 0.5),
-    );
+    final mutedColor = colorScheme.onSurface.withValues(alpha: 0.5);
+
+    switch (message.sendingState) {
+      case MessageSendingState.pending:
+        return Icon(Icons.access_time, size: 14, color: mutedColor);
+      case MessageSendingState.sent:
+        return Icon(Icons.done, size: 14, color: mutedColor);
+      case MessageSendingState.read:
+        return Icon(Icons.done_all, size: 14, color: colorScheme.primary);
+      case MessageSendingState.failed:
+        return Icon(Icons.error_outline, size: 14, color: colorScheme.error);
+      case null:
+        // Default for messages loaded from history (already sent)
+        return Icon(Icons.done, size: 14, color: mutedColor);
+    }
   }
 
   String _formatTime(DateTime dateTime) {

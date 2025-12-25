@@ -219,57 +219,54 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
             tooltip: 'Attach file',
           ),
           Expanded(
-            child: Container(
+            child: ConstrainedBox(
               constraints: const BoxConstraints(
                 minHeight: 40,
                 maxHeight: 120,
               ),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: _focusNode.hasFocus
-                      ? colorScheme.primary
-                      : colorScheme.outline,
-                  width: _focusNode.hasFocus ? 2 : 1,
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _focusNode,
-                      enabled: !isSending,
-                      maxLines: null,
-                      textInputAction: _isMultiline
-                          ? TextInputAction.newline
-                          : TextInputAction.send,
-                      onSubmitted: (_) {
-                        if (!_isMultiline) {
-                          _sendMessage();
-                        }
-                      },
-                      decoration: InputDecoration(
-                        hintText: isSending ? 'Sending...' : 'Type a message...',
-                        hintStyle: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: isSending ? 0.3 : 0.5),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      style: TextStyle(
-                        fontSize: 16,
-                        height: 1.3,
-                        color: colorScheme.onSurface,
-                      ),
+              child: TextField(
+                controller: _textController,
+                focusNode: _focusNode,
+                enabled: !isSending,
+                maxLines: null,
+                textInputAction: _isMultiline
+                    ? TextInputAction.newline
+                    : TextInputAction.send,
+                onSubmitted: (_) {
+                  if (!_isMultiline) {
+                    _sendMessage();
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: isSending ? 'Sending...' : 'Type a message...',
+                  hintStyle: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: isSending ? 0.3 : 0.5),
+                  ),
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHigh,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(
+                      color: colorScheme.outline,
+                      width: 1,
                     ),
                   ),
-                  IconButton(
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(
+                      color: colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  suffixIcon: IconButton(
                     onPressed: isSending ? null : _showEmojiPicker,
                     icon: Icon(
                       ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible))
@@ -281,7 +278,12 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
                         ? 'Show keyboard'
                         : 'Add emoji',
                   ),
-                ],
+                ),
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.3,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
           ),

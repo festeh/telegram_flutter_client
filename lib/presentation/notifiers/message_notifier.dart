@@ -61,8 +61,8 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
         _handleMessagesDeleted(chatId, messageIds);
       case MessageContentChangedEvent(:final chatId, :final messageId, :final newContent):
         _handleMessageContentChanged(chatId, messageId, newContent);
-      case MessageSendSucceededEvent(:final chatId, :final message):
-        _handleMessageSendSucceeded(chatId, message);
+      case MessageSendSucceededEvent(:final chatId, :final message, :final oldMessageId):
+        _handleMessageSendSucceeded(chatId, message, oldMessageId);
       case MessageSendFailedEvent(:final errorMessage):
         _handleMessageSendFailed(errorMessage);
       case MessagesBatchReceivedEvent(:final chatId, :final messages):
@@ -73,6 +73,8 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
         _handleMessageStickerUpdated(chatId, messageId, stickerPath);
       case MessageReactionsUpdatedEvent(:final chatId, :final messageId, :final reactions):
         _handleMessageReactionsUpdated(chatId, messageId, reactions);
+      case ChatReadOutboxEvent(:final chatId, :final lastReadOutboxMessageId):
+        _handleChatReadOutbox(chatId, lastReadOutboxMessageId);
     }
   }
 
@@ -121,6 +123,28 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
   }
 
+  void _handleChatReadOutbox(int chatId, int lastReadOutboxMessageId) {
+    _logger.debug('Chat $chatId: outbox read up to message $lastReadOutboxMessageId');
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final messages = currentState.messagesByChat[chatId];
+    if (messages == null || messages.isEmpty) return;
+
+    // Mark all outgoing messages with ID <= lastReadOutboxMessageId as read
+    var newState = currentState;
+    for (final message in messages) {
+      if (message.isOutgoing &&
+          message.id <= lastReadOutboxMessageId &&
+          message.sendingState != MessageSendingState.read) {
+        final updatedMessage = message.copyWith(sendingState: MessageSendingState.read);
+        newState = newState.updateMessage(chatId, updatedMessage);
+      }
+    }
+
+    state = AsyncData(newState);
+  }
+
   void _handleNewMessage(int chatId, Message message) {
     _logger.debug('New message received for chat $chatId');
     final currentState = state.value;
@@ -163,12 +187,18 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     }
   }
 
-  void _handleMessageSendSucceeded(int chatId, Message message) {
-    _logger.debug('Message send succeeded for chat $chatId: ${message.id}');
+  void _handleMessageSendSucceeded(int chatId, Message message, int oldMessageId) {
+    _logger.debug('Message send succeeded for chat $chatId: ${message.id} (was: $oldMessageId)');
     final currentState = state.value;
-    if (currentState != null) {
-      state = AsyncData(currentState.updateMessage(chatId, message).setSending(false));
-    }
+    if (currentState == null) return;
+
+    // Replace the pending message (oldMessageId) with the confirmed one
+    // and update state to sent
+    final newState = currentState
+        .removeMessage(chatId, oldMessageId)
+        .addMessage(chatId, message.copyWith(sendingState: MessageSendingState.sent))
+        .setSending(false);
+    state = AsyncData(newState);
   }
 
   void _handleMessageSendFailed(String errorMessage) {
@@ -273,19 +303,17 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
     try {
       final currentState = state.value ?? MessageState.initial();
-      
-      // Set sending state
       state = AsyncData(currentState.setSending(true));
 
       // Send message via client
+      // TDLib will immediately fire updateNewMessage with pending state,
+      // then updateMessageSendSucceeded when confirmed
       await _client.sendMessage(chatId, text);
 
       _logger.debug('Message sent to chat $chatId');
 
-      // The actual message will be added via updateNewMessage event
-      // Just clear the sending state
-      final newState = currentState.setSending(false);
-      state = AsyncData(newState);
+      final latestState = state.value ?? MessageState.initial();
+      state = AsyncData(latestState.setSending(false));
 
     } catch (e) {
       _logger.error('Failed to send message to chat $chatId', error: e);

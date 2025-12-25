@@ -18,16 +18,19 @@ class ChatScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: _buildAppBar(context, ref, colorScheme),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              color: colorScheme.surface,
-              child: MessageList(chat: chat),
+      body: SafeArea(
+        top: false, // AppBar handles top
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                color: colorScheme.surface,
+                child: MessageList(chat: chat),
+              ),
             ),
-          ),
-          MessageInputArea(chat: chat),
-        ],
+            MessageInputArea(chat: chat),
+          ],
+        ),
       ),
     );
   }

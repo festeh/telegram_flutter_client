@@ -221,6 +221,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _chatEventController.add(ChatOrderChangedEvent());
     } else if (type == TdlibUpdateTypes.chatReadInbox) {
       _handleChatReadInboxUpdate(update);
+    } else if (type == TdlibUpdateTypes.chatReadOutbox) {
+      _handleChatReadOutboxUpdate(update);
     } else if (type == TdlibUpdateTypes.chatPosition) {
       _handleChatPositionUpdate(update);
     } else if (type == TdlibUpdateTypes.messageEdited) {
@@ -469,6 +471,16 @@ class TdlibTelegramClient implements TelegramClientRepository {
       }
       // Emit typed event
       _chatEventController.add(ChatUnreadCountUpdatedEvent(chatId, unreadCount));
+    }
+  }
+
+  void _handleChatReadOutboxUpdate(Map<String, dynamic> update) {
+    final chatId = update['chat_id'] as int?;
+    final lastReadOutboxMessageId = update['last_read_outbox_message_id'] as int?;
+
+    if (chatId != null && lastReadOutboxMessageId != null) {
+      // Emit typed event for message state updates
+      _messageEventController.add(ChatReadOutboxEvent(chatId, lastReadOutboxMessageId));
     }
   }
 
@@ -946,6 +958,12 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
   }
 
+  /// Removes a message from the cache by ID.
+  void _removeMessageFromCache(int chatId, int messageId) {
+    if (!_messages.containsKey(chatId)) return;
+    _messages[chatId]!.removeWhere((msg) => msg.id == messageId);
+  }
+
   void _handleMessageUpdate(Map<String, dynamic> update) {
     try {
       final message = update['message'] as Map<String, dynamic>?;
@@ -1039,14 +1057,16 @@ class TdlibTelegramClient implements TelegramClientRepository {
       final messageData = update['message'] as Map<String, dynamic>?;
       if (messageData == null) return;
 
+      final oldMessageId = update['old_message_id'] as int? ?? 0;
       final message = _createMessageFromJson(messageData);
       final chatId = message.chatId;
 
-      // Update cache
+      // Update cache - remove old temp message, add new one
+      _removeMessageFromCache(chatId, oldMessageId);
       _addMessageToCache(chatId, message, insertAtStart: false);
 
-      // Emit typed event
-      _messageEventController.add(MessageSendSucceededEvent(chatId, message));
+      // Emit typed event with old message ID for replacement
+      _messageEventController.add(MessageSendSucceededEvent(chatId, message, oldMessageId));
     } catch (e) {
       _logger.logError('Error handling message send succeeded update', error: e);
     }

@@ -33,7 +33,6 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
       child: Column(
         children: [
           _buildHeader(colorScheme),
-          _buildFilterTabs(colorScheme),
           Expanded(
             child: ChatList(
               onChatSelected: widget.onChatSelected,
@@ -100,73 +99,4 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
     );
   }
 
-  Widget _buildFilterTabs(ColorScheme colorScheme) {
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterTab('All', true, colorScheme),
-                  const SizedBox(width: 6),
-                  _buildFilterTab('Unread', false, colorScheme),
-                  const SizedBox(width: 6),
-                  _buildFilterTab('Favorites', false, colorScheme),
-                ],
-              ),
-            ),
-          ),
-          // Archive button
-          IconButton(
-            onPressed: () {
-              // TODO: Implement archive functionality
-            },
-            icon: Icon(
-              Icons.archive_outlined,
-              size: 18,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            tooltip: 'Archive',
-            padding: const EdgeInsets.all(4),
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterTab(String label, bool isActive, ColorScheme colorScheme) {
-    return GestureDetector(
-      onTap: () {
-        // TODO: Implement filter functionality
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isActive ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          border: isActive
-              ? null
-              : Border.all(
-                  color: colorScheme.outline,
-                  width: 1,
-                ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
-            color: isActive
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      ),
-    );
-  }
 }

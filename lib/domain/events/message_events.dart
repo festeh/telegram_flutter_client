@@ -37,7 +37,8 @@ class MessageContentChangedEvent extends MessageEvent {
 class MessageSendSucceededEvent extends MessageEvent {
   final int chatId;
   final Message message;
-  MessageSendSucceededEvent(this.chatId, this.message);
+  final int oldMessageId; // Temporary local message ID to replace
+  MessageSendSucceededEvent(this.chatId, this.message, this.oldMessageId);
 }
 
 /// Emitted when a message send fails.
@@ -75,4 +76,11 @@ class MessageReactionsUpdatedEvent extends MessageEvent {
   final int messageId;
   final List<MessageReaction> reactions;
   MessageReactionsUpdatedEvent(this.chatId, this.messageId, this.reactions);
+}
+
+/// Emitted when outgoing messages are read by recipient.
+class ChatReadOutboxEvent extends MessageEvent {
+  final int chatId;
+  final int lastReadOutboxMessageId;
+  ChatReadOutboxEvent(this.chatId, this.lastReadOutboxMessageId);
 }

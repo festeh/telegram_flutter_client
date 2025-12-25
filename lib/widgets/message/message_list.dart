@@ -59,15 +59,14 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   void _onScroll() {
-    // Detect if user is scrolling near the bottom
     if (_scrollController.hasClients) {
-      final maxScrollExtent = _scrollController.position.maxScrollExtent;
       final currentScrollPosition = _scrollController.offset;
-      
-      // If user is within 100 pixels of the bottom, enable auto-scroll
-      _shouldAutoScroll = (maxScrollExtent - currentScrollPosition) < 100;
-      
-      // Load more messages when scrolling to the top
+
+      // With reverse: true, offset 0 = bottom (newest messages visible)
+      // Show scroll-to-bottom button when scrolled away from newest messages
+      _shouldAutoScroll = currentScrollPosition < 100;
+
+      // Load more messages when scrolling to the top (older messages)
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
         _loadMoreMessages();
       }

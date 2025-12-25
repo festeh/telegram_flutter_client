@@ -178,6 +178,7 @@ class Message {
   final String content;
   final bool isOutgoing;
   final MessageType type;
+  final MessageSendingState? sendingState;
   // Photo-specific fields
   final String? photoPath;
   final int? photoFileId;
@@ -202,6 +203,7 @@ class Message {
     required this.content,
     required this.isOutgoing,
     required this.type,
+    this.sendingState,
     this.photoPath,
     this.photoFileId,
     this.photoWidth,
@@ -388,6 +390,22 @@ class Message {
 
     final reactions = parseReactions(json['interaction_info'] as Map<String, dynamic>?);
 
+    // Parse sending state from TDLib
+    MessageSendingState? parseSendingState(Map<String, dynamic>? sendingStateMap) {
+      if (sendingStateMap == null) return MessageSendingState.sent; // No state = already sent
+      final type = sendingStateMap['@type'] as String?;
+      switch (type) {
+        case 'messageSendingStatePending':
+          return MessageSendingState.pending;
+        case 'messageSendingStateFailed':
+          return MessageSendingState.failed;
+        default:
+          return MessageSendingState.sent;
+      }
+    }
+
+    final sendingState = parseSendingState(json['sending_state'] as Map<String, dynamic>?);
+
     return Message(
       id: json['id'] as int,
       chatId: json['chat_id'] as int,
@@ -399,6 +417,7 @@ class Message {
       content: parseContent(json['content']),
       isOutgoing: json['is_outgoing'] as bool? ?? false,
       type: parseMessageType(json['content']),
+      sendingState: sendingState,
       photoPath: photoInfo.path,
       photoFileId: photoInfo.fileId,
       photoWidth: photoInfo.width,
@@ -423,6 +442,7 @@ class Message {
       'content': content,
       'is_outgoing': isOutgoing,
       'type': type.toString().split('.').last,
+      'sending_state': sendingState?.name,
       'photo_path': photoPath,
       'photo_file_id': photoFileId,
       'photo_width': photoWidth,
@@ -452,6 +472,7 @@ class Message {
     String? content,
     bool? isOutgoing,
     MessageType? type,
+    MessageSendingState? sendingState,
     String? photoPath,
     int? photoFileId,
     int? photoWidth,
@@ -473,6 +494,7 @@ class Message {
       content: content ?? this.content,
       isOutgoing: isOutgoing ?? this.isOutgoing,
       type: type ?? this.type,
+      sendingState: sendingState ?? this.sendingState,
       photoPath: photoPath ?? this.photoPath,
       photoFileId: photoFileId ?? this.photoFileId,
       photoWidth: photoWidth ?? this.photoWidth,
@@ -502,6 +524,13 @@ enum MessageType {
   voice,
   sticker,
   animation,
+}
+
+enum MessageSendingState {
+  pending, // Optimistic local message, not yet sent to server
+  sent, // Server confirmed receipt
+  read, // Recipient has read
+  failed, // Send failed
 }
 
 enum ReactionType { emoji, customEmoji, paid }
