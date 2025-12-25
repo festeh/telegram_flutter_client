@@ -84,7 +84,8 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
 
     final currentState = state.value;
     if (currentState != null) {
-      final newState = currentState.addChat(chat);
+      // Mark as initialized when we receive chats (they've loaded)
+      final newState = currentState.addChat(chat).copyWith(isInitialized: true);
       state = AsyncData(newState);
       _logger.debug('Chat added to state. Total chats: ${newState.chatCount}');
       _scheduleSortIfNeeded();
@@ -153,9 +154,11 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       // Trigger photo downloads for chats that need them
       _downloadChatPhotos(chats);
 
-      // Return the chats (could be empty initially if updates haven't arrived yet)
-      // Real chats will arrive via updateNewChat events
-      final chatState = ChatState.loaded(chats);
+      // Only set isInitialized=true when we have chats
+      // If empty, real chats will arrive via updateNewChat events
+      final chatState = chats.isNotEmpty
+          ? ChatState.loaded(chats)
+          : const ChatState(isLoading: false, isInitialized: false);
 
       _setLoading(false);
       return chatState.sortByLastActivity();
@@ -165,9 +168,8 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       // On error, start with empty state, real chats will still come via updates
       _logger.debug(
           'Starting with empty state, real chats will arrive via updates');
-      final chatState = ChatState.loaded([]);
       _setLoading(false);
-      return chatState.sortByLastActivity();
+      return const ChatState(isLoading: false, isInitialized: false);
     }
   }
 

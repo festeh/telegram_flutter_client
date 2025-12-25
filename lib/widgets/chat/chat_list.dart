@@ -50,7 +50,7 @@ class _ChatListState extends ConsumerState<ChatList> {
 
         return chatAsync.when(
           data: (chatState) =>
-              _buildChatList(chatState.chats, chatState.isLoading),
+              _buildChatList(chatState.chats, chatState.isLoading, chatState.isInitialized),
           loading: () => _buildLoadingState(),
           error: (error, stackTrace) => _buildErrorState(error.toString()),
         );
@@ -58,14 +58,15 @@ class _ChatListState extends ConsumerState<ChatList> {
     );
   }
 
-  Widget _buildChatList(List<Chat> chats, bool isLoadingMore) {
+  Widget _buildChatList(List<Chat> chats, bool isLoadingMore, bool isInitialized) {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Filter to show only chats in the main list (as determined by TDLib positions)
     final filteredChats = chats.where((chat) => chat.isInMainList).toList();
 
     if (filteredChats.isEmpty) {
-      return _buildEmptyState();
+      // Only show "No chats" if we've finished initial load
+      return isInitialized ? _buildEmptyState() : _buildLoadingState();
     }
 
     return Column(
