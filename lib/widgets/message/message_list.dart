@@ -73,7 +73,7 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   void _loadMoreMessages() {
-    if (!ref.read(messageProvider.select((state) => state.valueOrNull?.isLoadingMore ?? false))) {
+    if (!ref.read(messageProvider.select((state) => state.value?.isLoadingMore ?? false))) {
       ref.read(messageProvider.notifier).loadMoreMessages(widget.chat.id);
     }
   }
@@ -98,7 +98,7 @@ class _MessageListState extends ConsumerState<MessageList> {
   @override
   Widget build(BuildContext context) {
     // Listen to message updates for this chat
-    ref.listen(messageProvider.select((state) => state.valueOrNull?.selectedChatMessages), 
+    ref.listen(messageProvider.select((state) => state.value?.selectedChatMessages), 
       (prev, next) {
         if (next != null && prev != null && next.length > prev.length && _shouldAutoScroll) {
           // New message arrived, scroll to bottom
@@ -109,9 +109,9 @@ class _MessageListState extends ConsumerState<MessageList> {
       }
     );
 
-    final messageState = ref.watch(messageProvider).valueOrNull;
+    final messageState = ref.watch(messageProvider).value;
     final isLoading = ref.watch(messageProvider.select((state) => state.isLoading));
-    final isLoadingMore = ref.watch(messageProvider.select((state) => state.valueOrNull?.isLoadingMore ?? false));
+    final isLoadingMore = ref.watch(messageProvider.select((state) => state.value?.isLoadingMore ?? false));
     final hasError = ref.watch(messageProvider.select((state) => state.hasError));
     final error = ref.watch(messageProvider.select((state) => state.error?.toString()));
     

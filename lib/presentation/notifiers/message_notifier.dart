@@ -59,7 +59,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleMessagePhotoUpdated(int chatId, int messageId, String photoPath) {
     _logger.debug('Message photo updated in chat $chatId: $messageId');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     final messages = currentState.messagesByChat[chatId];
@@ -74,7 +74,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleMessageStickerUpdated(int chatId, int messageId, String stickerPath) {
     _logger.debug('Message sticker updated in chat $chatId: $messageId');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     final messages = currentState.messagesByChat[chatId];
@@ -89,7 +89,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleNewMessage(int chatId, Message message) {
     _logger.debug('New message received for chat $chatId');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.addMessage(chatId, message));
     }
@@ -97,7 +97,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleMessageEdited(int chatId, Message message) {
     _logger.debug('Message edited in chat $chatId: ${message.id}');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.updateMessage(chatId, message));
     }
@@ -105,7 +105,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleMessagesDeleted(int chatId, List<int> messageIds) {
     _logger.debug('Messages deleted in chat $chatId: $messageIds');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       var newState = currentState;
       for (final messageId in messageIds) {
@@ -118,7 +118,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
   void _handleMessageContentChanged(int chatId, int messageId, Map<String, dynamic> newContent) {
     _logger.debug('Message content changed in chat $chatId: $messageId');
     // Content update handling - placeholder until Message supports content updates
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null && currentState.messagesByChat.containsKey(chatId)) {
       final messages = currentState.messagesByChat[chatId]!;
       final messageIndex = messages.indexWhere((msg) => msg.id == messageId);
@@ -131,7 +131,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleMessageSendSucceeded(int chatId, Message message) {
     _logger.debug('Message send succeeded for chat $chatId: ${message.id}');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.updateMessage(chatId, message).setSending(false));
     }
@@ -139,7 +139,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleMessageSendFailed(String errorMessage) {
     _logger.error('Message send failed: $errorMessage');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(
         currentState.setSending(false).setError('Failed to send message: $errorMessage'),
@@ -149,7 +149,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   void _handleMessagesBatch(int chatId, List<Message> messages) {
     _logger.debug('Received batch of ${messages.length} messages for chat $chatId');
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(
         currentState.addMessages(chatId, messages).setLoading(false).setLoadingMore(false),
@@ -161,7 +161,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   Future<void> loadMessages(int chatId, {bool forceRefresh = false}) async {
     try {
-      final currentState = state.valueOrNull ?? MessageState.initial();
+      final currentState = state.value ?? MessageState.initial();
 
       // Set loading state
       state = AsyncData(currentState.selectChat(chatId).setLoading(true));
@@ -204,7 +204,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
   Future<void> loadMoreMessages(int chatId) async {
     try {
-      final currentState = state.valueOrNull;
+      final currentState = state.value;
       if (currentState == null || currentState.isLoadingMore) return;
 
       final existingMessages = currentState.messagesByChat[chatId] ?? [];
@@ -237,7 +237,7 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     if (text.trim().isEmpty) return;
 
     try {
-      final currentState = state.valueOrNull ?? MessageState.initial();
+      final currentState = state.value ?? MessageState.initial();
       
       // Set sending state
       state = AsyncData(currentState.setSending(true));
@@ -292,19 +292,19 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
   }
 
   void selectChat(int chatId) {
-    final currentState = state.valueOrNull ?? MessageState.initial();
+    final currentState = state.value ?? MessageState.initial();
     state = AsyncData(currentState.selectChat(chatId));
   }
 
   // State management helpers
 
   void _setError(String errorMessage) {
-    final currentState = state.valueOrNull ?? MessageState.initial();
+    final currentState = state.value ?? MessageState.initial();
     state = AsyncData(currentState.setError(errorMessage));
   }
 
   void clearError() {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.clearError());
     }

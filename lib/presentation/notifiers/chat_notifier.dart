@@ -63,7 +63,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
     // Trigger photo download if needed
     _downloadChatPhoto(chat);
 
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       final newState = currentState.addChat(chat);
       state = AsyncData(newState.sortByLastActivity());
@@ -72,7 +72,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   }
 
   void _resortChats() {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.sortByLastActivity());
     }
@@ -93,7 +93,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   }
 
   void _updateChatProperty(int chatId, Chat Function(Chat) updater) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null) return;
 
     final chatIndex = currentState.chats.indexWhere((c) => c.id == chatId);
@@ -145,7 +145,7 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   }
 
   Future<void> loadMoreChats() async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState == null || currentState.isLoading) return;
 
     try {
@@ -173,17 +173,17 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   // State management helpers
 
   void _setLoading(bool isLoading) {
-    final currentState = state.valueOrNull ?? ChatState.initial();
+    final currentState = state.value ?? ChatState.initial();
     state = AsyncData(currentState.setLoading(isLoading));
   }
 
   void _setError(String errorMessage) {
-    final currentState = state.valueOrNull ?? ChatState.initial();
+    final currentState = state.value ?? ChatState.initial();
     state = AsyncData(currentState.setError(errorMessage));
   }
 
   void clearError() {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.clearError());
     }

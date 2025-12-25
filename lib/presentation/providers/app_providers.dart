@@ -33,46 +33,46 @@ final emojiStickerProvider = NotifierProvider<EmojiStickerNotifier, EmojiSticker
 // Clean extension methods for convenient UI access
 extension AuthX on WidgetRef {
   // State access
-  UnifiedAuthState? get auth => watch(authProvider).valueOrNull;
+  UnifiedAuthState? get auth => watch(authProvider).value;
   bool get isAuthLoading => watch(authProvider).isLoading;
   bool get hasAuthError => watch(authProvider).hasError;
   String? get authError => watch(authProvider).error?.toString();
 
   // Computed properties - these will trigger rebuilds only when specific values change
   bool get isAuthenticated => watch(authProvider
-      .select((state) => state.valueOrNull?.isAuthenticated ?? false));
+      .select((state) => state.value?.isAuthenticated ?? false));
 
   bool get needsPhoneNumber => watch(authProvider
-      .select((state) => state.valueOrNull?.needsPhoneNumber ?? false));
+      .select((state) => state.value?.needsPhoneNumber ?? false));
 
   bool get needsCode => watch(
-      authProvider.select((state) => state.valueOrNull?.needsCode ?? false));
+      authProvider.select((state) => state.value?.needsCode ?? false));
 
   bool get needsPassword => watch(authProvider
-      .select((state) => state.valueOrNull?.needsPassword ?? false));
+      .select((state) => state.value?.needsPassword ?? false));
 
   bool get needsRegistration => watch(authProvider
-      .select((state) => state.valueOrNull?.needsRegistration ?? false));
+      .select((state) => state.value?.needsRegistration ?? false));
 
   bool get needsQrConfirmation => watch(authProvider
-      .select((state) => state.valueOrNull?.needsQrConfirmation ?? false));
+      .select((state) => state.value?.needsQrConfirmation ?? false));
 
   bool get isLoading => watch(
-      authProvider.select((state) => state.valueOrNull?.isLoading ?? false));
+      authProvider.select((state) => state.value?.isLoading ?? false));
 
   String? get errorMessage =>
-      watch(authProvider.select((state) => state.valueOrNull?.errorMessage));
+      watch(authProvider.select((state) => state.value?.errorMessage));
 
   // User info access
   dynamic get currentUser =>
-      watch(authProvider.select((state) => state.valueOrNull?.user));
+      watch(authProvider.select((state) => state.value?.user));
 
   // Additional auth info
   dynamic get codeInfo =>
-      watch(authProvider.select((state) => state.valueOrNull?.codeInfo));
+      watch(authProvider.select((state) => state.value?.codeInfo));
 
   dynamic get qrCodeInfo =>
-      watch(authProvider.select((state) => state.valueOrNull?.qrCodeInfo));
+      watch(authProvider.select((state) => state.value?.qrCodeInfo));
 
   // Action shortcuts - these don't trigger rebuilds
   AuthNotifier get authActions => read(authProvider.notifier);
@@ -102,18 +102,18 @@ extension AuthX on WidgetRef {
 // Chat extension methods for convenient UI access
 extension ChatX on WidgetRef {
   // State access
-  ChatState? get chatState => watch(chatProvider).valueOrNull;
+  ChatState? get chatState => watch(chatProvider).value;
   bool get isChatLoading => watch(chatProvider).isLoading;
   bool get hasChatError => watch(chatProvider).hasError;
   String? get chatError => watch(chatProvider).error?.toString();
 
   // Computed properties
   List<Chat> get chats =>
-      watch(chatProvider.select((state) => state.valueOrNull?.chats ?? []));
+      watch(chatProvider.select((state) => state.value?.chats ?? []));
   int get chatCount =>
-      watch(chatProvider.select((state) => state.valueOrNull?.chatCount ?? 0));
+      watch(chatProvider.select((state) => state.value?.chatCount ?? 0));
   bool get hasChats => watch(chatProvider
-      .select((state) => state.valueOrNull?.chats.isNotEmpty ?? false));
+      .select((state) => state.value?.chats.isNotEmpty ?? false));
 
   // Action shortcuts
   ChatNotifier get chatActions => read(chatProvider.notifier);
@@ -127,32 +127,32 @@ extension ChatX on WidgetRef {
 // Message extension methods for convenient UI access
 extension MessageX on WidgetRef {
   // State access
-  MessageState? get messageState => watch(messageProvider).valueOrNull;
+  MessageState? get messageState => watch(messageProvider).value;
   bool get isMessageLoading => watch(messageProvider).isLoading;
   bool get hasMessageError => watch(messageProvider).hasError;
   String? get messageError => watch(messageProvider).error?.toString();
 
   // Computed properties
   Map<int, List<Message>> get messagesByChat =>
-      watch(messageProvider.select((state) => state.valueOrNull?.messagesByChat ?? {}));
+      watch(messageProvider.select((state) => state.value?.messagesByChat ?? {}));
   
   List<Message> get selectedChatMessages =>
-      watch(messageProvider.select((state) => state.valueOrNull?.selectedChatMessages ?? []));
+      watch(messageProvider.select((state) => state.value?.selectedChatMessages ?? []));
   
   int? get selectedChatId =>
-      watch(messageProvider.select((state) => state.valueOrNull?.selectedChatId));
+      watch(messageProvider.select((state) => state.value?.selectedChatId));
   
   bool get hasSelectedChat =>
-      watch(messageProvider.select((state) => state.valueOrNull?.hasSelectedChat ?? false));
+      watch(messageProvider.select((state) => state.value?.hasSelectedChat ?? false));
   
   bool get selectedChatHasMessages =>
-      watch(messageProvider.select((state) => state.valueOrNull?.selectedChatHasMessages ?? false));
+      watch(messageProvider.select((state) => state.value?.selectedChatHasMessages ?? false));
   
   bool get isLoadingMore =>
-      watch(messageProvider.select((state) => state.valueOrNull?.isLoadingMore ?? false));
+      watch(messageProvider.select((state) => state.value?.isLoadingMore ?? false));
   
   bool get isSending =>
-      watch(messageProvider.select((state) => state.valueOrNull?.isSending ?? false));
+      watch(messageProvider.select((state) => state.value?.isSending ?? false));
 
   // Action shortcuts
   MessageNotifier get messageActions => read(messageProvider.notifier);
@@ -231,5 +231,5 @@ extension EmojiStickerX on WidgetRef {
 // These can be removed once all widgets are updated
 final isAuthenticatedProvider = Provider<bool>((ref) {
   return ref.watch(authProvider
-      .select((state) => state.valueOrNull?.isAuthenticated ?? false));
+      .select((state) => state.value?.isAuthenticated ?? false));
 });

@@ -122,7 +122,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isSending = ref.watch(messageProvider.select((state) => state.valueOrNull?.isSending ?? false));
+    final isSending = ref.watch(messageProvider.select((state) => state.value?.isSending ?? false));
     final hasError = ref.watch(messageProvider.select((state) => state.hasError));
     final isPickerVisible = ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible));
     final pickerHeight = ref.watch(emojiStickerProvider.select((s) => s.keyboardHeight));

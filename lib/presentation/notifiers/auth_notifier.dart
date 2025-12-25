@@ -97,21 +97,21 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
 
   void clearError() {
     _authRepository.clearError();
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.clearError());
     }
   }
 
   void _setLoading(bool isLoading) {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.setLoading(isLoading));
     }
   }
 
   void _setError(String errorMessage) {
-    final currentState = state.valueOrNull ?? UnifiedAuthState.initial();
+    final currentState = state.value ?? UnifiedAuthState.initial();
     state = AsyncData(currentState.copyWith(
       errorMessage: errorMessage,
       isLoading: false,
