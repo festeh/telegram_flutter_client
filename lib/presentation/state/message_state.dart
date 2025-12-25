@@ -100,24 +100,31 @@ class MessageState {
 
   MessageState addMessages(int chatId, List<Message> messages) {
     final newMessages = Map<int, List<Message>>.from(messagesByChat);
+
+    // Always ensure chat exists in map (to distinguish "never loaded" from "loaded but empty")
     if (!newMessages.containsKey(chatId)) {
       newMessages[chatId] = [];
     }
-    
-    // Add messages in chronological order (newest first)
-    for (final message in messages) {
-      final existingIndex = newMessages[chatId]!.indexWhere((msg) => msg.id == message.id);
-      if (existingIndex == -1) {
-        // Insert in correct chronological position
-        final insertIndex = newMessages[chatId]!.indexWhere((msg) => msg.date.isBefore(message.date));
-        if (insertIndex == -1) {
-          newMessages[chatId]!.add(message);
-        } else {
-          newMessages[chatId]!.insert(insertIndex, message);
-        }
-      }
+
+    if (messages.isEmpty) {
+      return copyWith(messagesByChat: newMessages);
     }
-    
+
+    final existingList = newMessages[chatId]!;
+
+    // Build a set of existing message IDs for O(1) lookup
+    final existingIds = existingList.map((m) => m.id).toSet();
+
+    // Filter out duplicates and add new messages
+    final newMessagesToAdd = messages.where((m) => !existingIds.contains(m.id)).toList();
+
+    if (newMessagesToAdd.isEmpty) return this;
+
+    // Combine and sort once - O(n log n) instead of O(n²)
+    final combined = [...existingList, ...newMessagesToAdd];
+    combined.sort((a, b) => b.date.compareTo(a.date)); // Newest first
+
+    newMessages[chatId] = combined;
     return copyWith(messagesByChat: newMessages);
   }
 
@@ -158,17 +165,43 @@ class MessageState {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is MessageState &&
-        other.selectedChatId == selectedChatId &&
-        other.isLoading == isLoading &&
-        other.isLoadingMore == isLoadingMore &&
-        other.isSending == isSending &&
-        other.errorMessage == errorMessage &&
-        other.isInitialized == isInitialized;
+    if (other is! MessageState) return false;
+
+    // Compare primitive fields first (fast path)
+    if (other.selectedChatId != selectedChatId ||
+        other.isLoading != isLoading ||
+        other.isLoadingMore != isLoadingMore ||
+        other.isSending != isSending ||
+        other.errorMessage != errorMessage ||
+        other.isInitialized != isInitialized) {
+      return false;
+    }
+
+    // Compare messagesByChat - reference equality first for performance
+    if (identical(other.messagesByChat, messagesByChat)) return true;
+
+    // Compare map structure
+    if (other.messagesByChat.length != messagesByChat.length) return false;
+
+    // Compare each chat's message list
+    for (final chatId in messagesByChat.keys) {
+      final otherMessages = other.messagesByChat[chatId];
+      final thisMessages = messagesByChat[chatId];
+      if (otherMessages == null) return false;
+      if (otherMessages.length != thisMessages!.length) return false;
+      // Compare message IDs for equality (messages are identified by ID)
+      for (int i = 0; i < thisMessages.length; i++) {
+        if (otherMessages[i].id != thisMessages[i].id) return false;
+      }
+    }
+
+    return true;
   }
 
   @override
   int get hashCode {
+    // Include messagesByChat in hash via its length and selected chat message count
+    final selectedMessages = selectedChatId != null ? messagesByChat[selectedChatId]?.length ?? 0 : 0;
     return Object.hash(
       selectedChatId,
       isLoading,
@@ -176,6 +209,8 @@ class MessageState {
       isSending,
       errorMessage,
       isInitialized,
+      messagesByChat.length,
+      selectedMessages,
     );
   }
 }

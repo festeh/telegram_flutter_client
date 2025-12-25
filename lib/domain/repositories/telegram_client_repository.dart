@@ -32,6 +32,9 @@ abstract class TelegramClientRepository {
       {int limit = 20, int offsetOrder = 0, int offsetChatId = 0});
   Future<Chat?> getChat(int chatId);
 
+  // User methods
+  String? getUserStatus(int userId);
+
   // File methods
   Future<void> downloadFile(int fileId);
 

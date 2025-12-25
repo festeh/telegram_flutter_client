@@ -20,35 +20,12 @@ class PhotoMessageWidget extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Calculate constrained dimensions
-    final maxWidth = 250.0;
-    final maxHeight = 300.0;
+    const maxWidth = 250.0;
+    const maxHeight = 300.0;
 
-    double? displayWidth;
-    double? displayHeight;
-
-    if (photoWidth != null && photoHeight != null && photoWidth! > 0 && photoHeight! > 0) {
-      final aspectRatio = photoWidth! / photoHeight!;
-
-      if (aspectRatio > 1) {
-        // Landscape
-        displayWidth = maxWidth;
-        displayHeight = maxWidth / aspectRatio;
-        if (displayHeight > maxHeight) {
-          displayHeight = maxHeight;
-          displayWidth = maxHeight * aspectRatio;
-        }
-      } else {
-        // Portrait or square
-        displayHeight = maxHeight;
-        displayWidth = maxHeight * aspectRatio;
-        if (displayWidth > maxWidth) {
-          displayWidth = maxWidth;
-          displayHeight = maxWidth / aspectRatio;
-        }
-      }
-    }
-
-    final hasPhoto = photoPath != null && photoPath!.isNotEmpty;
+    final (displayWidth, displayHeight) = _calculateDimensions(maxWidth, maxHeight);
+    final path = photoPath;
+    final hasPhoto = path != null && path.isNotEmpty;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -63,9 +40,43 @@ class PhotoMessageWidget extends StatelessWidget {
     );
   }
 
+  (double, double) _calculateDimensions(double maxWidth, double maxHeight) {
+    final w = photoWidth;
+    final h = photoHeight;
+    if (w == null || h == null || w <= 0 || h <= 0) {
+      return (200.0, 150.0);
+    }
+
+    final aspectRatio = w / h;
+    double displayWidth;
+    double displayHeight;
+
+    if (aspectRatio > 1) {
+      // Landscape
+      displayWidth = maxWidth;
+      displayHeight = maxWidth / aspectRatio;
+      if (displayHeight > maxHeight) {
+        displayHeight = maxHeight;
+        displayWidth = maxHeight * aspectRatio;
+      }
+    } else {
+      // Portrait or square
+      displayHeight = maxHeight;
+      displayWidth = maxHeight * aspectRatio;
+      if (displayWidth > maxWidth) {
+        displayWidth = maxWidth;
+        displayHeight = maxWidth / aspectRatio;
+      }
+    }
+    return (displayWidth, displayHeight);
+  }
+
   Widget _buildImage() {
+    final path = photoPath;
+    if (path == null) return const SizedBox.shrink();
+
     return Image.file(
-      File(photoPath!),
+      File(path),
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         return _buildPlaceholder(context);

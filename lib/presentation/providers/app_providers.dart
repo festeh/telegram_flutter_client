@@ -115,6 +115,14 @@ extension ChatX on WidgetRef {
   bool get hasChats => watch(chatProvider
       .select((state) => state.value?.chats.isNotEmpty ?? false));
 
+  /// Get the currently selected chat (based on messageProvider's selectedChatId)
+  Chat? get selectedChat {
+    final chatId = watch(messageProvider.select((state) => state.value?.selectedChatId));
+    if (chatId == null) return null;
+    final chatList = watch(chatProvider.select((state) => state.value?.chats ?? []));
+    return chatList.where((c) => c.id == chatId).firstOrNull;
+  }
+
   // Action shortcuts
   ChatNotifier get chatActions => read(chatProvider.notifier);
 

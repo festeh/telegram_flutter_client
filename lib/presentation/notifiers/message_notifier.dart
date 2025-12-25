@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/chat.dart';
 import '../../domain/events/message_events.dart';
 import '../state/message_state.dart';
 import '../../core/logging/app_logger.dart';
 import '../providers/telegram_client_provider.dart';
+
+const _lastSelectedChatKey = 'last_selected_chat_id';
 
 class MessageNotifier extends AsyncNotifier<MessageState> {
   late final TelegramClientRepository _client;
@@ -19,6 +22,20 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
     // Start listening to message events
     _listenToMessageEvents();
+
+    // Load last selected chat from storage
+    final prefs = await SharedPreferences.getInstance();
+    final lastChatId = prefs.getInt(_lastSelectedChatKey);
+
+    if (lastChatId != null) {
+      // Return state with last selected chat and trigger message loading
+      final initialState = MessageState.initial().selectChat(lastChatId);
+      // Load messages for the restored chat after a short delay to let chats load first
+      Future.delayed(const Duration(milliseconds: 500), () {
+        loadMessages(lastChatId);
+      });
+      return initialState;
+    }
 
     // Initialize with empty state
     return MessageState.initial();
@@ -291,9 +308,13 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     }
   }
 
-  void selectChat(int chatId) {
+  void selectChat(int chatId) async {
     final currentState = state.value ?? MessageState.initial();
     state = AsyncData(currentState.selectChat(chatId));
+
+    // Persist the selected chat ID
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastSelectedChatKey, chatId);
   }
 
   // State management helpers

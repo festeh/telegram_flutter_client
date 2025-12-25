@@ -101,7 +101,8 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
   }
 
   Future<void> _loadSticker() async {
-    if (_localPath == null || _localPath!.isEmpty) {
+    final path = _localPath;
+    if (path == null || path.isEmpty) {
       return;
     }
 
@@ -109,7 +110,7 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
     setState(() => _isLoading = true);
 
     try {
-      final file = File(_localPath!);
+      final file = File(path);
       if (!await file.exists()) {
         if (mounted) {
           setState(() {
@@ -153,11 +154,12 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
 
   @override
   Widget build(BuildContext context) {
-    final hasPath = _localPath != null && _localPath!.isNotEmpty;
+    final path = _localPath;
+    final hasPath = path != null && path.isNotEmpty;
 
     Widget content;
 
-    if (_isLoading || _downloadRequested && !hasPath) {
+    if (_isLoading || (_downloadRequested && !hasPath)) {
       content = _buildLoadingIndicator();
     } else if (!hasPath || _loadError) {
       content = _buildPlaceholder(context);
@@ -211,8 +213,11 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
   }
 
   Widget _buildStaticSticker() {
+    final path = _localPath;
+    if (path == null) return _buildPlaceholder(context);
+
     return Image.file(
-      File(_localPath!),
+      File(path),
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
         return _buildPlaceholder(context);

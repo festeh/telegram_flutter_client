@@ -40,11 +40,6 @@ class MessageBubble extends ConsumerWidget {
               : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (!message.isOutgoing)
-              ...[
-                _buildAvatar(context),
-                const SizedBox(width: 8),
-              ],
             Flexible(
               child: Column(
                 crossAxisAlignment: message.isOutgoing
@@ -62,28 +57,6 @@ class MessageBubble extends ConsumerWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatar(BuildContext context) {
-    final avatarColor = _getAvatarColor();
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: avatarColor,
-      ),
-      child: Center(
-        child: Text(
-          _getSenderInitials(),
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
         ),
       ),
     );
@@ -293,22 +266,5 @@ class MessageBubble extends ConsumerWidget {
     } else {
       return DateFormat('MMM dd, yyyy HH:mm').format(dateTime);
     }
-  }
-
-  String _getSenderInitials() {
-    final name = message.senderName;
-    if (name == null || name.isEmpty) {
-      return message.senderId.toString()[0];
-    }
-
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      // First letter of first name + first letter of last name
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
-      // Just first letter of single name
-      return parts[0][0].toUpperCase();
-    }
-    return '?';
   }
 }

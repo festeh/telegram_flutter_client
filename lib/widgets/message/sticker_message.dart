@@ -41,12 +41,13 @@ class _StickerMessageWidgetState extends State<StickerMessageWidget> {
   }
 
   Future<void> _loadSticker() async {
-    if (!widget.isAnimated || widget.stickerPath == null || widget.stickerPath!.isEmpty) {
+    final path = widget.stickerPath;
+    if (!widget.isAnimated || path == null || path.isEmpty) {
       return;
     }
 
     try {
-      final file = File(widget.stickerPath!);
+      final file = File(path);
       if (!await file.exists()) {
         setState(() => _loadError = true);
         return;
@@ -74,16 +75,17 @@ class _StickerMessageWidgetState extends State<StickerMessageWidget> {
     // Stickers are typically 512x512, constrain to 150x150 max
     const maxSize = 150.0;
 
-    final hasSticker = widget.stickerPath != null && widget.stickerPath!.isNotEmpty;
+    final path = widget.stickerPath;
+    final hasSticker = path != null && path.isNotEmpty;
 
     return SizedBox(
       width: maxSize,
       height: maxSize,
-      child: hasSticker && !_loadError ? _buildSticker() : _buildPlaceholder(context),
+      child: hasSticker && !_loadError ? _buildSticker(path) : _buildPlaceholder(context),
     );
   }
 
-  Widget _buildSticker() {
+  Widget _buildSticker(String path) {
     if (widget.isAnimated) {
       // TGS files - use pre-loaded composition
       if (_composition != null) {
@@ -97,7 +99,7 @@ class _StickerMessageWidgetState extends State<StickerMessageWidget> {
     } else {
       // Static WebP sticker
       return Image.file(
-        File(widget.stickerPath!),
+        File(path),
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           return _buildPlaceholder(context);
@@ -110,10 +112,11 @@ class _StickerMessageWidgetState extends State<StickerMessageWidget> {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Show emoji if available, otherwise generic sticker icon
-    if (widget.emoji != null && widget.emoji!.isNotEmpty) {
+    final emoji = widget.emoji;
+    if (emoji != null && emoji.isNotEmpty) {
       return Center(
         child: Text(
-          widget.emoji!,
+          emoji,
           style: const TextStyle(fontSize: 80),
         ),
       );

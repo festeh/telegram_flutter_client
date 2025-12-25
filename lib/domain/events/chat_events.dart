@@ -48,3 +48,11 @@ class ChatPositionChangedEvent extends ChatEvent {
 
 /// Emitted when chat order changes and list should be re-sorted.
 class ChatOrderChangedEvent extends ChatEvent {}
+
+/// Emitted when a user's online status changes.
+class UserStatusUpdatedEvent extends ChatEvent {
+  final int userId;
+  final String status; // "online", "last seen recently", etc.
+  final DateTime? lastSeen;
+  UserStatusUpdatedEvent(this.userId, this.status, {this.lastSeen});
+}

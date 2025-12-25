@@ -110,7 +110,6 @@ class _MessageListState extends ConsumerState<MessageList> {
     );
 
     final messageState = ref.watch(messageProvider).value;
-    final isLoading = ref.watch(messageProvider.select((state) => state.isLoading));
     final isLoadingMore = ref.watch(messageProvider.select((state) => state.value?.isLoadingMore ?? false));
     final hasError = ref.watch(messageProvider.select((state) => state.hasError));
     final error = ref.watch(messageProvider.select((state) => state.error?.toString()));
@@ -119,13 +118,15 @@ class _MessageListState extends ConsumerState<MessageList> {
       return _buildErrorState(error);
     }
 
-    if (isLoading && (messageState?.messagesByChat[widget.chat.id]?.isEmpty ?? true)) {
+    final messages = messageState?.messagesByChat[widget.chat.id];
+
+    // null means never loaded yet - show loading
+    if (messages == null) {
       return _buildLoadingState();
     }
 
-    final messages = messageState?.messagesByChat[widget.chat.id] ?? [];
-
-    if (messages.isEmpty && !isLoading) {
+    // Empty list means loaded but no messages
+    if (messages.isEmpty) {
       return _buildEmptyState();
     }
 

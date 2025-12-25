@@ -113,7 +113,13 @@ class StickerSet {
       try {
         final stickerMap = Map<String, dynamic>.from(s as Map);
         stickers.add(Sticker.fromJson(stickerMap, setId: setId));
-      } catch (_) {}
+      } catch (e) {
+        // Skip invalid stickers but log for debugging
+        assert(() {
+          print('Failed to parse sticker in set $setId: $e');
+          return true;
+        }());
+      }
     }
 
     // Parse thumbnail
@@ -155,7 +161,13 @@ class StickerSet {
       try {
         final stickerMap = Map<String, dynamic>.from(s as Map);
         coverStickers.add(Sticker.fromJson(stickerMap, setId: setId));
-      } catch (_) {}
+      } catch (e) {
+        // Skip invalid cover stickers but log for debugging
+        assert(() {
+          print('Failed to parse cover sticker in set $setId: $e');
+          return true;
+        }());
+      }
     }
 
     return StickerSet(

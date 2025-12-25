@@ -12,11 +12,19 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   late final TelegramClientRepository _client;
   StreamSubscription<ChatEvent>? _eventSubscription;
   final AppLogger _logger = AppLogger.instance;
+  Timer? _sortDebounceTimer;
+  bool _needsSort = false;
 
   @override
   Future<ChatState> build() async {
     // Use the shared client instance from provider
     _client = ref.read(telegramClientProvider);
+
+    // Register cleanup on dispose
+    ref.onDispose(() {
+      _eventSubscription?.cancel();
+      _sortDebounceTimer?.cancel();
+    });
 
     // Start listening to chat events
     _listenToChatEvents();
@@ -54,6 +62,17 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
         _updateChatProperty(chatId, (chat) => chat.copyWith(isInMainList: isInMainList));
       case ChatOrderChangedEvent():
         _resortChats();
+      case UserStatusUpdatedEvent():
+        // Status is cached in TdlibTelegramClient; force UI refresh
+        _triggerStateRefresh();
+    }
+  }
+
+  void _triggerStateRefresh() {
+    final currentState = state.value;
+    if (currentState != null) {
+      // Bump version to trigger UI rebuild
+      state = AsyncData(currentState.bumpVersion());
     }
   }
 
@@ -66,19 +85,33 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
     final currentState = state.value;
     if (currentState != null) {
       final newState = currentState.addChat(chat);
-      state = AsyncData(newState.sortByLastActivity());
+      state = AsyncData(newState);
       _logger.debug('Chat added to state. Total chats: ${newState.chatCount}');
+      _scheduleSortIfNeeded();
     }
   }
 
   void _resortChats() {
-    final currentState = state.value;
-    if (currentState != null) {
-      state = AsyncData(currentState.sortByLastActivity());
-    }
+    _scheduleSortIfNeeded();
+  }
+
+  /// Debounced sorting - waits for a batch of events before sorting
+  void _scheduleSortIfNeeded() {
+    _needsSort = true;
+    _sortDebounceTimer?.cancel();
+    _sortDebounceTimer = Timer(const Duration(milliseconds: 50), () {
+      if (_needsSort) {
+        _needsSort = false;
+        final currentState = state.value;
+        if (currentState != null) {
+          state = AsyncData(currentState.sortByLastActivity());
+        }
+      }
+    });
   }
 
   void _downloadChatPhotos(List<Chat> chats) {
+    // Download photos in parallel - downloadFile is non-blocking
     for (final chat in chats) {
       _downloadChatPhoto(chat);
     }
@@ -103,7 +136,8 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
     final updatedChat = updater(currentChat);
 
     final newState = currentState.updateChat(updatedChat);
-    state = AsyncData(newState.sortByLastActivity());
+    state = AsyncData(newState);
+    _scheduleSortIfNeeded();
   }
 
   Future<ChatState> _loadChats() async {
@@ -189,8 +223,4 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
     }
   }
 
-  // Cleanup
-  void dispose() {
-    _eventSubscription?.cancel();
-  }
 }

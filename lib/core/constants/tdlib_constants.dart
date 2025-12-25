@@ -21,6 +21,17 @@ abstract class TdlibUpdateTypes {
   static const chatOrder = 'updateChatOrder';
   static const chatReadInbox = 'updateChatReadInbox';
   static const chatPosition = 'updateChatPosition';
+  static const userStatus = 'updateUserStatus';
+}
+
+/// TDLib user status type names.
+abstract class TdlibUserStatusTypes {
+  static const online = 'userStatusOnline';
+  static const offline = 'userStatusOffline';
+  static const recently = 'userStatusRecently';
+  static const lastWeek = 'userStatusLastWeek';
+  static const lastMonth = 'userStatusLastMonth';
+  static const empty = 'userStatusEmpty';
 }
 
 /// TDLib chat list type names.

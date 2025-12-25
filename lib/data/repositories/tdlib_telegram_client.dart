@@ -54,6 +54,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
   final Map<int, Chat> _chats = <int, Chat>{};
   final Map<int, List<Message>> _messages = <int, List<Message>>{};
   final Map<int, String> _userNames = <int, String>{};
+  // Cache user online status
+  final Map<int, String> _userStatuses = <int, String>{};
   // Track file ID to message ID mapping for photo updates
   final Map<int, ({int chatId, int messageId})> _photoFileToMessage = {};
   // Track file ID to message ID mapping for sticker updates
@@ -182,6 +184,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _handleAuthorizationState(authState);
     } else if (type == TdlibUpdateTypes.user) {
       _handleUserUpdate(update);
+    } else if (type == TdlibUpdateTypes.userStatus) {
+      _handleUserStatusUpdate(update);
     } else if (type == TdlibUpdateTypes.newChat) {
       _handleNewChatUpdate(update);
     } else if (type == TdlibUpdateTypes.chatLastMessage) {
@@ -282,6 +286,80 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _logger.logError('Error processing updateUser', error: e);
     }
   }
+
+  void _handleUserStatusUpdate(Map<String, dynamic> update) {
+    try {
+      final userId = update['user_id'] as int?;
+      final status = update['status'] as Map<String, dynamic>?;
+
+      if (userId == null || status == null) return;
+
+      final statusType = status[TdlibFields.type] as String?;
+      if (statusType == null) return;
+
+      String statusString;
+      DateTime? lastSeen;
+
+      switch (statusType) {
+        case TdlibUserStatusTypes.online:
+          statusString = 'online';
+        case TdlibUserStatusTypes.offline:
+          final wasOnline = status['was_online'] as int?;
+          if (wasOnline != null) {
+            lastSeen = DateTime.fromMillisecondsSinceEpoch(wasOnline * 1000);
+            statusString = _formatLastSeen(lastSeen);
+          } else {
+            statusString = 'offline';
+          }
+        case TdlibUserStatusTypes.recently:
+          statusString = 'last seen recently';
+        case TdlibUserStatusTypes.lastWeek:
+          statusString = 'last seen within a week';
+        case TdlibUserStatusTypes.lastMonth:
+          statusString = 'last seen within a month';
+        case TdlibUserStatusTypes.empty:
+          statusString = '';
+        default:
+          statusString = '';
+      }
+
+      // Cache the status
+      _userStatuses[userId] = statusString;
+
+      _logger.logRequest({
+        '@type': 'user_status_updated',
+        'user_id': userId,
+        'status': statusString,
+      });
+
+      // Emit event for UI updates
+      _chatEventController.add(UserStatusUpdatedEvent(userId, statusString, lastSeen: lastSeen));
+    } catch (e) {
+      _logger.logError('Error processing updateUserStatus', error: e);
+    }
+  }
+
+  String _formatLastSeen(DateTime lastSeen) {
+    final now = DateTime.now();
+    final diff = now.difference(lastSeen);
+
+    if (diff.inMinutes < 1) {
+      return 'last seen just now';
+    } else if (diff.inMinutes < 60) {
+      return 'last seen ${diff.inMinutes} min ago';
+    } else if (diff.inHours < 24) {
+      return 'last seen ${diff.inHours}h ago';
+    } else if (diff.inDays == 1) {
+      return 'last seen yesterday';
+    } else if (diff.inDays < 7) {
+      return 'last seen ${diff.inDays} days ago';
+    } else {
+      return 'last seen within a week';
+    }
+  }
+
+  /// Get cached user status
+  String? getUserStatus(int userId) => _userStatuses[userId];
 
   void _handleNewChatUpdate(Map<String, dynamic> update) {
     try {
@@ -1112,6 +1190,12 @@ class TdlibTelegramClient implements TelegramClientRepository {
       return _installedStickerSets;
     }
 
+    // If there's already a pending request, reuse it instead of creating a new one
+    if (_stickerSetsCompleter != null && !_stickerSetsCompleter!.isCompleted) {
+      _logger.logRequest({'@type': 'DEBUG_reusing_pending_request'});
+      return _stickerSetsCompleter!.future;
+    }
+
     _stickerSetsCompleter = Completer<List<StickerSet>>();
 
     _logger.logRequest({'@type': 'DEBUG_sending_getInstalledStickerSets'});
@@ -1138,6 +1222,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
   }
 
+  // Track pending sticker set requests by ID to avoid race conditions
+  final Map<int, Completer<StickerSet>> _pendingStickerSetRequests = {};
+
   @override
   Future<StickerSet?> getStickerSet(int setId) async {
     // Return cached if available
@@ -1145,7 +1232,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
       return _stickerSetsCache[setId];
     }
 
-    _stickerSetCompleter = Completer<StickerSet>();
+    // If there's already a pending request for this set, reuse it
+    if (_pendingStickerSetRequests.containsKey(setId)) {
+      return _pendingStickerSetRequests[setId]!.future;
+    }
+
+    final completer = Completer<StickerSet>();
+    _pendingStickerSetRequests[setId] = completer;
+    _stickerSetCompleter = completer;
 
     await _sendRequest({
       '@type': 'getStickerSet',
@@ -1154,7 +1248,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
     // Wait for response with timeout
     try {
-      final result = await _stickerSetCompleter!.future.timeout(
+      final result = await completer.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () => throw TimeoutException('getStickerSet timeout'),
       );
@@ -1163,11 +1257,18 @@ class TdlibTelegramClient implements TelegramClientRepository {
     } catch (e) {
       _logger.logError('Failed to get sticker set $setId', error: e);
       return null;
+    } finally {
+      _pendingStickerSetRequests.remove(setId);
     }
   }
 
   @override
   Future<List<Sticker>> getRecentStickers() async {
+    // If there's already a pending request, reuse it
+    if (_recentStickersCompleter != null && !_recentStickersCompleter!.isCompleted) {
+      return _recentStickersCompleter!.future;
+    }
+
     _recentStickersCompleter = Completer<List<Sticker>>();
 
     await _sendRequest({

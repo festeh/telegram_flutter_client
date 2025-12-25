@@ -5,13 +5,15 @@ class ChatState {
   final bool isLoading;
   final String? errorMessage;
   final bool isInitialized;
+  final int _version; // Used to force rebuilds on status updates
 
   const ChatState({
     this.chats = const [],
     this.isLoading = false,
     this.errorMessage,
     this.isInitialized = false,
-  });
+    int version = 0,
+  }) : _version = version;
 
   // Factory constructors for common states
   factory ChatState.initial() => const ChatState(
@@ -37,14 +39,19 @@ class ChatState {
     bool? isLoading,
     String? errorMessage,
     bool? isInitialized,
+    int? version,
   }) {
     return ChatState(
       chats: chats ?? this.chats,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       isInitialized: isInitialized ?? this.isInitialized,
+      version: version ?? _version,
     );
   }
+
+  // Increment version to force UI rebuild
+  ChatState bumpVersion() => copyWith(version: _version + 1);
 
   // Helper methods
   ChatState setLoading(bool loading) => copyWith(isLoading: loading);
@@ -101,7 +108,8 @@ class ChatState {
         other.chats.length == chats.length &&
         other.isLoading == isLoading &&
         other.errorMessage == errorMessage &&
-        other.isInitialized == isInitialized;
+        other.isInitialized == isInitialized &&
+        other._version == _version;
   }
 
   @override
@@ -111,6 +119,7 @@ class ChatState {
       isLoading,
       errorMessage,
       isInitialized,
+      _version,
     );
   }
 }
