@@ -22,6 +22,7 @@ abstract class TdlibUpdateTypes {
   static const chatReadInbox = 'updateChatReadInbox';
   static const chatPosition = 'updateChatPosition';
   static const userStatus = 'updateUserStatus';
+  static const messageInteractionInfo = 'updateMessageInteractionInfo';
 }
 
 /// TDLib user status type names.

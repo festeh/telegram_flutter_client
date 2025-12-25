@@ -183,16 +183,14 @@ class MessageState {
     // Compare map structure
     if (other.messagesByChat.length != messagesByChat.length) return false;
 
-    // Compare each chat's message list
+    // Compare each chat's message list by reference
+    // We always create new lists on updates, so reference inequality means content changed
     for (final chatId in messagesByChat.keys) {
       final otherMessages = other.messagesByChat[chatId];
       final thisMessages = messagesByChat[chatId];
       if (otherMessages == null) return false;
-      if (otherMessages.length != thisMessages!.length) return false;
-      // Compare message IDs for equality (messages are identified by ID)
-      for (int i = 0; i < thisMessages.length; i++) {
-        if (otherMessages[i].id != thisMessages[i].id) return false;
-      }
+      // If list references are different, states are different
+      if (!identical(otherMessages, thisMessages)) return false;
     }
 
     return true;

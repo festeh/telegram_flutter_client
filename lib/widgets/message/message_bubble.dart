@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/chat.dart';
 import '../../core/theme/app_theme.dart';
+import '../../presentation/providers/telegram_client_provider.dart';
 import 'photo_message.dart';
 import 'sticker_message.dart';
 
@@ -53,6 +55,8 @@ class MessageBubble extends ConsumerWidget {
                   else
                     _buildMessageBubble(context),
                   if (showTime) _buildTimeStamp(context),
+                  if (message.reactions != null && message.reactions!.isNotEmpty)
+                    _buildReactionsRow(context, ref),
                 ],
               ),
             ),
@@ -265,6 +269,104 @@ class MessageBubble extends ConsumerWidget {
       return DateFormat('MMM dd HH:mm').format(dateTime);
     } else {
       return DateFormat('MMM dd, yyyy HH:mm').format(dateTime);
+    }
+  }
+
+  Widget _buildReactionsRow(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final reactions = message.reactions!;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: reactions.map((reaction) {
+          final isChosen = reaction.isChosen;
+          final isPaid = reaction.type == ReactionType.paid;
+          return GestureDetector(
+            onTap: isPaid ? null : () => _toggleReaction(ref, reaction),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isChosen
+                    ? colorScheme.primaryContainer
+                    : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isChosen
+                      ? colorScheme.primary
+                      : colorScheme.outline.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if ((reaction.type == ReactionType.emoji || reaction.type == ReactionType.paid) && reaction.emoji != null)
+                    Text(
+                      reaction.emoji!,
+                      style: const TextStyle(fontSize: 14),
+                    )
+                  else if (reaction.type == ReactionType.customEmoji && reaction.customEmojiPath != null)
+                    // Custom emoji with downloaded image
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: Image.file(
+                        File(reaction.customEmojiPath!),
+                        width: 16,
+                        height: 16,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.emoji_emotions,
+                          size: 14,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    )
+                  else if (reaction.type == ReactionType.customEmoji)
+                    // Custom emoji loading placeholder
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    )
+                  else
+                    // Fallback for unknown reaction types
+                    Icon(
+                      Icons.emoji_emotions,
+                      size: 14,
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${reaction.count}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isChosen ? FontWeight.w600 : FontWeight.w400,
+                      color: isChosen
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _toggleReaction(WidgetRef ref, MessageReaction reaction) {
+    final client = ref.read(telegramClientProvider);
+    if (reaction.isChosen) {
+      client.removeReaction(message.chatId, message.id, reaction);
+    } else {
+      client.addReaction(message.chatId, message.id, reaction);
     }
   }
 }

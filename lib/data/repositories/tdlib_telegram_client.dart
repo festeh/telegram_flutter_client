@@ -66,6 +66,18 @@ class TdlibTelegramClient implements TelegramClientRepository {
   // Track pending downloads to avoid duplicate requests
   final Set<int> _pendingDownloads = {};
 
+  // Custom emoji caches
+  // customEmojiId -> file path (when downloaded)
+  final Map<int, String> _customEmojiCache = {};
+  // customEmojiId -> file ID (for download tracking)
+  final Map<int, int> _customEmojiFileIds = {};
+  // fileId -> customEmojiId (reverse mapping for download completion)
+  final Map<int, int> _fileIdToCustomEmoji = {};
+  // customEmojiId -> set of (chatId, messageId) that use this emoji
+  final Map<int, Set<({int chatId, int messageId})>> _customEmojiToMessages = {};
+  // Track pending custom emoji fetches to avoid duplicate requests
+  final Set<int> _pendingCustomEmojiFetches = {};
+
   @override
   AuthenticationState get currentAuthState => _currentAuthState;
 
@@ -220,6 +232,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _handleMessageSendSucceededUpdate(update);
     } else if (type == TdlibUpdateTypes.messageSendFailed) {
       _handleMessageSendFailedUpdate(update);
+    } else if (type == TdlibUpdateTypes.messageInteractionInfo) {
+      _handleMessageInteractionInfoUpdate(update);
     } else if (type == 'stickerSets' || type == 'StickerSets') {
       _logger.logResponse({'@type': 'DEBUG_stickerSets_received', 'type': type, 'sets_count': (update['sets'] as List?)?.length});
       _handleStickerSetsResponse(update);
@@ -817,11 +831,76 @@ class TdlibTelegramClient implements TelegramClientRepository {
           },
         },
       });
-      
+
       return null; // Updated message will come via updates
     } catch (e) {
       _logger.logError('Failed to edit message $messageId in chat $chatId', error: e);
       return null;
+    }
+  }
+
+  @override
+  Future<void> addReaction(int chatId, int messageId, MessageReaction reaction) async {
+    _logger.logRequest({
+      '@type': 'addReaction_called',
+      'chat_id': chatId,
+      'message_id': messageId,
+      'reaction_type': reaction.type.toString(),
+      'emoji': reaction.emoji,
+    });
+
+    try {
+      Map<String, dynamic> reactionType;
+      switch (reaction.type) {
+        case ReactionType.emoji:
+          reactionType = {'@type': 'reactionTypeEmoji', 'emoji': reaction.emoji};
+        case ReactionType.customEmoji:
+          reactionType = {'@type': 'reactionTypeCustomEmoji', 'custom_emoji_id': reaction.customEmojiId};
+        case ReactionType.paid:
+          reactionType = {'@type': 'reactionTypePaid'};
+      }
+
+      final response = await _sendRequest({
+        '@type': 'addMessageReaction',
+        'chat_id': chatId,
+        'message_id': messageId,
+        'reaction_type': reactionType,
+        'is_big': false,
+        'update_recent_reactions': true,
+      });
+
+      _logger.logResponse({
+        '@type': 'addReaction_response',
+        'response': response?.toString(),
+      });
+    } catch (e) {
+      _logger.logError('Failed to add reaction to message $messageId in chat $chatId', error: e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> removeReaction(int chatId, int messageId, MessageReaction reaction) async {
+    try {
+      Map<String, dynamic> reactionType;
+      switch (reaction.type) {
+        case ReactionType.emoji:
+          reactionType = {'@type': 'reactionTypeEmoji', 'emoji': reaction.emoji};
+        case ReactionType.customEmoji:
+          reactionType = {'@type': 'reactionTypeCustomEmoji', 'custom_emoji_id': reaction.customEmojiId};
+        case ReactionType.paid:
+          reactionType = {'@type': 'reactionTypePaid'};
+      }
+
+      await _sendRequest({
+        '@type': 'removeMessageReaction',
+        'chat_id': chatId,
+        'message_id': messageId,
+        'reaction_type': reactionType,
+      });
+    } catch (e) {
+      _logger.logError('Failed to remove reaction from message $messageId in chat $chatId', error: e);
+      rethrow;
     }
   }
 
@@ -833,25 +912,32 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _messages[chatId] = <Message>[];
     }
 
-    final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == message.id);
+    // Process custom emojis in reactions if present
+    var processedMessage = message;
+    if (message.reactions != null && message.reactions!.isNotEmpty) {
+      final processedReactions = _processCustomEmojiReactions(chatId, message.id, message.reactions!);
+      processedMessage = message.copyWith(reactions: processedReactions);
+    }
+
+    final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == processedMessage.id);
     if (existingIndex != -1) {
-      _messages[chatId]![existingIndex] = message;
+      _messages[chatId]![existingIndex] = processedMessage;
     } else {
       if (insertAtStart) {
-        _messages[chatId]!.insert(0, message);
+        _messages[chatId]!.insert(0, processedMessage);
       } else {
-        _messages[chatId]!.add(message);
+        _messages[chatId]!.add(processedMessage);
       }
     }
 
     // Track photo file ID for download completion updates
-    if (message.photoFileId != null) {
-      _photoFileToMessage[message.photoFileId!] = (chatId: chatId, messageId: message.id);
+    if (processedMessage.photoFileId != null) {
+      _photoFileToMessage[processedMessage.photoFileId!] = (chatId: chatId, messageId: processedMessage.id);
     }
 
     // Track sticker file ID for download completion updates
-    if (message.stickerFileId != null) {
-      _stickerFileToMessage[message.stickerFileId!] = (chatId: chatId, messageId: message.id);
+    if (processedMessage.stickerFileId != null) {
+      _stickerFileToMessage[processedMessage.stickerFileId!] = (chatId: chatId, messageId: processedMessage.id);
     }
   }
 
@@ -973,6 +1059,230 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
   }
 
+  void _handleMessageInteractionInfoUpdate(Map<String, dynamic> update) {
+    try {
+      final chatId = update['chat_id'] as int?;
+      final messageId = update['message_id'] as int?;
+      final interactionInfo = update['interaction_info'] as Map<String, dynamic>?;
+
+      _logger.logRequest({
+        '@type': 'interaction_info_update_received',
+        'chat_id': chatId,
+        'message_id': messageId,
+        'has_interaction_info': interactionInfo != null,
+      });
+
+      if (chatId == null || messageId == null) return;
+
+      // Parse reactions from interaction_info
+      List<MessageReaction>? reactions;
+      if (interactionInfo != null) {
+        final reactionsData = interactionInfo['reactions'] as Map<String, dynamic>?;
+        if (reactionsData != null) {
+          final reactionsList = reactionsData['reactions'] as List<dynamic>?;
+          if (reactionsList != null && reactionsList.isNotEmpty) {
+            reactions = reactionsList
+                .whereType<Map<String, dynamic>>()
+                .map((r) => MessageReaction.fromJson(r))
+                .toList();
+          }
+        }
+      }
+
+      // Process custom emoji reactions - apply cached paths and fetch missing ones
+      if (reactions != null) {
+        reactions = _processCustomEmojiReactions(chatId, messageId, reactions);
+      }
+
+      // Update cached message if exists
+      final cachedMessages = _messages[chatId];
+      if (cachedMessages != null) {
+        final idx = cachedMessages.indexWhere((m) => m.id == messageId);
+        if (idx != -1) {
+          final updatedMessage = cachedMessages[idx].copyWith(reactions: reactions);
+          cachedMessages[idx] = updatedMessage;
+        }
+      }
+
+      // Emit typed event
+      _logger.logRequest({
+        '@type': 'emitting_reactions_event',
+        'chat_id': chatId,
+        'message_id': messageId,
+        'reactions_count': reactions?.length ?? 0,
+      });
+      _messageEventController.add(
+        MessageReactionsUpdatedEvent(chatId, messageId, reactions ?? []),
+      );
+    } catch (e) {
+      _logger.logError('Error handling message interaction info update', error: e);
+    }
+  }
+
+  /// Process custom emoji reactions - apply cached paths and trigger fetches for missing ones
+  List<MessageReaction> _processCustomEmojiReactions(
+    int chatId,
+    int messageId,
+    List<MessageReaction> reactions,
+  ) {
+    final customEmojiIdsToFetch = <int>[];
+
+    final processedReactions = reactions.map((reaction) {
+      if (reaction.type == ReactionType.customEmoji && reaction.customEmojiId != null) {
+        final emojiId = reaction.customEmojiId!;
+
+        // Track which messages use this custom emoji
+        _customEmojiToMessages.putIfAbsent(emojiId, () => {});
+        _customEmojiToMessages[emojiId]!.add((chatId: chatId, messageId: messageId));
+
+        // Check if we have cached path
+        final cachedPath = _customEmojiCache[emojiId];
+        if (cachedPath != null) {
+          return reaction.copyWith(customEmojiPath: cachedPath);
+        }
+
+        // Need to fetch this custom emoji
+        if (!_pendingCustomEmojiFetches.contains(emojiId) && !_customEmojiFileIds.containsKey(emojiId)) {
+          customEmojiIdsToFetch.add(emojiId);
+        }
+      }
+      return reaction;
+    }).toList();
+
+    // Fetch missing custom emojis
+    if (customEmojiIdsToFetch.isNotEmpty) {
+      _fetchCustomEmojis(customEmojiIdsToFetch);
+    }
+
+    return processedReactions;
+  }
+
+  /// Fetch custom emoji stickers from TDLib
+  Future<void> _fetchCustomEmojis(List<int> customEmojiIds) async {
+    // Mark as pending to avoid duplicate fetches
+    _pendingCustomEmojiFetches.addAll(customEmojiIds);
+
+    _logger.logRequest({
+      '@type': 'fetching_custom_emojis',
+      'emoji_ids': customEmojiIds,
+    });
+
+    try {
+      final response = await _sendRequest({
+        '@type': 'getCustomEmojiStickers',
+        'custom_emoji_ids': customEmojiIds,
+      });
+
+      _logger.logResponse({
+        '@type': 'custom_emoji_response',
+        'response': response?.toString(),
+      });
+
+      if (response == null) return;
+      final stickers = response['stickers'] as List<dynamic>?;
+      if (stickers == null) {
+        _logger.logError('No stickers in response', error: response);
+        return;
+      }
+
+      _logger.logRequest({
+        '@type': 'custom_emoji_stickers_count',
+        'count': stickers.length,
+      });
+
+      for (final sticker in stickers) {
+        if (sticker is! Map<String, dynamic>) continue;
+
+        _logger.logResponse({
+          '@type': 'custom_emoji_sticker_data',
+          'sticker_keys': sticker.keys.toList(),
+        });
+
+        // The custom_emoji_id is at the top level of the sticker object
+        final customEmojiId = sticker['custom_emoji_id'] as int?;
+        if (customEmojiId == null) {
+          _logger.logError('No custom_emoji_id in sticker', error: sticker);
+          continue;
+        }
+
+        // Get the sticker file info - it's in 'sticker' field
+        final stickerFile = sticker['sticker'] as Map<String, dynamic>?;
+        if (stickerFile == null) {
+          _logger.logError('No sticker file in sticker object', error: sticker);
+          continue;
+        }
+
+        final fileId = stickerFile['id'] as int?;
+        if (fileId == null) {
+          _logger.logError('No file id in sticker file', error: stickerFile);
+          continue;
+        }
+
+        // Check if already downloaded
+        final localPath = stickerFile['local']?['path'] as String?;
+        _logger.logRequest({
+          '@type': 'custom_emoji_file_status',
+          'custom_emoji_id': customEmojiId,
+          'file_id': fileId,
+          'local_path': localPath,
+        });
+
+        if (localPath != null && localPath.isNotEmpty) {
+          // Already downloaded - cache and notify
+          _customEmojiCache[customEmojiId] = localPath;
+          _updateMessagesWithCustomEmoji(customEmojiId, localPath);
+        } else {
+          // Need to download
+          _customEmojiFileIds[customEmojiId] = fileId;
+          _fileIdToCustomEmoji[fileId] = customEmojiId;
+          _logger.logRequest({
+            '@type': 'downloading_custom_emoji',
+            'custom_emoji_id': customEmojiId,
+            'file_id': fileId,
+          });
+          downloadFile(fileId);
+        }
+      }
+    } catch (e) {
+      _logger.logError('Error fetching custom emojis', error: e);
+    } finally {
+      _pendingCustomEmojiFetches.removeAll(customEmojiIds);
+    }
+  }
+
+  /// Update all messages that use a custom emoji when it's downloaded
+  void _updateMessagesWithCustomEmoji(int customEmojiId, String path) {
+    final messageRefs = _customEmojiToMessages[customEmojiId];
+    if (messageRefs == null || messageRefs.isEmpty) return;
+
+    for (final ref in messageRefs) {
+      final cachedMessages = _messages[ref.chatId];
+      if (cachedMessages == null) continue;
+
+      final idx = cachedMessages.indexWhere((m) => m.id == ref.messageId);
+      if (idx == -1) continue;
+
+      final message = cachedMessages[idx];
+      if (message.reactions == null) continue;
+
+      // Update the reaction with the downloaded path
+      final updatedReactions = message.reactions!.map((r) {
+        if (r.type == ReactionType.customEmoji && r.customEmojiId == customEmojiId) {
+          return r.copyWith(customEmojiPath: path);
+        }
+        return r;
+      }).toList();
+
+      final updatedMessage = message.copyWith(reactions: updatedReactions);
+      cachedMessages[idx] = updatedMessage;
+
+      // Emit update event
+      _messageEventController.add(
+        MessageReactionsUpdatedEvent(ref.chatId, ref.messageId, updatedReactions),
+      );
+    }
+  }
+
   void _handleMessagesResponse(Map<String, dynamic> update) {
     try {
       final messages = update['messages'] as List?;
@@ -1055,10 +1365,35 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
         // Update any messages that have this file ID as their sticker
         _updateMessageStickerByFileId(fileId, filePath);
+
+        // Update any custom emojis that have this file ID
+        _updateCustomEmojiByFileId(fileId, filePath);
       }
     } catch (e) {
       _logger.logError('Error handling file update', error: e);
     }
+  }
+
+  void _updateCustomEmojiByFileId(int fileId, String path) {
+    final customEmojiId = _fileIdToCustomEmoji[fileId];
+    if (customEmojiId == null) return;
+
+    _logger.logRequest({
+      '@type': 'custom_emoji_download_complete',
+      'file_id': fileId,
+      'custom_emoji_id': customEmojiId,
+      'path': path,
+    });
+
+    // Cache the path
+    _customEmojiCache[customEmojiId] = path;
+
+    // Clean up mappings
+    _fileIdToCustomEmoji.remove(fileId);
+    _customEmojiFileIds.remove(customEmojiId);
+
+    // Update all messages using this custom emoji
+    _updateMessagesWithCustomEmoji(customEmojiId, path);
   }
 
   void _updateChatPhotoByFileId(int fileId, String path) {

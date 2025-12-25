@@ -68,3 +68,11 @@ class MessageStickerUpdatedEvent extends MessageEvent {
   final String stickerPath;
   MessageStickerUpdatedEvent(this.chatId, this.messageId, this.stickerPath);
 }
+
+/// Emitted when a message's reactions are updated.
+class MessageReactionsUpdatedEvent extends MessageEvent {
+  final int chatId;
+  final int messageId;
+  final List<MessageReaction> reactions;
+  MessageReactionsUpdatedEvent(this.chatId, this.messageId, this.reactions);
+}

@@ -190,6 +190,8 @@ class Message {
   final int? stickerHeight;
   final String? stickerEmoji;
   final bool stickerIsAnimated;
+  // Reactions
+  final List<MessageReaction>? reactions;
 
   const Message({
     required this.id,
@@ -210,6 +212,7 @@ class Message {
     this.stickerHeight,
     this.stickerEmoji,
     this.stickerIsAnimated = false,
+    this.reactions,
   });
 
   factory Message.fromJson(Map<String, dynamic> json, {String? senderName}) {
@@ -370,6 +373,21 @@ class Message {
       return chatId ?? 0;
     }
 
+    // Parse reactions from interaction_info
+    List<MessageReaction>? parseReactions(Map<String, dynamic>? interactionInfo) {
+      if (interactionInfo == null) return null;
+      final reactionsData = interactionInfo['reactions'] as Map<String, dynamic>?;
+      if (reactionsData == null) return null;
+      final reactionsList = reactionsData['reactions'] as List<dynamic>?;
+      if (reactionsList == null || reactionsList.isEmpty) return null;
+      return reactionsList
+          .whereType<Map<String, dynamic>>()
+          .map((r) => MessageReaction.fromJson(r))
+          .toList();
+    }
+
+    final reactions = parseReactions(json['interaction_info'] as Map<String, dynamic>?);
+
     return Message(
       id: json['id'] as int,
       chatId: json['chat_id'] as int,
@@ -391,6 +409,7 @@ class Message {
       stickerHeight: stickerInfo.height,
       stickerEmoji: stickerInfo.emoji,
       stickerIsAnimated: stickerInfo.isAnimated,
+      reactions: reactions,
     );
   }
 
@@ -414,6 +433,13 @@ class Message {
       'sticker_height': stickerHeight,
       'sticker_emoji': stickerEmoji,
       'sticker_is_animated': stickerIsAnimated,
+      'reactions': reactions?.map((r) => {
+        'type': r.type.name,
+        'emoji': r.emoji,
+        'custom_emoji_id': r.customEmojiId,
+        'count': r.count,
+        'is_chosen': r.isChosen,
+      }).toList(),
     };
   }
 
@@ -436,6 +462,7 @@ class Message {
     int? stickerHeight,
     String? stickerEmoji,
     bool? stickerIsAnimated,
+    List<MessageReaction>? reactions,
   }) {
     return Message(
       id: id ?? this.id,
@@ -456,6 +483,7 @@ class Message {
       stickerHeight: stickerHeight ?? this.stickerHeight,
       stickerEmoji: stickerEmoji ?? this.stickerEmoji,
       stickerIsAnimated: stickerIsAnimated ?? this.stickerIsAnimated,
+      reactions: reactions ?? this.reactions,
     );
   }
 
@@ -474,4 +502,79 @@ enum MessageType {
   voice,
   sticker,
   animation,
+}
+
+enum ReactionType { emoji, customEmoji, paid }
+
+class MessageReaction {
+  final ReactionType type;
+  final String? emoji;
+  final int? customEmojiId;
+  final int? customEmojiFileId;
+  final String? customEmojiPath;
+  final int count;
+  final bool isChosen;
+
+  const MessageReaction({
+    required this.type,
+    this.emoji,
+    this.customEmojiId,
+    this.customEmojiFileId,
+    this.customEmojiPath,
+    required this.count,
+    required this.isChosen,
+  });
+
+  factory MessageReaction.fromJson(Map<String, dynamic> json) {
+    final reactionType = json['type'] as Map<String, dynamic>;
+    final typeString = reactionType['@type'] as String;
+
+    if (typeString == 'reactionTypeCustomEmoji') {
+      return MessageReaction(
+        type: ReactionType.customEmoji,
+        customEmojiId: reactionType['custom_emoji_id'] as int?,
+        count: json['total_count'] as int? ?? 0,
+        isChosen: json['is_chosen'] as bool? ?? false,
+      );
+    } else if (typeString == 'reactionTypePaid') {
+      return MessageReaction(
+        type: ReactionType.paid,
+        emoji: '⭐', // Use star as display for paid reactions
+        count: json['total_count'] as int? ?? 0,
+        isChosen: json['is_chosen'] as bool? ?? false,
+      );
+    } else {
+      return MessageReaction(
+        type: ReactionType.emoji,
+        emoji: reactionType['emoji'] as String?,
+        count: json['total_count'] as int? ?? 0,
+        isChosen: json['is_chosen'] as bool? ?? false,
+      );
+    }
+  }
+
+  MessageReaction copyWith({
+    ReactionType? type,
+    String? emoji,
+    int? customEmojiId,
+    int? customEmojiFileId,
+    String? customEmojiPath,
+    int? count,
+    bool? isChosen,
+  }) {
+    return MessageReaction(
+      type: type ?? this.type,
+      emoji: emoji ?? this.emoji,
+      customEmojiId: customEmojiId ?? this.customEmojiId,
+      customEmojiFileId: customEmojiFileId ?? this.customEmojiFileId,
+      customEmojiPath: customEmojiPath ?? this.customEmojiPath,
+      count: count ?? this.count,
+      isChosen: isChosen ?? this.isChosen,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'MessageReaction(type: $type, emoji: $emoji, customEmojiId: $customEmojiId, count: $count, isChosen: $isChosen)';
+  }
 }

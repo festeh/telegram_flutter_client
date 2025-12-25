@@ -45,6 +45,10 @@ abstract class TelegramClientRepository {
   Future<bool> deleteMessage(int chatId, int messageId);
   Future<Message?> editMessage(int chatId, int messageId, String newText);
 
+  // Reaction methods
+  Future<void> addReaction(int chatId, int messageId, MessageReaction reaction);
+  Future<void> removeReaction(int chatId, int messageId, MessageReaction reaction);
+
   // Sticker methods
   Future<List<StickerSet>> getInstalledStickerSets();
   Future<StickerSet?> getStickerSet(int setId);

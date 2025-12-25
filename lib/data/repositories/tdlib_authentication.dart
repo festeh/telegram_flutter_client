@@ -83,6 +83,11 @@ class TdlibAuthentication implements AuthenticationRepository {
     _errorMessage = null;
     _isLoading = false;
 
+    // Mark as initialized once we know the actual auth state
+    if (state.state != AuthorizationState.unknown) {
+      _isInitialized = true;
+    }
+
     if (state.state != AuthorizationState.waitCode) {
       _codeInfo = null;
     }
@@ -134,11 +139,11 @@ class TdlibAuthentication implements AuthenticationRepository {
     try {
       await _loadUserSession();
       await _client.start();
-      _isInitialized = true;
+      // isInitialized will be set when we receive actual auth state via _onAuthUpdate
       _authStateController.add(_authState);
     } catch (e) {
       _logger.logError('Authentication initialization failed', error: e);
-      _isInitialized = true;
+      _isInitialized = true; // On error, mark as initialized to show error state
       _authStateController.add(_authState);
       rethrow;
     }

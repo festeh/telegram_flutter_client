@@ -22,6 +22,7 @@ class _MessageListState extends ConsumerState<MessageList> {
   late ScrollController _scrollController;
   bool _isAutoScrolling = false;
   bool _shouldAutoScroll = true;
+  int? _lastMarkedMessageId;
 
   @override
   void initState() {
@@ -41,6 +42,7 @@ class _MessageListState extends ConsumerState<MessageList> {
     super.didUpdateWidget(oldWidget);
     // When chat changes, load messages for the new chat
     if (oldWidget.chat.id != widget.chat.id) {
+      _lastMarkedMessageId = null; // Reset for new chat
       // Delay the provider modification to avoid modifying during build
       Future(() {
         ref.read(messageProvider.notifier).selectChat(widget.chat.id);
@@ -78,6 +80,24 @@ class _MessageListState extends ConsumerState<MessageList> {
     }
   }
 
+  void _markLatestAsRead(List<Message>? messages) {
+    if (messages == null || messages.isEmpty) return;
+
+    // Find the latest incoming message (messages are sorted newest first)
+    final latestIncoming = messages.cast<Message?>().firstWhere(
+      (m) => m != null && !m.isOutgoing,
+      orElse: () => null,
+    );
+
+    if (latestIncoming == null) return;
+
+    // Don't mark the same message twice
+    if (_lastMarkedMessageId == latestIncoming.id) return;
+
+    _lastMarkedMessageId = latestIncoming.id;
+    ref.read(messageProvider.notifier).markAsRead(widget.chat.id, latestIncoming.id);
+  }
+
   void _scrollToBottom({bool animated = true}) {
     if (_scrollController.hasClients && !_isAutoScrolling) {
       _isAutoScrolling = true;
@@ -98,12 +118,13 @@ class _MessageListState extends ConsumerState<MessageList> {
   @override
   Widget build(BuildContext context) {
     // Listen to message updates for this chat
-    ref.listen(messageProvider.select((state) => state.value?.selectedChatMessages), 
+    ref.listen(messageProvider.select((state) => state.value?.selectedChatMessages),
       (prev, next) {
         if (next != null && prev != null && next.length > prev.length && _shouldAutoScroll) {
-          // New message arrived, scroll to bottom
+          // New message arrived, scroll to bottom and mark as read
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _scrollToBottom();
+            _markLatestAsRead(next);
           });
         }
       }
@@ -129,6 +150,11 @@ class _MessageListState extends ConsumerState<MessageList> {
     if (messages.isEmpty) {
       return _buildEmptyState();
     }
+
+    // Mark latest message as read when messages are displayed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markLatestAsRead(messages);
+    });
 
     return Stack(
       children: [

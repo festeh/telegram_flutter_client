@@ -71,6 +71,8 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
         _handleMessagePhotoUpdated(chatId, messageId, photoPath);
       case MessageStickerUpdatedEvent(:final chatId, :final messageId, :final stickerPath):
         _handleMessageStickerUpdated(chatId, messageId, stickerPath);
+      case MessageReactionsUpdatedEvent(:final chatId, :final messageId, :final reactions):
+        _handleMessageReactionsUpdated(chatId, messageId, reactions);
     }
   }
 
@@ -101,6 +103,21 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     if (index == -1) return;
 
     final updatedMessage = messages[index].copyWith(stickerPath: stickerPath);
+    state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
+  }
+
+  void _handleMessageReactionsUpdated(int chatId, int messageId, List<MessageReaction> reactions) {
+    _logger.debug('Message reactions updated in chat $chatId: $messageId');
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final messages = currentState.messagesByChat[chatId];
+    if (messages == null) return;
+
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final updatedMessage = messages[index].copyWith(reactions: reactions.isEmpty ? null : reactions);
     state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
   }
 
