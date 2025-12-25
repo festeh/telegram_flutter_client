@@ -89,6 +89,8 @@ extension AuthX on WidgetRef {
 
   Future<void> requestQrCode() => authActions.requestQrCode();
 
+  Future<void> confirmQrCode(String link) => authActions.confirmQrCode(link);
+
   Future<void> resendCode() => authActions.resendCode();
 
   Future<void> registerUser(String firstName, String lastName) =>

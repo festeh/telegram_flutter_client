@@ -102,6 +102,44 @@ download-tdlib-direct:
         exit 1
     fi
 
+# Build TDLib for Android from source (matches Linux version)
+# Prerequisites: gperf, php, make, perl, java
+# TDLib source should be at ~/github/td
+build-tdlib-android:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ANDROID_SDK="/home/dima/Android/Sdk"
+    NDK_VERSION="29.0.13113456"
+    TDLIB_DIR="$HOME/github/td"
+
+    echo "📦 Building TDLib for Android from source..."
+
+    if [ ! -d "$TDLIB_DIR" ]; then
+        echo "📡 Cloning TDLib..."
+        mkdir -p "$HOME/github"
+        git clone https://github.com/tdlib/td.git "$TDLIB_DIR"
+    fi
+
+    cd "$TDLIB_DIR/example/android"
+
+    # Build OpenSSL if not already built
+    if [ ! -d "third_party/openssl" ]; then
+        echo "🔐 Building OpenSSL..."
+        ./build-openssl.sh "$ANDROID_SDK" "$NDK_VERSION"
+    fi
+
+    # Build TDLib with JSON interface
+    echo "🔨 Building TDLib (this takes a few minutes)..."
+    ./build-tdlib.sh "$ANDROID_SDK" "$NDK_VERSION" '' '' 'JSON'
+
+    # Copy to project
+    mkdir -p "{{justfile_directory()}}/android/app/src/main/jniLibs/arm64-v8a"
+    cp tdlib/libs/arm64-v8a/libtdjson.so "{{justfile_directory()}}/android/app/src/main/jniLibs/arm64-v8a/"
+
+    echo "✓ TDLib for Android built and installed!"
+    ls -la "{{justfile_directory()}}/android/app/src/main/jniLibs/arm64-v8a/"
+
 # Build TDLib from source (advanced users)
 build-tdlib-source:
     #!/usr/bin/env bash
@@ -188,10 +226,41 @@ build-linux:
     @echo "🐧 Building Linux release..."
     {{flutter_bin}} build linux --release
 
-# Build Android APK
-build-apk:
-    @echo "🤖 Building Android APK..."
-    {{flutter_bin}} build apk
+# Build Android APK (ARM64 only for Nothing Phone 2)
+build-apk: check-tdlib-android
+    @echo "🤖 Building Android APK (ARM64)..."
+    {{flutter_bin}} build apk --target-platform android-arm64
+
+# Build and deploy to pCloud
+deploy-phone: build-apk
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    dest="$HOME/pCloudDrive/android-apps/telega2"
+    mkdir -p "$dest"
+
+    echo "📦 Copying APK to pCloud..."
+    cp "{{justfile_directory()}}/build/app/outputs/flutter-apk/app-release.apk" "$dest/telega2.apk"
+
+    echo "✓ Done! APK at: $dest/telega2.apk"
+
+# Run on connected Android device
+run-android: check-tdlib-android
+    @echo "🤖 Running on Android device..."
+    {{flutter_bin}} run -d android
+
+# Check if TDLib Android binary exists
+check-tdlib-android:
+    #!/usr/bin/env bash
+    tdlib_android="{{justfile_directory()}}/android/app/src/main/jniLibs/arm64-v8a/libtdjson.so"
+    if [ ! -f "$tdlib_android" ]; then
+        echo "❌ TDLib Android binary not found"
+        echo "💡 Run: just build-tdlib-android"
+        exit 1
+    else
+        echo "✓ TDLib Android binary found"
+        ls -lh "$tdlib_android"
+    fi
 
 # Build iOS (macOS only)
 build-ios:

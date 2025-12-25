@@ -31,6 +31,7 @@ abstract class AuthenticationRepository {
   Future<void> submitVerificationCode(String code);
   Future<void> submitPassword(String password);
   Future<void> requestQrCode();
+  Future<void> confirmQrCode(String link);
   Future<void> resendCode();
   Future<void> registerUser(String firstName, String lastName);
   Future<void> logOut();

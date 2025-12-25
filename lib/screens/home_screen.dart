@@ -7,12 +7,39 @@ import '../domain/entities/chat.dart';
 import '../widgets/home/left_pane.dart';
 import '../widgets/message/message_list.dart';
 import '../widgets/message/message_input_area.dart';
+import 'chat_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  bool get _isMobile => Platform.isAndroid || Platform.isIOS;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (_isMobile) {
+      return _buildMobileLayout(context, ref);
+    }
+    return _buildDesktopLayout(context, ref);
+  }
+
+  Widget _buildMobileLayout(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      body: SafeArea(
+        child: LeftPane(
+          onChatSelected: (chat) {
+            ref.selectChatForMessages(chat.id);
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ChatScreen(chat: chat),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(BuildContext context, WidgetRef ref) {
     final selectedChat = ref.selectedChat;
 
     return Scaffold(

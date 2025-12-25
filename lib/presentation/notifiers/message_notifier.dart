@@ -208,10 +208,11 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       // Trigger media downloads for messages that need them
       _downloadMessageMedia(messages);
 
-      // Update state with loaded messages
+      // Update state with loaded messages and mark chat as initialized
       final newState = currentState
           .selectChat(chatId)
           .addMessages(chatId, messages)
+          .markChatInitialized(chatId)
           .setLoading(false);
 
       state = AsyncData(newState);

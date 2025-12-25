@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/auth_state.dart';
@@ -514,6 +515,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   Future<String> _getDatabasePath() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      final appDir = await getApplicationDocumentsDirectory();
+      return path.join(appDir.path, 'tdlib');
+    }
     final homeDir = Platform.environment['HOME'] ?? '';
     final dbPath =
         path.join(homeDir, '.local', 'share', 'telegram_flutter_client');

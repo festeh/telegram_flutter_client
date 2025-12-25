@@ -236,6 +236,22 @@ class TdlibAuthentication implements AuthenticationRepository {
   }
 
   @override
+  Future<void> confirmQrCode(String link) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _authStateController.add(_authState);
+
+    try {
+      await _client.confirmQrCodeAuthentication(link);
+    } catch (e) {
+      _logger.logAuthFailure('QR code confirmation failed', error: e);
+      _errorMessage = 'Failed to confirm QR code: $e';
+      _isLoading = false;
+      _authStateController.add(_authState);
+    }
+  }
+
+  @override
   Future<void> resendCode() async {
     _isLoading = true;
     _errorMessage = null;

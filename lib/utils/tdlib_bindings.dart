@@ -35,6 +35,8 @@ class TdLibBindings {
         return DynamicLibrary.open(libraryPath);
       }
       return DynamicLibrary.open('libtdjson.so');
+    } else if (Platform.isAndroid) {
+      return DynamicLibrary.open('libtdjson.so');
     } else if (Platform.isWindows) {
       return DynamicLibrary.open('tdjson.dll');
     } else if (Platform.isMacOS) {

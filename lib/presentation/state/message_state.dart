@@ -2,6 +2,7 @@ import '../../domain/entities/chat.dart';
 
 class MessageState {
   final Map<int, List<Message>> messagesByChat;
+  final Set<int> initializedChatIds; // Tracks which chats have completed initial load
   final int? selectedChatId;
   final bool isLoading;
   final bool isLoadingMore;
@@ -11,6 +12,7 @@ class MessageState {
 
   const MessageState({
     this.messagesByChat = const {},
+    this.initializedChatIds = const {},
     this.selectedChatId,
     this.isLoading = false,
     this.isLoadingMore = false,
@@ -40,6 +42,7 @@ class MessageState {
   // Copy with method for immutable updates
   MessageState copyWith({
     Map<int, List<Message>>? messagesByChat,
+    Set<int>? initializedChatIds,
     int? selectedChatId,
     bool? isLoading,
     bool? isLoadingMore,
@@ -49,6 +52,7 @@ class MessageState {
   }) {
     return MessageState(
       messagesByChat: messagesByChat ?? this.messagesByChat,
+      initializedChatIds: initializedChatIds ?? this.initializedChatIds,
       selectedChatId: selectedChatId ?? this.selectedChatId,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
@@ -57,6 +61,15 @@ class MessageState {
       isInitialized: isInitialized ?? this.isInitialized,
     );
   }
+
+  // Mark a chat as initialized (completed initial load)
+  MessageState markChatInitialized(int chatId) {
+    final newSet = Set<int>.from(initializedChatIds)..add(chatId);
+    return copyWith(initializedChatIds: newSet);
+  }
+
+  // Check if a chat has been initialized
+  bool isChatInitialized(int chatId) => initializedChatIds.contains(chatId);
 
   // Helper methods
   MessageState setLoading(bool loading) => copyWith(isLoading: loading);
@@ -177,6 +190,12 @@ class MessageState {
       return false;
     }
 
+    // Compare initializedChatIds
+    if (!identical(other.initializedChatIds, initializedChatIds)) {
+      if (other.initializedChatIds.length != initializedChatIds.length) return false;
+      if (!other.initializedChatIds.containsAll(initializedChatIds)) return false;
+    }
+
     // Compare messagesByChat - reference equality first for performance
     if (identical(other.messagesByChat, messagesByChat)) return true;
 
@@ -209,6 +228,7 @@ class MessageState {
       isInitialized,
       messagesByChat.length,
       selectedMessages,
+      initializedChatIds.length,
     );
   }
 }

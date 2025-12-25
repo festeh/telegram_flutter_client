@@ -16,17 +16,6 @@ class LeftPane extends ConsumerStatefulWidget {
 }
 
 class _LeftPaneState extends ConsumerState<LeftPane> {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
-  String _searchQuery = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _searchFocusNode.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -44,7 +33,6 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
       child: Column(
         children: [
           _buildHeader(colorScheme),
-          _buildSearchBar(colorScheme),
           _buildFilterTabs(colorScheme),
           Expanded(
             child: ChatList(
@@ -108,83 +96,6 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
             tooltip: 'New Chat',
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(ColorScheme colorScheme) {
-    final mutedColor = colorScheme.onSurface.withValues(alpha: 0.5);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-          // TODO: Implement search functionality
-        },
-        decoration: InputDecoration(
-          hintText: 'Search',
-          hintStyle: TextStyle(
-            color: mutedColor,
-            fontSize: 16,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: mutedColor,
-            size: 20,
-          ),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _searchQuery = '';
-                    });
-                    _searchFocusNode.unfocus();
-                  },
-                  icon: Icon(
-                    Icons.clear,
-                    color: mutedColor,
-                    size: 20,
-                  ),
-                )
-              : null,
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHigh,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(
-              color: colorScheme.outline,
-              width: 1,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(
-              color: colorScheme.outline,
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide(
-              color: colorScheme.primary,
-              width: 2,
-            ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        style: TextStyle(
-          fontSize: 16,
-          color: colorScheme.onSurface,
-        ),
       ),
     );
   }

@@ -71,6 +71,9 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
   Future<void> requestQrCode() =>
       _executeAuthAction(() => _authRepository.requestQrCode());
 
+  Future<void> confirmQrCode(String link) =>
+      _executeAuthAction(() => _authRepository.confirmQrCode(link));
+
   Future<void> resendCode() =>
       _executeAuthAction(() => _authRepository.resendCode());
 

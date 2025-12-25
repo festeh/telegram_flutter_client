@@ -140,13 +140,14 @@ class _MessageListState extends ConsumerState<MessageList> {
     }
 
     final messages = messageState?.messagesByChat[widget.chat.id];
+    final isChatInitialized = messageState?.isChatInitialized(widget.chat.id) ?? false;
 
-    // null means never loaded yet - show loading
-    if (messages == null) {
+    // Show loading if messages not loaded yet OR chat hasn't completed initialization
+    if (messages == null || !isChatInitialized) {
       return _buildLoadingState();
     }
 
-    // Empty list means loaded but no messages
+    // Empty list with initialization complete means truly no messages
     if (messages.isEmpty) {
       return _buildEmptyState();
     }
