@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/chat.dart';
 import '../../presentation/providers/app_providers.dart';
@@ -317,7 +318,7 @@ class _MessageListState extends ConsumerState<MessageList> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (message.isOutgoing) ...[
+            if (message.isOutgoing)
               ListTile(
                 leading: const Icon(Icons.edit),
                 title: const Text('Edit'),
@@ -326,29 +327,35 @@ class _MessageListState extends ConsumerState<MessageList> {
                   _editMessage(message);
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('Delete'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _deleteMessage(message);
-                },
-              ),
-            ],
             ListTile(
               leading: const Icon(Icons.reply),
               title: const Text('Reply'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement reply functionality
+                ref.read(messageProvider.notifier).setReplyingTo(message);
               },
             ),
+            if (message.content.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.copy),
+                title: const Text('Copy'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Clipboard.setData(ClipboardData(text: message.content));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Copied to clipboard'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                },
+              ),
             ListTile(
-              leading: const Icon(Icons.copy),
-              title: const Text('Copy'),
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Delete'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Implement copy functionality
+                _deleteMessage(message);
               },
             ),
             ListTile(

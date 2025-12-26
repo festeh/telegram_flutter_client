@@ -9,6 +9,8 @@ class MessageState {
   final bool isSending;
   final String? errorMessage;
   final bool isInitialized;
+  // Reply tracking
+  final Message? replyingToMessage;
 
   const MessageState({
     this.messagesByChat = const {},
@@ -19,6 +21,7 @@ class MessageState {
     this.isSending = false,
     this.errorMessage,
     this.isInitialized = false,
+    this.replyingToMessage,
   });
 
   // Factory constructors for common states
@@ -40,6 +43,7 @@ class MessageState {
       );
 
   // Copy with method for immutable updates
+  // Use clearReplyingTo flag to explicitly clear replyingToMessage
   MessageState copyWith({
     Map<int, List<Message>>? messagesByChat,
     Set<int>? initializedChatIds,
@@ -49,6 +53,8 @@ class MessageState {
     bool? isSending,
     String? errorMessage,
     bool? isInitialized,
+    Message? replyingToMessage,
+    bool clearReplyingTo = false,
   }) {
     return MessageState(
       messagesByChat: messagesByChat ?? this.messagesByChat,
@@ -59,6 +65,7 @@ class MessageState {
       isSending: isSending ?? this.isSending,
       errorMessage: errorMessage,
       isInitialized: isInitialized ?? this.isInitialized,
+      replyingToMessage: clearReplyingTo ? null : (replyingToMessage ?? this.replyingToMessage),
     );
   }
 
@@ -79,6 +86,8 @@ class MessageState {
   MessageState setError(String error) =>
       copyWith(errorMessage: error, isLoading: false);
   MessageState selectChat(int chatId) => copyWith(selectedChatId: chatId);
+  MessageState setReplyingTo(Message message) => copyWith(replyingToMessage: message);
+  MessageState clearReplyingTo() => copyWith(clearReplyingTo: true);
 
   // Computed properties
   bool get hasError => errorMessage != null;
@@ -186,7 +195,8 @@ class MessageState {
         other.isLoadingMore != isLoadingMore ||
         other.isSending != isSending ||
         other.errorMessage != errorMessage ||
-        other.isInitialized != isInitialized) {
+        other.isInitialized != isInitialized ||
+        other.replyingToMessage?.id != replyingToMessage?.id) {
       return false;
     }
 
@@ -229,6 +239,7 @@ class MessageState {
       messagesByChat.length,
       selectedMessages,
       initializedChatIds.length,
+      replyingToMessage?.id,
     );
   }
 }

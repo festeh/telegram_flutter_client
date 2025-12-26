@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/chat.dart';
 import '../../core/theme/app_theme.dart';
+import '../../presentation/providers/app_providers.dart';
 import '../../presentation/providers/telegram_client_provider.dart';
 import 'photo_message.dart';
 import 'sticker_message.dart';
@@ -53,7 +54,7 @@ class MessageBubble extends ConsumerWidget {
                   if (message.type == MessageType.sticker)
                     _buildStickerMessage(context)
                   else
-                    _buildMessageBubble(context),
+                    _buildMessageBubble(context, ref),
                   if (showTime) _buildTimeStamp(context),
                   if (message.reactions != null && message.reactions!.isNotEmpty)
                     _buildReactionsRow(context, ref),
@@ -86,7 +87,7 @@ class MessageBubble extends ConsumerWidget {
     );
   }
 
-  Widget _buildMessageBubble(BuildContext context) {
+  Widget _buildMessageBubble(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final isOutgoing = message.isOutgoing;
 
@@ -115,7 +116,81 @@ class MessageBubble extends ConsumerWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: _buildMessageContent(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (message.replyToMessageId != null)
+              _buildReplyPreview(context, ref),
+            _buildMessageContent(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyPreview(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isOutgoing = message.isOutgoing;
+
+    // Look up the original message from state
+    final messageState = ref.watch(messageProvider).value;
+    final messages = messageState?.messagesByChat[message.chatId] ?? [];
+    final repliedMessage = messages.cast<Message?>().firstWhere(
+      (m) => m?.id == message.replyToMessageId,
+      orElse: () => null,
+    );
+
+    final senderName = repliedMessage?.senderName ??
+        (repliedMessage?.isOutgoing == true ? 'You' : 'User');
+    final content = repliedMessage?.content ?? 'Message not found';
+    final truncatedContent = content.length > 40
+        ? '${content.substring(0, 40)}...'
+        : content;
+
+    final primaryColor = isOutgoing
+        ? colorScheme.onPrimary.withValues(alpha: 0.8)
+        : colorScheme.primary;
+    final textColor = isOutgoing
+        ? colorScheme.onPrimary.withValues(alpha: 0.7)
+        : colorScheme.onSurface.withValues(alpha: 0.7);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(color: primaryColor, width: 2),
+        ),
+        color: isOutgoing
+            ? colorScheme.onPrimary.withValues(alpha: 0.1)
+            : colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(4),
+          bottomRight: Radius.circular(4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            senderName,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: primaryColor,
+            ),
+          ),
+          Text(
+            truncatedContent,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: textColor,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -183,7 +258,7 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildTextMessage(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return SelectableText(
+    return Text(
       message.content,
       style: TextStyle(
         fontSize: 16,
@@ -327,7 +402,7 @@ class MessageBubble extends ConsumerWidget {
                         width: 16,
                         height: 16,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(
+                        errorBuilder: (_, _, _) => Icon(
                           Icons.emoji_emotions,
                           size: 14,
                           color: colorScheme.onSurface.withValues(alpha: 0.6),

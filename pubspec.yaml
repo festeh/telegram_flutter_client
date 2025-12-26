@@ -41,6 +41,8 @@ dependencies:
   flutter_dotenv: ^6.0.0
   lottie: ^3.3.2
   emoji_picker_flutter: ^4.4.0
+  file_picker: ^8.0.3
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

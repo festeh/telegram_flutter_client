@@ -376,6 +376,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   /// Get cached user status
+  @override
   String? getUserStatus(int userId) => _userStatuses[userId];
 
   void _handleNewChatUpdate(Map<String, dynamic> update) {
@@ -771,11 +772,15 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   @override
-  Future<Message?> sendMessage(int chatId, String text) async {
+  Future<Message?> sendMessage(int chatId, String text, {int? replyToMessageId}) async {
     try {
       final request = {
         '@type': 'sendMessage',
         'chat_id': chatId,
+        if (replyToMessageId != null) 'reply_to': {
+          '@type': 'inputMessageReplyToMessage',
+          'message_id': replyToMessageId,
+        },
         'input_message_content': {
           '@type': 'inputMessageText',
           'text': {
@@ -787,12 +792,87 @@ class TdlibTelegramClient implements TelegramClientRepository {
       };
 
       await _sendRequest(request);
-      
+
       // For now, return null. The actual message will come via updateNewMessage
       return null;
     } catch (e) {
       _logger.logError('Failed to send message to chat $chatId', error: e);
       return null;
+    }
+  }
+
+  @override
+  Future<void> sendPhoto(int chatId, String filePath, {String? caption, int? replyToMessageId}) async {
+    try {
+      final request = {
+        '@type': 'sendMessage',
+        'chat_id': chatId,
+        if (replyToMessageId != null) 'reply_to': {
+          '@type': 'inputMessageReplyToMessage',
+          'message_id': replyToMessageId,
+        },
+        'input_message_content': {
+          '@type': 'inputMessagePhoto',
+          'photo': {'@type': 'inputFileLocal', 'path': filePath},
+          if (caption != null && caption.isNotEmpty)
+            'caption': {'@type': 'formattedText', 'text': caption},
+        },
+      };
+
+      await _sendRequest(request);
+    } catch (e) {
+      _logger.logError('Failed to send photo to chat $chatId', error: e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> sendVideo(int chatId, String filePath, {String? caption, int? replyToMessageId}) async {
+    try {
+      final request = {
+        '@type': 'sendMessage',
+        'chat_id': chatId,
+        if (replyToMessageId != null) 'reply_to': {
+          '@type': 'inputMessageReplyToMessage',
+          'message_id': replyToMessageId,
+        },
+        'input_message_content': {
+          '@type': 'inputMessageVideo',
+          'video': {'@type': 'inputFileLocal', 'path': filePath},
+          if (caption != null && caption.isNotEmpty)
+            'caption': {'@type': 'formattedText', 'text': caption},
+        },
+      };
+
+      await _sendRequest(request);
+    } catch (e) {
+      _logger.logError('Failed to send video to chat $chatId', error: e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> sendDocument(int chatId, String filePath, {String? caption, int? replyToMessageId}) async {
+    try {
+      final request = {
+        '@type': 'sendMessage',
+        'chat_id': chatId,
+        if (replyToMessageId != null) 'reply_to': {
+          '@type': 'inputMessageReplyToMessage',
+          'message_id': replyToMessageId,
+        },
+        'input_message_content': {
+          '@type': 'inputMessageDocument',
+          'document': {'@type': 'inputFileLocal', 'path': filePath},
+          if (caption != null && caption.isNotEmpty)
+            'caption': {'@type': 'formattedText', 'text': caption},
+        },
+      };
+
+      await _sendRequest(request);
+    } catch (e) {
+      _logger.logError('Failed to send document to chat $chatId', error: e);
+      rethrow;
     }
   }
 

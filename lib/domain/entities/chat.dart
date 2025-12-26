@@ -193,6 +193,8 @@ class Message {
   final bool stickerIsAnimated;
   // Reactions
   final List<MessageReaction>? reactions;
+  // Reply
+  final int? replyToMessageId;
 
   const Message({
     required this.id,
@@ -215,6 +217,7 @@ class Message {
     this.stickerEmoji,
     this.stickerIsAnimated = false,
     this.reactions,
+    this.replyToMessageId,
   });
 
   factory Message.fromJson(Map<String, dynamic> json, {String? senderName}) {
@@ -242,6 +245,19 @@ class Message {
           return '🎭 Sticker';
         case 'messageAnimation':
           return '🎞️ GIF';
+        case 'messageAnimatedEmoji':
+          final emoji = contentMap['emoji'] as String?;
+          return emoji ?? '[AnimatedEmoji: $contentMap]';
+        case 'messageVideoNote':
+          return '📹 Video message';
+        case 'messageContact':
+          return '👤 Contact';
+        case 'messageLocation':
+          return '📍 Location';
+        case 'messagePoll':
+          return '📊 Poll';
+        case 'messageCall':
+          return '📞 Call';
         default:
           return 'Message';
       }
@@ -406,6 +422,14 @@ class Message {
 
     final sendingState = parseSendingState(json['sending_state'] as Map<String, dynamic>?);
 
+    // Parse reply_to for reply messages
+    int? parseReplyToMessageId(Map<String, dynamic>? replyTo) {
+      if (replyTo == null) return null;
+      // TDLib 1.8+: reply_to contains message_id
+      return replyTo['message_id'] as int?;
+    }
+    final replyToMessageId = parseReplyToMessageId(json['reply_to'] as Map<String, dynamic>?);
+
     return Message(
       id: json['id'] as int,
       chatId: json['chat_id'] as int,
@@ -429,6 +453,7 @@ class Message {
       stickerEmoji: stickerInfo.emoji,
       stickerIsAnimated: stickerInfo.isAnimated,
       reactions: reactions,
+      replyToMessageId: replyToMessageId,
     );
   }
 
@@ -460,6 +485,7 @@ class Message {
         'count': r.count,
         'is_chosen': r.isChosen,
       }).toList(),
+      'reply_to_message_id': replyToMessageId,
     };
   }
 
@@ -484,6 +510,7 @@ class Message {
     String? stickerEmoji,
     bool? stickerIsAnimated,
     List<MessageReaction>? reactions,
+    int? replyToMessageId,
   }) {
     return Message(
       id: id ?? this.id,
@@ -506,6 +533,7 @@ class Message {
       stickerEmoji: stickerEmoji ?? this.stickerEmoji,
       stickerIsAnimated: stickerIsAnimated ?? this.stickerIsAnimated,
       reactions: reactions ?? this.reactions,
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
     );
   }
 

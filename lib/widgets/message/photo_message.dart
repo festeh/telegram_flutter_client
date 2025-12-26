@@ -51,8 +51,8 @@ class PhotoMessageWidget extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          width: displayWidth ?? 200,
-          height: displayHeight ?? 150,
+          width: displayWidth,
+          height: displayHeight,
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHigh,
           ),

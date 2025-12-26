@@ -303,17 +303,19 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
 
     try {
       final currentState = state.value ?? MessageState.initial();
+      final replyToMessageId = currentState.replyingToMessage?.id;
       state = AsyncData(currentState.setSending(true));
 
       // Send message via client
       // TDLib will immediately fire updateNewMessage with pending state,
       // then updateMessageSendSucceeded when confirmed
-      await _client.sendMessage(chatId, text);
+      await _client.sendMessage(chatId, text, replyToMessageId: replyToMessageId);
 
       _logger.debug('Message sent to chat $chatId');
 
       final latestState = state.value ?? MessageState.initial();
-      state = AsyncData(latestState.setSending(false));
+      // Clear reply state after sending
+      state = AsyncData(latestState.setSending(false).clearReplyingTo());
 
     } catch (e) {
       _logger.error('Failed to send message to chat $chatId', error: e);
@@ -328,6 +330,57 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     } catch (e) {
       _logger.error('Failed to edit message $messageId in chat $chatId', error: e);
       _setError('Failed to edit message: $e');
+    }
+  }
+
+  Future<void> sendPhoto(int chatId, String filePath, {String? caption}) async {
+    try {
+      final currentState = state.value ?? MessageState.initial();
+      final replyToMessageId = currentState.replyingToMessage?.id;
+      state = AsyncData(currentState.setSending(true));
+
+      await _client.sendPhoto(chatId, filePath, caption: caption, replyToMessageId: replyToMessageId);
+      _logger.debug('Photo sent to chat $chatId');
+
+      final latestState = state.value ?? MessageState.initial();
+      state = AsyncData(latestState.setSending(false).clearReplyingTo());
+    } catch (e) {
+      _logger.error('Failed to send photo to chat $chatId', error: e);
+      _setError('Failed to send photo: $e');
+    }
+  }
+
+  Future<void> sendVideo(int chatId, String filePath, {String? caption}) async {
+    try {
+      final currentState = state.value ?? MessageState.initial();
+      final replyToMessageId = currentState.replyingToMessage?.id;
+      state = AsyncData(currentState.setSending(true));
+
+      await _client.sendVideo(chatId, filePath, caption: caption, replyToMessageId: replyToMessageId);
+      _logger.debug('Video sent to chat $chatId');
+
+      final latestState = state.value ?? MessageState.initial();
+      state = AsyncData(latestState.setSending(false).clearReplyingTo());
+    } catch (e) {
+      _logger.error('Failed to send video to chat $chatId', error: e);
+      _setError('Failed to send video: $e');
+    }
+  }
+
+  Future<void> sendDocument(int chatId, String filePath, {String? caption}) async {
+    try {
+      final currentState = state.value ?? MessageState.initial();
+      final replyToMessageId = currentState.replyingToMessage?.id;
+      state = AsyncData(currentState.setSending(true));
+
+      await _client.sendDocument(chatId, filePath, caption: caption, replyToMessageId: replyToMessageId);
+      _logger.debug('Document sent to chat $chatId');
+
+      final latestState = state.value ?? MessageState.initial();
+      state = AsyncData(latestState.setSending(false).clearReplyingTo());
+    } catch (e) {
+      _logger.error('Failed to send document to chat $chatId', error: e);
+      _setError('Failed to send document: $e');
     }
   }
 
@@ -361,6 +414,19 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     // Persist the selected chat ID
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_lastSelectedChatKey, chatId);
+  }
+
+  // Reply management
+  void setReplyingTo(Message message) {
+    final currentState = state.value ?? MessageState.initial();
+    state = AsyncData(currentState.setReplyingTo(message));
+  }
+
+  void clearReplyingTo() {
+    final currentState = state.value;
+    if (currentState != null) {
+      state = AsyncData(currentState.clearReplyingTo());
+    }
   }
 
   // State management helpers

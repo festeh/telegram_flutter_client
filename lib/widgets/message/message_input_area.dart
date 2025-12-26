@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/chat.dart';
 import '../../presentation/providers/app_providers.dart';
 import '../emoji_sticker/emoji_sticker_picker.dart';
@@ -126,6 +129,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
     final hasError = ref.watch(messageProvider.select((state) => state.hasError));
     final isPickerVisible = ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible));
     final pickerHeight = ref.watch(emojiStickerProvider.select((s) => s.keyboardHeight));
+    final replyingToMessage = ref.watch(messageProvider.select((state) => state.value?.replyingToMessage));
 
     return Container(
       decoration: BoxDecoration(
@@ -141,6 +145,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
         mainAxisSize: MainAxisSize.min,
         children: [
           if (hasError) _buildErrorBanner(),
+          if (replyingToMessage != null) _buildReplyPreview(replyingToMessage),
           _buildInputArea(isSending),
           if (isPickerVisible)
             EmojiStickerPicker(
@@ -195,6 +200,77 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
                 fontSize: 12,
                 color: colorScheme.onErrorContainer,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyPreview(Message message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final senderName = message.senderName ?? (message.isOutgoing ? 'You' : 'User');
+    final content = message.content.length > 50
+        ? '${message.content.substring(0, 50)}...'
+        : message.content;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        border: Border(
+          left: BorderSide(
+            color: colorScheme.primary,
+            width: 3,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.reply,
+            size: 18,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Replying to $senderName',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  content,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => ref.read(messageProvider.notifier).clearReplyingTo(),
+            icon: Icon(
+              Icons.close,
+              size: 18,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 32,
+              minHeight: 32,
             ),
           ),
         ],
@@ -363,62 +439,130 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
 
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Send Attachment',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
+      builder: (context) => SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Send Attachment',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildAttachmentOption(
-                  icon: Icons.photo_library,
-                  label: 'Gallery',
-                  color: Colors.purple,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildAttachmentOption(
-                  icon: Icons.camera_alt,
-                  label: 'Camera',
-                  color: colorScheme.primary,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildAttachmentOption(
-                  icon: Icons.insert_drive_file,
-                  label: 'Document',
-                  color: Colors.orange,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                _buildAttachmentOption(
-                  icon: Icons.location_on,
-                  label: 'Location',
-                  color: Colors.green,
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildAttachmentOption(
+                    icon: Icons.photo_library,
+                    label: 'Gallery',
+                    color: Colors.purple,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickFromGallery();
+                    },
+                  ),
+                  _buildAttachmentOption(
+                    icon: Icons.camera_alt,
+                    label: 'Camera',
+                    color: colorScheme.primary,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickFromCamera();
+                    },
+                  ),
+                  _buildAttachmentOption(
+                    icon: Icons.insert_drive_file,
+                    label: 'Document',
+                    color: Colors.orange,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _pickDocument();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final media = await picker.pickMedia();
+      if (media != null) {
+        final path = media.path.toLowerCase();
+        final isVideo = path.endsWith('.mp4') ||
+                        path.endsWith('.mov') ||
+                        path.endsWith('.avi') ||
+                        path.endsWith('.webm') ||
+                        path.endsWith('.mkv');
+
+        if (isVideo) {
+          await ref.read(messageProvider.notifier).sendVideo(widget.chat.id, media.path);
+        } else {
+          await ref.read(messageProvider.notifier).sendPhoto(widget.chat.id, media.path);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick media: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFromCamera() async {
+    // Camera is not available on Linux desktop
+    if (Platform.isLinux) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Camera is not available on desktop')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(source: ImageSource.camera);
+      if (image != null) {
+        await ref.read(messageProvider.notifier).sendPhoto(widget.chat.id, image.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to capture image: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles();
+      if (result != null && result.files.single.path != null) {
+        await ref.read(messageProvider.notifier).sendDocument(
+          widget.chat.id,
+          result.files.single.path!,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick document: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildAttachmentOption({

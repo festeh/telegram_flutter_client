@@ -80,7 +80,7 @@ class AppWrapper extends ConsumerWidget {
               return _buildLoadingScreen();
             },
             loading: () => _buildLoadingScreen(),
-            error: (_, __) => const HomeScreen(), // Show home on chat error, let it handle retry
+            error: (_, _) => const HomeScreen(), // Show home on chat error, let it handle retry
           );
         } else if (!authState.isInitialized) {
           // Still determining auth status - show loading

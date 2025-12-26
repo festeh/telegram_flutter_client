@@ -105,7 +105,6 @@ class _QrAuthWidgetState extends ConsumerState<QrAuthWidget> {
   }
 
   Widget _buildMobileView(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final errorMessage = ref.errorMessage;
     final isLoading = ref.isLoading;
 

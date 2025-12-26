@@ -40,7 +40,10 @@ abstract class TelegramClientRepository {
 
   // Message methods
   Future<List<Message>> loadMessages(int chatId, {int limit = 50, int fromMessageId = 0});
-  Future<Message?> sendMessage(int chatId, String text);
+  Future<Message?> sendMessage(int chatId, String text, {int? replyToMessageId});
+  Future<void> sendPhoto(int chatId, String filePath, {String? caption, int? replyToMessageId});
+  Future<void> sendVideo(int chatId, String filePath, {String? caption, int? replyToMessageId});
+  Future<void> sendDocument(int chatId, String filePath, {String? caption, int? replyToMessageId});
   Future<void> markAsRead(int chatId, int messageId);
   Future<bool> deleteMessage(int chatId, int messageId);
   Future<Message?> editMessage(int chatId, int messageId, String newText);
