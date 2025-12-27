@@ -139,12 +139,10 @@ class MessageBubble extends ConsumerWidget {
     switch (message.type) {
       case MessageType.photo:
         final caption = message.content;
-        if (caption.isNotEmpty && caption != '📷 Photo') {
-          return '📷 $caption';
-        }
-        return '📷 Photo';
+        return caption.isNotEmpty ? '📷 $caption' : '📷 Photo';
       case MessageType.video:
-        return '🎥 Video';
+        final caption = message.content;
+        return caption.isNotEmpty ? '🎥 $caption' : '🎥 Video';
       case MessageType.sticker:
         return message.sticker?.emoji ?? '🎭 Sticker';
       case MessageType.document:
@@ -351,8 +349,7 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildPhotoMessage(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasCaption =
-        message.content.isNotEmpty && message.content != '📷 Photo';
+    final hasCaption = message.content.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,8 +379,7 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildVideoMessage(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasCaption =
-        message.content.isNotEmpty && message.content != '🎥 Video';
+    final hasCaption = message.content.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -705,8 +701,7 @@ class _ReplyPostViewer extends StatelessWidget {
                           ),
                         ),
                       // Show message type indicator for media without caption
-                      if (message.content.isEmpty ||
-                          message.content == '📷 Photo')
+                      if (message.content.isEmpty)
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),

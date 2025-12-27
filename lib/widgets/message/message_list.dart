@@ -63,7 +63,12 @@ class _MessageListState extends ConsumerState<MessageList> {
 
       // With reverse: true, offset 0 = bottom (newest messages visible)
       // Show scroll-to-bottom button when scrolled away from newest messages
-      _shouldAutoScroll = currentScrollPosition < 100;
+      final shouldAutoScroll = currentScrollPosition < 100;
+      if (shouldAutoScroll != _shouldAutoScroll) {
+        setState(() {
+          _shouldAutoScroll = shouldAutoScroll;
+        });
+      }
 
       // Load more messages when scrolling to the top (older messages)
       if (_scrollController.position.pixels >=
@@ -109,10 +114,22 @@ class _MessageListState extends ConsumerState<MessageList> {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOut,
             )
-            .then((_) => _isAutoScrolling = false);
+            .then((_) {
+          _isAutoScrolling = false;
+          if (!_shouldAutoScroll) {
+            setState(() {
+              _shouldAutoScroll = true;
+            });
+          }
+        });
       } else {
         _scrollController.jumpTo(0.0);
         _isAutoScrolling = false;
+        if (!_shouldAutoScroll) {
+          setState(() {
+            _shouldAutoScroll = true;
+          });
+        }
       }
     }
   }

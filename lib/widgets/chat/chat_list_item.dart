@@ -203,12 +203,38 @@ class _ChatListItemState extends State<ChatListItem>
       messagePrefix = 'You: ';
     }
 
+    // Get display text - use content if available, otherwise show type placeholder
+    final displayText = lastMessage.content.isNotEmpty
+        ? lastMessage.content
+        : _getMessageTypeLabel(lastMessage.type);
+
     return Text(
-      '$messagePrefix${lastMessage.content}',
+      '$messagePrefix$displayText',
       style: TextStyle(fontSize: 14, color: textColor),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
+  }
+
+  String _getMessageTypeLabel(MessageType type) {
+    switch (type) {
+      case MessageType.photo:
+        return '📷 Photo';
+      case MessageType.video:
+        return '🎥 Video';
+      case MessageType.sticker:
+        return '🎭 Sticker';
+      case MessageType.document:
+        return '📎 Document';
+      case MessageType.audio:
+        return '🎵 Audio';
+      case MessageType.voice:
+        return '🎤 Voice message';
+      case MessageType.animation:
+        return '🎞️ GIF';
+      case MessageType.text:
+        return 'Message';
+    }
   }
 
   Widget _buildUnreadBadge(ColorScheme colorScheme) {

@@ -203,16 +203,20 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _logger.logUpdate(update);
     _updateController.add(update);
 
+    final type = update[TdlibFields.type] as String?;
+
     // Check for @extra to complete pending async requests
     final extra = update['@extra'] as String?;
     if (extra != null && _pendingRequests.containsKey(extra)) {
       _pendingRequests.remove(extra)?.complete(update);
-      // Response to our request - don't process as a regular update
-      // (e.g., getRepliedMessage responses shouldn't be added to chat history)
-      return;
+      // For 'messages' type, continue processing to populate cache
+      // For other types (e.g., getRepliedMessage), skip to avoid adding to chat history
+      if (type != TdlibUpdateTypes.messages) {
+        return;
+      }
     }
 
-    final type = update[TdlibFields.type] as String;
+    if (type == null) return;
 
     // Debug log for sticker-related types
     if (type.toLowerCase().contains('sticker')) {
@@ -439,7 +443,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       if (contentType == 'messagePhoto') {
         replyType = MessageType.photo;
-        if (replyContent.isEmpty) replyContent = '📷 Photo';
+        // Extract caption if available
+        if (replyContent.isEmpty) {
+          final caption = replyToContent['caption']?['text'] as String?;
+          replyContent = caption ?? '';
+        }
         // Parse photo
         final photoData = replyToContent['photo'] as Map<String, dynamic>?;
         if (photoData != null) {
@@ -470,10 +478,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
         }
       } else if (contentType == 'messageVideo') {
         replyType = MessageType.video;
-        if (replyContent.isEmpty) replyContent = '🎥 Video';
+        // Extract caption if available
+        if (replyContent.isEmpty) {
+          final caption = replyToContent['caption']?['text'] as String?;
+          replyContent = caption ?? '';
+        }
       } else if (contentType == 'messageSticker') {
         replyType = MessageType.sticker;
-        if (replyContent.isEmpty) replyContent = '🎭 Sticker';
+        // Stickers don't have captions, content stays empty
       }
     }
 
@@ -1029,6 +1041,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     maxAttempts ??= AppConfig.messageLoadRetries;
     int attempts = 0;
     int currentFromMessageId = fromMessageId;
+    int previousCacheSize = _messages[chatId]?.length ?? 0;
 
     while (attempts < maxAttempts) {
       attempts++;
@@ -1042,18 +1055,35 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'target': minMessages,
       });
 
-      // Request messages from TDLib
-      await _sendRequest({
-        '@type': 'getChatHistory',
-        'chat_id': chatId,
-        'limit': AppConfig.messagePageSize,
-        'from_message_id': currentFromMessageId,
-        'offset': 0,
-        'only_local': false,
-      });
+      // Request messages from TDLib and wait for actual response
+      final response = await _sendRequestAsync(
+        {
+          '@type': 'getChatHistory',
+          'chat_id': chatId,
+          'limit': AppConfig.messagePageSize,
+          'from_message_id': currentFromMessageId,
+          'offset': 0,
+          'only_local': false,
+        },
+        timeout: const Duration(seconds: 10),
+      );
 
-      // Wait for messages to be received via updates
-      await Future.delayed(AppConfig.messageLoadDelay);
+      // Process response - extract messages count
+      final messagesInResponse =
+          (response?['messages'] as List?)?.length ?? 0;
+
+      // If response had no messages, we've reached the end
+      if (messagesInResponse == 0) {
+        _logger.logRequest({
+          '@type': 'no_more_messages',
+          'chat_id': chatId,
+          'attempt': attempts,
+        });
+        break;
+      }
+
+      // Small delay to let the update handler process the response into cache
+      await Future.delayed(const Duration(milliseconds: 50));
 
       final currentMessages = _messages[chatId] ?? [];
 
@@ -1062,13 +1092,32 @@ class TdlibTelegramClient implements TelegramClientRepository {
         break;
       }
 
-      // After first attempt, if no messages were received at all, stop trying
-      if (attempts > 1 && currentMessages.isEmpty) {
+      // Check if cache grew - if not, something went wrong
+      if (currentMessages.length <= previousCacheSize && attempts > 1) {
+        _logger.logRequest({
+          '@type': 'cache_not_growing',
+          'chat_id': chatId,
+          'previous': previousCacheSize,
+          'current': currentMessages.length,
+        });
         break;
+      }
+      previousCacheSize = currentMessages.length;
+
+      // If no messages in cache yet, but response had messages, wait a bit more
+      if (currentMessages.isEmpty) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        final retryMessages = _messages[chatId] ?? [];
+        if (retryMessages.isEmpty) {
+          break;
+        }
       }
 
       // Get the oldest message ID for next request
-      final oldestMessage = currentMessages.reduce(
+      final cachedMessages = _messages[chatId] ?? [];
+      if (cachedMessages.isEmpty) break;
+
+      final oldestMessage = cachedMessages.reduce(
         (a, b) => a.date.isBefore(b.date) ? a : b,
       );
       currentFromMessageId = oldestMessage.id;

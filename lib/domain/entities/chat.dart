@@ -331,11 +331,14 @@ class Message {
         case 'messageText':
           return contentMap['text']?['text'] as String? ?? '';
         case 'messagePhoto':
-          // Include caption if available
           final caption = contentMap['caption']?['text'] as String?;
-          return caption?.isNotEmpty == true ? caption! : '📷 Photo';
+          return caption?.isNotEmpty == true ? caption! : '';
         case 'messageVideo':
-          return '🎥 Video';
+          final caption = contentMap['caption']?['text'] as String?;
+          return caption?.isNotEmpty == true ? caption! : '';
+        case 'messageVideoNote':
+          // Video notes don't have captions
+          return '';
         case 'messageDocument':
           return '📎 Document';
         case 'messageAudio':
@@ -349,8 +352,6 @@ class Message {
         case 'messageAnimatedEmoji':
           final emoji = contentMap['emoji'] as String?;
           return emoji ?? '[AnimatedEmoji: $contentMap]';
-        case 'messageVideoNote':
-          return '📹 Video message';
         case 'messageContact':
           return '👤 Contact';
         case 'messageLocation':
@@ -374,6 +375,7 @@ class Message {
         case 'messagePhoto':
           return MessageType.photo;
         case 'messageVideo':
+        case 'messageVideoNote':
           return MessageType.video;
         case 'messageDocument':
           return MessageType.document;
