@@ -81,8 +81,8 @@ class HomeScreen extends ConsumerWidget {
               child: MessageList(chat: chat),
             ),
           ),
-          // Message Input Area
-          MessageInputArea(chat: chat),
+          // Message Input Area (only show if user can send messages)
+          if (chat.canSendMessages) MessageInputArea(chat: chat),
         ],
       ),
     );

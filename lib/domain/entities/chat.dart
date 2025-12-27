@@ -19,6 +19,7 @@ class Chat {
   final bool isMuted;
   final int totalCount;
   final bool isInMainList;
+  final bool canSendMessages;
 
   const Chat({
     required this.id,
@@ -33,6 +34,7 @@ class Chat {
     this.isMuted = false,
     this.totalCount = 0,
     this.isInMainList = true,
+    this.canSendMessages = true,
   });
 
   factory Chat.fromJson(Map<String, dynamic> json) {
@@ -87,6 +89,12 @@ class Chat {
       });
     }
 
+    // Check if user can send messages in this chat
+    bool parseCanSendMessages(Map<String, dynamic>? permissions) {
+      if (permissions == null) return true; // Private chats default to true
+      return permissions['can_send_basic_messages'] as bool? ?? true;
+    }
+
     return Chat(
       id: json['id'] as int,
       title: json['title'] as String? ?? '',
@@ -104,6 +112,7 @@ class Chat {
           (json['notification_settings']['mute_for'] as int) > 0,
       totalCount: json['message_count'] as int? ?? 0,
       isInMainList: parseIsInMainList(json['positions'] as List<dynamic>?),
+      canSendMessages: parseCanSendMessages(json['permissions'] as Map<String, dynamic>?),
     );
   }
 
@@ -121,6 +130,7 @@ class Chat {
       'is_muted': isMuted,
       'total_count': totalCount,
       'is_in_main_list': isInMainList,
+      'can_send_messages': canSendMessages,
     };
   }
 
@@ -137,6 +147,7 @@ class Chat {
     bool? isMuted,
     int? totalCount,
     bool? isInMainList,
+    bool? canSendMessages,
   }) {
     return Chat(
       id: id ?? this.id,
@@ -151,6 +162,7 @@ class Chat {
       isMuted: isMuted ?? this.isMuted,
       totalCount: totalCount ?? this.totalCount,
       isInMainList: isInMainList ?? this.isInMainList,
+      canSendMessages: canSendMessages ?? this.canSendMessages,
     );
   }
 

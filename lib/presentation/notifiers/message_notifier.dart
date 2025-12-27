@@ -407,6 +407,16 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     }
   }
 
+  Future<void> forwardMessage(int fromChatId, int toChatId, int messageId) async {
+    try {
+      await _client.forwardMessages(fromChatId, toChatId, [messageId]);
+      _logger.debug('Message $messageId forwarded from $fromChatId to $toChatId');
+    } catch (e) {
+      _logger.error('Failed to forward message $messageId', error: e);
+      _setError('Failed to forward message: $e');
+    }
+  }
+
   void selectChat(int chatId) async {
     final currentState = state.value ?? MessageState.initial();
     state = AsyncData(currentState.selectChat(chatId));

@@ -17,6 +17,9 @@ abstract class TelegramClientRepository {
 
   Future<void> start();
 
+  // Network/connection methods
+  Future<void> setNetworkType({bool isOnline = true});
+
   // Authentication methods
   Future<void> setPhoneNumber(String phoneNumber);
   Future<void> checkAuthenticationCode(String code);
@@ -47,8 +50,10 @@ abstract class TelegramClientRepository {
   Future<void> markAsRead(int chatId, int messageId);
   Future<bool> deleteMessage(int chatId, int messageId);
   Future<Message?> editMessage(int chatId, int messageId, String newText);
+  Future<void> forwardMessages(int fromChatId, int toChatId, List<int> messageIds);
 
   // Reaction methods
+  Future<List<String>> getAvailableReactions(int chatId, int messageId);
   Future<void> addReaction(int chatId, int messageId, MessageReaction reaction);
   Future<void> removeReaction(int chatId, int messageId, MessageReaction reaction);
 

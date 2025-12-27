@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/chat.dart';
 import '../../presentation/providers/app_providers.dart';
+import '../../presentation/providers/telegram_client_provider.dart';
 import '../common/state_widgets.dart';
 import 'chat_list_item.dart';
 
@@ -73,7 +74,11 @@ class _ChatListState extends ConsumerState<ChatList> {
       children: [
         Expanded(
           child: RefreshIndicator(
-            onRefresh: () => ref.refreshChats(),
+            onRefresh: () async {
+              // Force TDLib to reconnect before refreshing
+              await ref.read(telegramClientProvider).setNetworkType(isOnline: true);
+              await ref.refreshChats();
+            },
             child: ListView.separated(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

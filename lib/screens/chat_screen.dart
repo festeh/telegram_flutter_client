@@ -28,7 +28,7 @@ class ChatScreen extends ConsumerWidget {
                 child: MessageList(chat: chat),
               ),
             ),
-            MessageInputArea(chat: chat),
+            if (chat.canSendMessages) MessageInputArea(chat: chat),
           ],
         ),
       ),

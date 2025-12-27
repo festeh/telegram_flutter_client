@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/chat.dart';
 import '../../presentation/providers/app_providers.dart';
+import '../../presentation/providers/telegram_client_provider.dart';
 import '../common/state_widgets.dart';
+import '../chat/chat_picker_sheet.dart';
 import 'message_bubble.dart';
 import 'date_separator.dart';
+import 'reaction_bar.dart';
 
 class MessageList extends ConsumerStatefulWidget {
   final Chat chat;
@@ -311,62 +314,91 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   void _showMessageOptions(BuildContext context, Message message) {
+    // Fetch available reactions
+    final reactionsFuture = ref.read(telegramClientProvider).getAvailableReactions(
+      widget.chat.id,
+      message.id,
+    );
+
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (message.isOutgoing)
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Edit'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _editMessage(message);
+      builder: (context) => SafeArea(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Reaction bar at top
+              FutureBuilder<List<String>>(
+                future: reactionsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                    return Column(
+                      children: [
+                        ReactionBar(
+                          reactions: snapshot.data!,
+                          onReactionSelected: (emoji) {
+                            Navigator.pop(context);
+                            _addReaction(message, emoji);
+                          },
+                        ),
+                        const Divider(height: 1),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.reply),
-              title: const Text('Reply'),
-              onTap: () {
-                Navigator.pop(context);
-                ref.read(messageProvider.notifier).setReplyingTo(message);
-              },
-            ),
-            if (message.content.isNotEmpty)
+              if (message.isOutgoing)
+                ListTile(
+                  leading: const Icon(Icons.edit),
+                  title: const Text('Edit'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _editMessage(message);
+                  },
+                ),
               ListTile(
-                leading: const Icon(Icons.copy),
-                title: const Text('Copy'),
+                leading: const Icon(Icons.reply),
+                title: const Text('Reply'),
                 onTap: () {
                   Navigator.pop(context);
-                  Clipboard.setData(ClipboardData(text: message.content));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Copied to clipboard'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
+                  ref.read(messageProvider.notifier).setReplyingTo(message);
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: const Text('Delete'),
-              onTap: () {
-                Navigator.pop(context);
-                _deleteMessage(message);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.forward),
-              title: const Text('Forward'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement forward functionality
-              },
-            ),
-          ],
+              if (message.content.isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.copy),
+                  title: const Text('Copy'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Clipboard.setData(ClipboardData(text: message.content));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Copied to clipboard'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Delete'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _deleteMessage(message);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.forward),
+                title: const Text('Forward'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showForwardSheet(message);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -434,7 +466,7 @@ class _MessageListState extends ConsumerState<MessageList> {
           TextButton(
             onPressed: () {
               ref.read(messageProvider.notifier).deleteMessage(
-                widget.chat.id, 
+                widget.chat.id,
                 message.id,
               );
               Navigator.pop(context);
@@ -443,6 +475,43 @@ class _MessageListState extends ConsumerState<MessageList> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showForwardSheet(Message message) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => ChatPickerSheet(
+        excludeChatId: widget.chat.id,
+        onChatSelected: (targetChat) {
+          ref.read(messageProvider.notifier).forwardMessage(
+            widget.chat.id,
+            targetChat.id,
+            message.id,
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Message forwarded to ${targetChat.title}'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _addReaction(Message message, String emoji) {
+    final reaction = MessageReaction(
+      type: ReactionType.emoji,
+      emoji: emoji,
+      count: 0,
+      isChosen: false,
+    );
+    ref.read(telegramClientProvider).addReaction(
+      widget.chat.id,
+      message.id,
+      reaction,
     );
   }
 }

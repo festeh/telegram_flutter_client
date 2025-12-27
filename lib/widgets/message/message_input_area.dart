@@ -24,7 +24,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isMultiline = false;
-  String _currentText = '';
   bool _wasKeyboardVisible = false;
 
   @override
@@ -82,7 +81,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
   void _onTextChanged() {
     final text = _textController.text;
     setState(() {
-      _currentText = text;
       _isMultiline = text.contains('\n') || text.length > 50;
     });
   }
@@ -93,7 +91,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
 
     _textController.clear();
     setState(() {
-      _currentText = '';
       _isMultiline = false;
     });
 
@@ -101,9 +98,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
       await ref.read(messageProvider.notifier).sendMessage(widget.chat.id, text);
     } catch (e) {
       _textController.text = text;
-      setState(() {
-        _currentText = text;
-      });
 
       if (mounted) {
         final colorScheme = Theme.of(context).colorScheme;
@@ -364,12 +358,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
             ),
           ),
           const SizedBox(width: 8),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            child: _currentText.trim().isNotEmpty || isSending
-                ? _buildSendButton(isSending)
-                : _buildVoiceButton(),
-          ),
+          _buildSendButton(isSending),
         ],
       ),
     );
@@ -406,29 +395,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
                 size: 20,
               ),
         tooltip: isSending ? 'Sending...' : 'Send message',
-        splashRadius: 20,
-      ),
-    );
-  }
-
-  Widget _buildVoiceButton() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      height: 40,
-      width: 40,
-      decoration: BoxDecoration(
-        color: colorScheme.secondary,
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        onPressed: _startVoiceRecording,
-        icon: Icon(
-          Icons.mic,
-          color: colorScheme.onSecondary,
-          size: 20,
-        ),
-        tooltip: 'Voice message',
         splashRadius: 20,
       ),
     );
@@ -617,12 +583,4 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
     }
   }
 
-  void _startVoiceRecording() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Voice messages coming soon!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
 }

@@ -132,6 +132,17 @@ class TdlibTelegramClient implements TelegramClientRepository {
     });
   }
 
+  @override
+  Future<void> setNetworkType({bool isOnline = true}) async {
+    await _sendRequest({
+      '@type': 'setNetworkType',
+      'type': isOnline
+          ? {'@type': 'networkTypeOther'}
+          : {'@type': 'networkTypeNone'},
+    });
+    _logger.logResponse({'@type': 'setNetworkType', 'online': isOnline});
+  }
+
   void _startReceiving() {
     _receiveTimer = Timer.periodic(AppConfig.updatePollingInterval, (timer) {
       bool hasUpdates = false;
@@ -246,6 +257,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
     } else if (type == 'stickers' || type == 'Stickers') {
       _logger.logResponse({'@type': 'DEBUG_stickers_received', 'type': type});
       _handleRecentStickersResponse(update);
+    } else if (type == 'availableReactions') {
+      _handleAvailableReactionsResponse(update);
     } else if (type == 'error') {
       // Log errors
       _logger.logError('TDLib error: ${update['message']}', error: update);
@@ -937,6 +950,105 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   @override
+  Future<void> forwardMessages(int fromChatId, int toChatId, List<int> messageIds) async {
+    try {
+      await _sendRequest({
+        '@type': 'forwardMessages',
+        'chat_id': toChatId,
+        'from_chat_id': fromChatId,
+        'message_ids': messageIds,
+        'send_copy': false,
+        'remove_caption': false,
+      });
+      _logger.logResponse({'@type': 'forwardMessages_success', 'count': messageIds.length, 'from': fromChatId, 'to': toChatId});
+    } catch (e) {
+      _logger.logError('Failed to forward messages from $fromChatId to $toChatId', error: e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<String>> getAvailableReactions(int chatId, int messageId) async {
+    try {
+      // If there's already a pending request, reuse it
+      if (_availableReactionsCompleter != null && !_availableReactionsCompleter!.isCompleted) {
+        return _availableReactionsCompleter!.future;
+      }
+
+      _availableReactionsCompleter = Completer<List<String>>();
+
+      _logger.logRequest({
+        '@type': 'getMessageAvailableReactions',
+        'chat_id': chatId,
+        'message_id': messageId,
+      });
+
+      await _sendRequest({
+        '@type': 'getMessageAvailableReactions',
+        'chat_id': chatId,
+        'message_id': messageId,
+        'row_size': 8,
+      });
+
+      // Wait for response with timeout
+      final result = await _availableReactionsCompleter!.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => <String>[],
+      );
+
+      _logger.logResponse({
+        '@type': 'getMessageAvailableReactions_result',
+        'count': result.length,
+        'emojis': result.take(5).toList(),
+      });
+
+      return result;
+    } catch (e) {
+      _logger.logError('Failed to get available reactions', error: e);
+      return [];
+    }
+  }
+
+  void _handleAvailableReactionsResponse(Map<String, dynamic> update) {
+    try {
+      final emojis = <String>[];
+
+      // Helper to extract emojis from reaction list
+      void extractEmojis(List<dynamic>? reactions) {
+        if (reactions == null) return;
+        for (final reaction in reactions) {
+          // Skip premium reactions
+          if (reaction['needs_premium'] == true) continue;
+
+          final type = reaction['type'] as Map<String, dynamic>?;
+          if (type == null) continue;
+
+          // Only handle emoji reactions (not custom emoji or paid)
+          if (type['@type'] == 'reactionTypeEmoji') {
+            final emoji = type['emoji'] as String?;
+            if (emoji != null && !emojis.contains(emoji)) {
+              emojis.add(emoji);
+            }
+          }
+        }
+      }
+
+      extractEmojis(update['top_reactions'] as List<dynamic>?);
+      extractEmojis(update['recent_reactions'] as List<dynamic>?);
+      extractEmojis(update['popular_reactions'] as List<dynamic>?);
+
+      if (_availableReactionsCompleter != null && !_availableReactionsCompleter!.isCompleted) {
+        _availableReactionsCompleter!.complete(emojis);
+      }
+    } catch (e) {
+      _logger.logError('Error handling available reactions response', error: e);
+      if (_availableReactionsCompleter != null && !_availableReactionsCompleter!.isCompleted) {
+        _availableReactionsCompleter!.complete([]);
+      }
+    }
+  }
+
+  @override
   Future<void> addReaction(int chatId, int messageId, MessageReaction reaction) async {
     _logger.logRequest({
       '@type': 'addReaction_called',
@@ -1611,6 +1723,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
       'synchronous': false,
     });
   }
+
+  // Available reactions completer
+  Completer<List<String>>? _availableReactionsCompleter;
 
   // Sticker methods
 
