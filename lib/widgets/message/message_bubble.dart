@@ -8,6 +8,7 @@ import '../../presentation/providers/app_providers.dart';
 import '../../presentation/providers/telegram_client_provider.dart';
 import 'photo_message.dart';
 import 'sticker_message.dart';
+import 'video_message.dart';
 
 class MessageBubble extends ConsumerWidget {
   final Message message;
@@ -56,7 +57,8 @@ class MessageBubble extends ConsumerWidget {
                   else
                     _buildMessageBubble(context, ref),
                   if (showTime) _buildTimeStamp(context),
-                  if (message.reactions != null && message.reactions!.isNotEmpty)
+                  if (message.reactions != null &&
+                      message.reactions!.isNotEmpty)
                     _buildReactionsRow(context, ref),
                 ],
               ),
@@ -68,7 +70,8 @@ class MessageBubble extends ConsumerWidget {
   }
 
   Color _getAvatarColor() {
-    return AppTheme.avatarColors[message.senderId.abs() % AppTheme.avatarColors.length];
+    return AppTheme.avatarColors[message.senderId.abs() %
+        AppTheme.avatarColors.length];
   }
 
   Widget _buildSenderName(BuildContext context) {
@@ -109,10 +112,9 @@ class MessageBubble extends ConsumerWidget {
             offset: const Offset(0, 2),
           ),
         ],
-        border: !isOutgoing ? Border.all(
-          color: colorScheme.outline,
-          width: 1,
-        ) : null,
+        border: !isOutgoing
+            ? Border.all(color: colorScheme.outline, width: 1)
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -129,23 +131,83 @@ class MessageBubble extends ConsumerWidget {
     );
   }
 
+  /// Get clean preview content for reply - strips URLs and handles media types
+  String _getReplyPreviewContent(Message? message) {
+    if (message == null) return 'Loading...';
+
+    // For media types, show descriptive text
+    switch (message.type) {
+      case MessageType.photo:
+        final caption = message.content;
+        if (caption.isNotEmpty && caption != '📷 Photo') {
+          return '📷 $caption';
+        }
+        return '📷 Photo';
+      case MessageType.video:
+        return '🎥 Video';
+      case MessageType.sticker:
+        return message.sticker?.emoji ?? '🎭 Sticker';
+      case MessageType.document:
+        return '📎 Document';
+      case MessageType.audio:
+        return '🎵 Audio';
+      case MessageType.voice:
+        return '🎤 Voice message';
+      case MessageType.animation:
+        return 'GIF';
+      case MessageType.text:
+        // Strip URLs from text for cleaner preview
+        final text = message.content;
+        if (text.isEmpty) return 'Message';
+        // Remove URLs (http/https/t.me links)
+        final cleanText = text
+            .replaceAll(RegExp(r'https?://\S+'), '')
+            .replaceAll(RegExp(r't\.me/\S+'), '')
+            .trim();
+        return cleanText.isNotEmpty ? cleanText : text;
+    }
+  }
+
   Widget _buildReplyPreview(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final isOutgoing = message.isOutgoing;
+    final replyToId = message.replyToMessageId;
+    if (replyToId == null) return const SizedBox.shrink();
 
-    // Look up the original message from state
-    final messageState = ref.watch(messageProvider).value;
+    // Watch reply cache version to rebuild when replies are fetched
+    ref.watch(replyCacheVersionProvider);
+
+    // Look up the original message from state (don't watch full provider to avoid rebuilds)
+    final messageState = ref.read(messageProvider).value;
     final messages = messageState?.messagesByChat[message.chatId] ?? [];
-    final repliedMessage = messages.cast<Message?>().firstWhere(
-      (m) => m?.id == message.replyToMessageId,
+    Message? repliedMessage = messages.cast<Message?>().firstWhere(
+      (m) => m?.id == replyToId,
       orElse: () => null,
     );
 
-    final senderName = repliedMessage?.senderName ??
+    // If not in state, check TDLib client cache
+    final client = ref.read(telegramClientProvider);
+    repliedMessage ??= client.getCachedReplyMessage(message.chatId, replyToId);
+
+    // If still not found, trigger async fetch (will rebuild when cached)
+    if (repliedMessage == null) {
+      // Pass both current message ID and replyToMessageId for proper TDLib getRepliedMessage API
+      client.fetchReplyMessage(message.chatId, message.id, replyToId).then((
+        msg,
+      ) {
+        if (msg != null) {
+          // Bump version to trigger rebuild of bubbles with replies
+          ref.read(replyCacheVersionProvider.notifier).bump();
+        }
+      });
+    }
+
+    final senderName =
+        repliedMessage?.senderName ??
         (repliedMessage?.isOutgoing == true ? 'You' : 'User');
-    final content = repliedMessage?.content ?? 'Message not found';
-    final truncatedContent = content.length > 40
-        ? '${content.substring(0, 40)}...'
+    final content = _getReplyPreviewContent(repliedMessage);
+    final truncatedContent = content.length > 50
+        ? '${content.substring(0, 50)}...'
         : content;
 
     final primaryColor = isOutgoing
@@ -155,42 +217,113 @@ class MessageBubble extends ConsumerWidget {
         ? colorScheme.onPrimary.withValues(alpha: 0.7)
         : colorScheme.onSurface.withValues(alpha: 0.7);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: primaryColor, width: 2),
+    // Check if replied message has a photo (regular or link preview)
+    final photoPath = repliedMessage?.photo?.path;
+    final linkPreviewPhotoPath = repliedMessage?.linkPreviewPhoto?.path;
+    final displayPhotoPath = photoPath ?? linkPreviewPhotoPath;
+    final hasPhoto = displayPhotoPath != null && displayPhotoPath.isNotEmpty;
+
+    // Check if photo is loading (has fileId but no path)
+    final isPhotoLoading =
+        repliedMessage != null &&
+        !hasPhoto &&
+        ((repliedMessage.photo?.fileId != null) ||
+            (repliedMessage.linkPreviewPhoto?.fileId != null));
+
+    // Capture for closure
+    final replyMsg = repliedMessage;
+
+    return GestureDetector(
+      onTap: replyMsg != null
+          ? () => _openReplyViewer(context, replyMsg)
+          : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: primaryColor, width: 2)),
+          color: isOutgoing
+              ? colorScheme.onPrimary.withValues(alpha: 0.1)
+              : colorScheme.primary.withValues(alpha: 0.1),
+          borderRadius: const BorderRadius.only(
+            topRight: Radius.circular(4),
+            bottomRight: Radius.circular(4),
+          ),
         ),
-        color: isOutgoing
-            ? colorScheme.onPrimary.withValues(alpha: 0.1)
-            : colorScheme.primary.withValues(alpha: 0.1),
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(4),
-          bottomRight: Radius.circular(4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    senderName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
+                  ),
+                  Text(
+                    truncatedContent,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: textColor),
+                  ),
+                ],
+              ),
+            ),
+            if (hasPhoto) ...[
+              const SizedBox(width: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image.file(
+                  File(displayPhotoPath),
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+              ),
+            ] else if (isPhotoLoading) ...[
+              const SizedBox(width: 8),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: primaryColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            senderName,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: primaryColor,
-            ),
-          ),
-          Text(
-            truncatedContent,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
-              color: textColor,
-            ),
-          ),
-        ],
+    );
+  }
+
+  void _openReplyViewer(BuildContext context, Message repliedMessage) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return _ReplyPostViewer(message: repliedMessage);
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
       ),
     );
   }
@@ -202,7 +335,7 @@ class MessageBubble extends ConsumerWidget {
       case MessageType.photo:
         return _buildPhotoMessage(context);
       case MessageType.video:
-        return _buildMediaMessage(context, Icons.videocam, 'Video');
+        return _buildVideoMessage(context);
       case MessageType.document:
         return _buildMediaMessage(context, Icons.description, 'Document');
       case MessageType.audio:
@@ -218,15 +351,49 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildPhotoMessage(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasCaption = message.content.isNotEmpty && message.content != '📷 Photo';
+    final hasCaption =
+        message.content.isNotEmpty && message.content != '📷 Photo';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         PhotoMessageWidget(
-          photoPath: message.photoPath,
-          photoWidth: message.photoWidth,
-          photoHeight: message.photoHeight,
+          photoPath: message.photo?.path,
+          photoWidth: message.photo?.width,
+          photoHeight: message.photo?.height,
+          isOutgoing: message.isOutgoing,
+        ),
+        if (hasCaption) ...[
+          const SizedBox(height: 8),
+          Text(
+            message.content,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.3,
+              color: message.isOutgoing
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVideoMessage(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasCaption =
+        message.content.isNotEmpty && message.content != '🎥 Video';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        VideoMessageWidget(
+          videoPath: message.video?.path,
+          videoWidth: message.video?.width,
+          videoHeight: message.video?.height,
+          duration: message.video?.duration,
+          thumbnailPath: message.video?.thumbnailPath,
           isOutgoing: message.isOutgoing,
         ),
         if (hasCaption) ...[
@@ -248,11 +415,11 @@ class MessageBubble extends ConsumerWidget {
 
   Widget _buildStickerMessage(BuildContext context) {
     return StickerMessageWidget(
-      stickerPath: message.stickerPath,
-      stickerWidth: message.stickerWidth,
-      stickerHeight: message.stickerHeight,
-      isAnimated: message.stickerIsAnimated,
-      emoji: message.stickerEmoji,
+      stickerPath: message.sticker?.path,
+      stickerWidth: message.sticker?.width,
+      stickerHeight: message.sticker?.height,
+      isAnimated: message.sticker?.isAnimated ?? false,
+      emoji: message.sticker?.emoji,
     );
   }
 
@@ -388,12 +555,12 @@ class MessageBubble extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if ((reaction.type == ReactionType.emoji || reaction.type == ReactionType.paid) && reaction.emoji != null)
-                    Text(
-                      reaction.emoji!,
-                      style: const TextStyle(fontSize: 14),
-                    )
-                  else if (reaction.type == ReactionType.customEmoji && reaction.customEmojiPath != null)
+                  if ((reaction.type == ReactionType.emoji ||
+                          reaction.type == ReactionType.paid) &&
+                      reaction.emoji != null)
+                    Text(reaction.emoji!, style: const TextStyle(fontSize: 14))
+                  else if (reaction.type == ReactionType.customEmoji &&
+                      reaction.customEmojiPath != null)
                     // Custom emoji with downloaded image
                     ClipRRect(
                       borderRadius: BorderRadius.circular(2),
@@ -452,6 +619,181 @@ class MessageBubble extends ConsumerWidget {
       client.removeReaction(message.chatId, message.id, reaction);
     } else {
       client.addReaction(message.chatId, message.id, reaction);
+    }
+  }
+}
+
+/// Full-screen viewer for reply posts
+class _ReplyPostViewer extends StatelessWidget {
+  final Message message;
+
+  const _ReplyPostViewer({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final photoPath = message.photo?.path ?? message.linkPreviewPhoto?.path;
+    final hasPhoto = photoPath != null && photoPath.isNotEmpty;
+
+    return Scaffold(
+      backgroundColor: Colors.black.withValues(alpha: 0.9),
+      body: GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header with close button
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        message.senderName ?? 'Channel',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Photo if available
+                      if (hasPhoto) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(photoPath),
+                            fit: BoxFit.contain,
+                            width: double.infinity,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const SizedBox.shrink(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      // Text content
+                      if (message.content.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: SelectableText(
+                            message.content,
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontSize: 16,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      // Show message type indicator for media without caption
+                      if (message.content.isEmpty ||
+                          message.content == '📷 Photo')
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _getTypeIcon(message.type),
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _getTypeName(message.type),
+                                style: TextStyle(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      // Date
+                      Text(
+                        DateFormat('MMM dd, yyyy HH:mm').format(message.date),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getTypeIcon(MessageType type) {
+    switch (type) {
+      case MessageType.photo:
+        return Icons.photo;
+      case MessageType.video:
+        return Icons.videocam;
+      case MessageType.sticker:
+        return Icons.emoji_emotions;
+      case MessageType.document:
+        return Icons.description;
+      case MessageType.audio:
+        return Icons.audiotrack;
+      case MessageType.voice:
+        return Icons.mic;
+      case MessageType.animation:
+        return Icons.gif;
+      case MessageType.text:
+        return Icons.message;
+    }
+  }
+
+  String _getTypeName(MessageType type) {
+    switch (type) {
+      case MessageType.photo:
+        return 'Photo';
+      case MessageType.video:
+        return 'Video';
+      case MessageType.sticker:
+        return 'Sticker';
+      case MessageType.document:
+        return 'Document';
+      case MessageType.audio:
+        return 'Audio';
+      case MessageType.voice:
+        return 'Voice message';
+      case MessageType.animation:
+        return 'GIF';
+      case MessageType.text:
+        return 'Message';
     }
   }
 }

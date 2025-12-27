@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/constants/ui_constants.dart';
 import '../presentation/providers/app_providers.dart';
 import '../widgets/auth/phone_input_widget.dart';
 import '../widgets/auth/code_input_widget.dart';
@@ -49,51 +50,49 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         child: Center(
           child: Card(
             elevation: 8,
-            margin: const EdgeInsets.all(32),
+            margin: const EdgeInsets.all(Spacing.xxl),
             child: Container(
-              width: 450,
-              height: 600,
-              padding: const EdgeInsets.all(32),
+              width: AuthLayout.dialogWidth,
+              height: AuthLayout.dialogHeight,
+              padding: const EdgeInsets.all(Spacing.xxl),
               child: Column(
                 children: [
                   // Header
                   Icon(
                     Icons.telegram,
-                    size: 64,
+                    size: IconSize.xl,
                     color: colorScheme.primary,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: Spacing.lg),
                   Text(
                     'Telegram Flutter Client',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: Spacing.sm),
                   Text(
                     'Sign in to your account',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
+                      color: colorScheme.onSurface.withValues(
+                        alpha: Opacities.high,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: Spacing.xxl),
 
                   // Tab Bar
                   TabBar(
                     controller: _tabController,
                     labelColor: colorScheme.primary,
-                    unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.6),
+                    unselectedLabelColor: colorScheme.onSurface.withValues(
+                      alpha: Opacities.high,
+                    ),
                     indicatorColor: colorScheme.primary,
                     tabs: const [
-                      Tab(
-                        icon: Icon(Icons.phone),
-                        text: 'Phone Number',
-                      ),
-                      Tab(
-                        icon: Icon(Icons.qr_code),
-                        text: 'QR Code',
-                      ),
+                      Tab(icon: Icon(Icons.phone), text: 'Phone Number'),
+                      Tab(icon: Icon(Icons.qr_code), text: 'QR Code'),
                     ],
                   ),
 
@@ -101,10 +100,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
-                      children: [
-                        _buildPhoneAuthTab(),
-                        _buildQrAuthTab(),
-                      ],
+                      children: [_buildPhoneAuthTab(), _buildQrAuthTab()],
                     ),
                   ),
                 ],
@@ -146,12 +142,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Spacing.lg),
           Text(
             message,
             style: TextStyle(
               fontSize: 16,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              color: colorScheme.onSurface.withValues(alpha: Opacities.high),
             ),
           ),
         ],
@@ -163,7 +159,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(32.0),
+      padding: const EdgeInsets.all(Spacing.xxl),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -173,22 +169,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
             height: 56,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(Radii.md),
             ),
             child: Center(
               child: SizedBox(
-                width: 20,
-                height: 20,
+                width: IconSize.sm,
+                height: IconSize.sm,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    colorScheme.onSurface.withValues(alpha: 0.5),
+                    colorScheme.onSurface.withValues(alpha: Opacities.medium),
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Spacing.lg),
 
           // Skeleton for button
           Container(
@@ -196,16 +192,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
             height: 48,
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(Radii.md),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Spacing.lg),
 
           // Loading text
           Text(
             'Initializing authentication...',
             style: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
+              color: colorScheme.onSurface.withValues(alpha: Opacities.medium),
               fontSize: 14,
             ),
           ),

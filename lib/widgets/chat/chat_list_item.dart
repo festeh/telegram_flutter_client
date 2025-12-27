@@ -71,9 +71,7 @@ class _ChatListItemState extends State<ChatListItem>
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Expanded(
-                            child: _buildLastMessage(colorScheme),
-                          ),
+                          Expanded(child: _buildLastMessage(colorScheme)),
                           const SizedBox(width: 8),
                           _buildUnreadBadge(colorScheme),
                         ],
@@ -182,13 +180,7 @@ class _ChatListItemState extends State<ChatListItem>
       timeText = 'now';
     }
 
-    return Text(
-      timeText,
-      style: TextStyle(
-        fontSize: 12,
-        color: timeColor,
-      ),
-    );
+    return Text(timeText, style: TextStyle(fontSize: 12, color: timeColor));
   }
 
   Widget _buildLastMessage(ColorScheme colorScheme) {
@@ -200,10 +192,7 @@ class _ChatListItemState extends State<ChatListItem>
     if (lastMessage == null) {
       return Text(
         'No messages yet',
-        style: TextStyle(
-          fontSize: 14,
-          color: textColor,
-        ),
+        style: TextStyle(fontSize: 14, color: textColor),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       );
@@ -216,10 +205,7 @@ class _ChatListItemState extends State<ChatListItem>
 
     return Text(
       '$messagePrefix${lastMessage.content}',
-      style: TextStyle(
-        fontSize: 14,
-        color: textColor,
-      ),
+      style: TextStyle(fontSize: 14, color: textColor),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );

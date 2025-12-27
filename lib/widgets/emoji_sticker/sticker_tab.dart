@@ -8,11 +8,7 @@ class StickerTab extends ConsumerStatefulWidget {
   final int chatId;
   final VoidCallback? onStickerSent;
 
-  const StickerTab({
-    super.key,
-    required this.chatId,
-    this.onStickerSent,
-  });
+  const StickerTab({super.key, required this.chatId, this.onStickerSent});
 
   @override
   ConsumerState<StickerTab> createState() => _StickerTabState();
@@ -34,12 +30,24 @@ class _StickerTabState extends ConsumerState<StickerTab> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final stickerSets = ref.watch(emojiStickerProvider.select((s) => s.installedStickerSets));
-    final recentStickers = ref.watch(emojiStickerProvider.select((s) => s.recentStickers));
-    final selectedSet = ref.watch(emojiStickerProvider.select((s) => s.selectedStickerSet));
-    final isLoadingSets = ref.watch(emojiStickerProvider.select((s) => s.isLoadingStickerSets));
-    final isLoadingStickers = ref.watch(emojiStickerProvider.select((s) => s.isLoadingStickers));
-    final displayedStickers = ref.watch(emojiStickerProvider.select((s) => s.displayedStickers));
+    final stickerSets = ref.watch(
+      emojiStickerProvider.select((s) => s.installedStickerSets),
+    );
+    final recentStickers = ref.watch(
+      emojiStickerProvider.select((s) => s.recentStickers),
+    );
+    final selectedSet = ref.watch(
+      emojiStickerProvider.select((s) => s.selectedStickerSet),
+    );
+    final isLoadingSets = ref.watch(
+      emojiStickerProvider.select((s) => s.isLoadingStickerSets),
+    );
+    final isLoadingStickers = ref.watch(
+      emojiStickerProvider.select((s) => s.isLoadingStickers),
+    );
+    final displayedStickers = ref.watch(
+      emojiStickerProvider.select((s) => s.displayedStickers),
+    );
 
     return Column(
       children: [
@@ -49,23 +57,24 @@ class _StickerTabState extends ConsumerState<StickerTab> {
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLow,
             border: Border(
-              bottom: BorderSide(
-                color: colorScheme.outlineVariant,
-                width: 0.5,
-              ),
+              bottom: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
             ),
           ),
           child: isLoadingSets
               ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-              : _buildStickerSetBar(stickerSets, selectedSet, recentStickers.isNotEmpty),
+              : _buildStickerSetBar(
+                  stickerSets,
+                  selectedSet,
+                  recentStickers.isNotEmpty,
+                ),
         ),
         // Sticker grid
         Expanded(
           child: isLoadingStickers
               ? const Center(child: CircularProgressIndicator())
               : displayedStickers.isEmpty
-                  ? _buildEmptyState(colorScheme, selectedSet == null)
-                  : _buildStickerGrid(displayedStickers),
+              ? _buildEmptyState(colorScheme, selectedSet == null)
+              : _buildStickerGrid(displayedStickers),
         ),
       ],
     );
@@ -91,13 +100,17 @@ class _StickerTabState extends ConsumerState<StickerTab> {
             onTap: () {
               if (selectedSet != null) {
                 // Deselect current set to show recent
-                ref.read(emojiStickerProvider.notifier).selectStickerSet(selectedSet);
+                ref
+                    .read(emojiStickerProvider.notifier)
+                    .selectStickerSet(selectedSet);
               }
             },
             child: Icon(
               Icons.access_time,
               size: 24,
-              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
             ),
           );
         }
@@ -107,7 +120,8 @@ class _StickerTabState extends ConsumerState<StickerTab> {
 
         return _StickerSetIcon(
           isSelected: isSelected,
-          onTap: () => ref.read(emojiStickerProvider.notifier).selectStickerSet(set),
+          onTap: () =>
+              ref.read(emojiStickerProvider.notifier).selectStickerSet(set),
           child: set.stickers.isNotEmpty
               ? StickerGridItem(
                   sticker: set.stickers.first,

@@ -9,7 +9,7 @@ import '../providers/telegram_client_provider.dart';
 import '../../core/config/app_config.dart';
 
 class ChatNotifier extends AsyncNotifier<ChatState> {
-  late final TelegramClientRepository _client;
+  TelegramClientRepository get _client => ref.read(telegramClientProvider);
   StreamSubscription<ChatEvent>? _eventSubscription;
   final AppLogger _logger = AppLogger.instance;
   Timer? _sortDebounceTimer;
@@ -17,9 +17,6 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
 
   @override
   Future<ChatState> build() async {
-    // Use the shared client instance from provider
-    _client = ref.read(telegramClientProvider);
-
     // Register cleanup on dispose
     ref.onDispose(() {
       _eventSubscription?.cancel();
@@ -50,16 +47,29 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       case ChatTitleUpdatedEvent(:final chatId, :final title):
         _updateChatProperty(chatId, (chat) => chat.copyWith(title: title));
       case ChatPhotoUpdatedEvent(:final chatId, :final photoPath):
-        _updateChatProperty(chatId, (chat) => chat.copyWith(photoPath: photoPath));
-      case ChatLastMessageUpdatedEvent(:final chatId, :final lastMessage, :final lastActivity):
         _updateChatProperty(
           chatId,
-          (chat) => chat.copyWith(lastMessage: lastMessage, lastActivity: lastActivity),
+          (chat) => chat.copyWith(photoPath: photoPath),
+        );
+      case ChatLastMessageUpdatedEvent(
+        :final chatId,
+        :final lastMessage,
+        :final lastActivity,
+      ):
+        _updateChatProperty(
+          chatId,
+          (chat) => chat.copyWith(
+            lastMessage: lastMessage,
+            lastActivity: lastActivity,
+          ),
         );
       case ChatUnreadCountUpdatedEvent(:final chatId, :final unreadCount):
-        _updateChatProperty(chatId, (chat) => chat.copyWith(unreadCount: unreadCount));
+        _updateChatProperty(
+          chatId,
+          (chat) => chat.copyWith(unreadCount: unreadCount),
+        );
       case ChatPositionChangedEvent(:final chatId, :final isInMainList):
-        _updateChatProperty(chatId, (chat) => chat.copyWith(isInMainList: isInMainList));
+        _handleChatPositionChanged(chatId, isInMainList);
       case ChatOrderChangedEvent():
         _resortChats();
       case UserStatusUpdatedEvent():
@@ -84,12 +94,33 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
 
     final currentState = state.value;
     if (currentState != null) {
-      // Mark as initialized when we receive chats (they've loaded)
-      final newState = currentState.addChat(chat).copyWith(isInitialized: true);
-      state = AsyncData(newState);
+      final newState = currentState.addChat(chat);
+      // Only mark as initialized when we have a chat visible in main list
+      final shouldInitialize = currentState.isInitialized || chat.isInMainList;
+      state = AsyncData(newState.copyWith(isInitialized: shouldInitialize));
       _logger.debug('Chat added to state. Total chats: ${newState.chatCount}');
       _scheduleSortIfNeeded();
     }
+  }
+
+  void _handleChatPositionChanged(int chatId, bool isInMainList) {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final chatIndex = currentState.chats.indexWhere((c) => c.id == chatId);
+    if (chatIndex == -1) return;
+
+    final currentChat = currentState.chats[chatIndex];
+    final updatedChat = currentChat.copyWith(isInMainList: isInMainList);
+    var newState = currentState.updateChat(updatedChat);
+
+    // Mark as initialized when we have a chat visible in main list
+    if (isInMainList && !currentState.isInitialized) {
+      newState = newState.copyWith(isInitialized: true);
+    }
+
+    state = AsyncData(newState);
+    _scheduleSortIfNeeded();
   }
 
   void _resortChats() {
@@ -121,7 +152,9 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
   void _downloadChatPhoto(Chat chat) {
     if (chat.photoFileId != null &&
         (chat.photoPath == null || chat.photoPath!.isEmpty)) {
-      _logger.debug('Requesting photo download for chat ${chat.title} (fileId: ${chat.photoFileId})');
+      _logger.debug(
+        'Requesting photo download for chat ${chat.title} (fileId: ${chat.photoFileId})',
+      );
       _client.downloadFile(chat.photoFileId!);
     }
   }
@@ -149,16 +182,18 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       final chats = await _client.loadChats(limit: AppConfig.chatPageSize);
 
       _logger.debug(
-          'Chat loading result: ${chats.length} chats loaded from client');
+        'Chat loading result: ${chats.length} chats loaded from client',
+      );
 
       // Trigger photo downloads for chats that need them
       _downloadChatPhotos(chats);
 
-      // Only set isInitialized=true when we have chats
+      // Only set isInitialized=true when we have chats visible in main list
       // If empty, real chats will arrive via updateNewChat events
-      final chatState = chats.isNotEmpty
+      final hasMainListChats = chats.any((c) => c.isInMainList);
+      final chatState = hasMainListChats
           ? ChatState.loaded(chats)
-          : const ChatState(isLoading: false, isInitialized: false);
+          : ChatState(chats: chats, isLoading: false, isInitialized: false);
 
       _setLoading(false);
       return chatState.sortByLastActivity();
@@ -167,7 +202,8 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
 
       // On error, start with empty state, real chats will still come via updates
       _logger.debug(
-          'Starting with empty state, real chats will arrive via updates');
+        'Starting with empty state, real chats will arrive via updates',
+      );
       _setLoading(false);
       return const ChatState(isLoading: false, isInitialized: false);
     }
@@ -190,8 +226,9 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       // Load more chats starting from the last chat
       final moreChats = await _client.loadChats(
         limit: 20,
-        offsetChatId:
-            currentState.chats.isNotEmpty ? currentState.chats.last.id : 0,
+        offsetChatId: currentState.chats.isNotEmpty
+            ? currentState.chats.last.id
+            : 0,
       );
 
       // Add new chats to existing list
@@ -224,5 +261,4 @@ class ChatNotifier extends AsyncNotifier<ChatState> {
       state = AsyncData(currentState.clearError());
     }
   }
-
 }

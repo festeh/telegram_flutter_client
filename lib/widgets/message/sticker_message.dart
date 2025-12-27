@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import '../../core/constants/ui_constants.dart';
+import 'media_placeholder.dart';
 
 class StickerMessageWidget extends StatefulWidget {
   final String? stickerPath;
@@ -72,16 +74,15 @@ class _StickerMessageWidgetState extends State<StickerMessageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Stickers are typically 512x512, constrain to 150x150 max
-    const maxSize = 150.0;
-
     final path = widget.stickerPath;
     final hasSticker = path != null && path.isNotEmpty;
 
     return SizedBox(
-      width: maxSize,
-      height: maxSize,
-      child: hasSticker && !_loadError ? _buildSticker(path) : _buildPlaceholder(context),
+      width: MediaSize.stickerSize,
+      height: MediaSize.stickerSize,
+      child: hasSticker && !_loadError
+          ? _buildSticker(path)
+          : _buildPlaceholder(context),
     );
   }
 
@@ -89,10 +90,7 @@ class _StickerMessageWidgetState extends State<StickerMessageWidget> {
     if (widget.isAnimated) {
       // TGS files - use pre-loaded composition
       if (_composition != null) {
-        return Lottie(
-          composition: _composition,
-          fit: BoxFit.contain,
-        );
+        return Lottie(composition: _composition, fit: BoxFit.contain);
       }
       // Still loading
       return _buildPlaceholder(context);
@@ -102,45 +100,19 @@ class _StickerMessageWidgetState extends State<StickerMessageWidget> {
         File(path),
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          return _buildPlaceholder(context);
+          return const MediaPlaceholder.sticker();
         },
       );
     }
   }
 
   Widget _buildPlaceholder(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     // Show emoji if available, otherwise generic sticker icon
     final emoji = widget.emoji;
     if (emoji != null && emoji.isNotEmpty) {
-      return Center(
-        child: Text(
-          emoji,
-          style: const TextStyle(fontSize: 80),
-        ),
-      );
+      return Center(child: Text(emoji, style: const TextStyle(fontSize: 80)));
     }
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.emoji_emotions_outlined,
-            size: 40,
-            color: colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Sticker',
-            style: TextStyle(
-              fontSize: 12,
-              color: colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const MediaPlaceholder.sticker();
   }
 }

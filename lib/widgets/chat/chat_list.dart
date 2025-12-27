@@ -9,17 +9,13 @@ import 'chat_list_item.dart';
 class ChatList extends ConsumerStatefulWidget {
   final Function(Chat)? onChatSelected;
 
-  const ChatList({
-    super.key,
-    this.onChatSelected,
-  });
+  const ChatList({super.key, this.onChatSelected});
 
   @override
   ConsumerState<ChatList> createState() => _ChatListState();
 }
 
 class _ChatListState extends ConsumerState<ChatList> {
-  int? _selectedChatId;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -50,8 +46,11 @@ class _ChatListState extends ConsumerState<ChatList> {
         final chatAsync = ref.watch(chatProvider);
 
         return chatAsync.when(
-          data: (chatState) =>
-              _buildChatList(chatState.chats, chatState.isLoading, chatState.isInitialized),
+          data: (chatState) => _buildChatList(
+            chatState.chats,
+            chatState.isLoading,
+            chatState.isInitialized,
+          ),
           loading: () => _buildLoadingState(),
           error: (error, stackTrace) => _buildErrorState(error.toString()),
         );
@@ -59,8 +58,14 @@ class _ChatListState extends ConsumerState<ChatList> {
     );
   }
 
-  Widget _buildChatList(List<Chat> chats, bool isLoadingMore, bool isInitialized) {
+  Widget _buildChatList(
+    List<Chat> chats,
+    bool isLoadingMore,
+    bool isInitialized,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
+    // Use global selected chat ID from messageProvider
+    final selectedChatId = ref.selectedChatId;
 
     // Filter to show only chats in the main list (as determined by TDLib positions)
     final filteredChats = chats.where((chat) => chat.isInMainList).toList();
@@ -76,7 +81,9 @@ class _ChatListState extends ConsumerState<ChatList> {
           child: RefreshIndicator(
             onRefresh: () async {
               // Force TDLib to reconnect before refreshing
-              await ref.read(telegramClientProvider).setNetworkType(isOnline: true);
+              await ref
+                  .read(telegramClientProvider)
+                  .setNetworkType(isOnline: true);
               await ref.refreshChats();
             },
             child: ListView.separated(
@@ -91,8 +98,9 @@ class _ChatListState extends ConsumerState<ChatList> {
                     padding: const EdgeInsets.all(16),
                     child: Center(
                       child: CircularProgressIndicator(
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.primary,
+                        ),
                       ),
                     ),
                   );
@@ -101,7 +109,7 @@ class _ChatListState extends ConsumerState<ChatList> {
                 final chat = filteredChats[index];
                 return ChatListItem(
                   chat: chat,
-                  isSelected: _selectedChatId == chat.id,
+                  isSelected: selectedChatId == chat.id,
                   onTap: () => _onChatTap(chat),
                 );
               },
@@ -175,11 +183,7 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   void _onChatTap(Chat chat) {
-    setState(() {
-      _selectedChatId = chat.id;
-    });
-
-    // Call the callback if provided
+    // Call the callback - the parent will update messageProvider.selectedChatId
     widget.onChatSelected?.call(chat);
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/constants/ui_constants.dart';
 import '../presentation/providers/app_providers.dart';
 import '../presentation/providers/telegram_client_provider.dart';
 import '../domain/entities/chat.dart';
@@ -29,9 +30,7 @@ class HomeScreen extends ConsumerWidget {
           onChatSelected: (chat) {
             ref.selectChatForMessages(chat.id);
             Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => ChatScreen(chat: chat),
-              ),
+              MaterialPageRoute(builder: (context) => ChatScreen(chat: chat)),
             );
           },
         ),
@@ -45,9 +44,10 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       body: Row(
         children: [
-          // Left Pane - Chat List (30% of screen width)
+          // Left Pane - Chat List
           SizedBox(
-            width: MediaQuery.of(context).size.width * 0.3,
+            width:
+                MediaQuery.of(context).size.width * LayoutRatio.leftPaneWidth,
             child: LeftPane(
               onChatSelected: (chat) {
                 ref.selectChatForMessages(chat.id);
@@ -88,7 +88,12 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildChatHeader(BuildContext context, WidgetRef ref, Chat chat, ColorScheme colorScheme) {
+  Widget _buildChatHeader(
+    BuildContext context,
+    WidgetRef ref,
+    Chat chat,
+    ColorScheme colorScheme,
+  ) {
     final mutedColor = colorScheme.onSurface.withValues(alpha: 0.6);
     final client = ref.read(telegramClientProvider);
 
@@ -101,18 +106,15 @@ class HomeScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
       child: Row(
         children: [
           // Chat avatar
           Container(
-            width: 40,
-            height: 40,
+            width: AvatarSize.sm,
+            height: AvatarSize.sm,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: colorScheme.primary,
@@ -171,10 +173,7 @@ class HomeScreen extends ConsumerWidget {
             onPressed: () {
               // TODO: Implement search in chat
             },
-            icon: Icon(
-              Icons.search,
-              color: mutedColor,
-            ),
+            icon: Icon(Icons.search, color: mutedColor),
             tooltip: 'Search in chat',
           ),
           PopupMenuButton<String>(
@@ -205,16 +204,12 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ],
-            child: Icon(
-              Icons.more_vert,
-              color: mutedColor,
-            ),
+            child: Icon(Icons.more_vert, color: mutedColor),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildEmptyPane(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;

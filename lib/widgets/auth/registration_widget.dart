@@ -36,11 +36,7 @@ class _RegistrationWidgetState extends ConsumerState<RegistrationWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_add,
-              size: 48,
-              color: colorScheme.primary,
-            ),
+            Icon(Icons.person_add, size: 48, color: colorScheme.primary),
             const SizedBox(height: 24),
             Text(
               'Create your profile',
@@ -51,8 +47,8 @@ class _RegistrationWidgetState extends ConsumerState<RegistrationWidget> {
             Text(
               'Enter your name to complete registration',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),

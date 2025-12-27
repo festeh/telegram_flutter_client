@@ -36,11 +36,7 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.message,
-              size: 32,
-              color: colorScheme.primary,
-            ),
+            Icon(Icons.message, size: 32, color: colorScheme.primary),
             const SizedBox(height: 12),
             Text(
               'Enter verification code',
@@ -51,8 +47,8 @@ class _CodeInputWidgetState extends ConsumerState<CodeInputWidget> {
             Text(
               'Code sent via Telegram',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

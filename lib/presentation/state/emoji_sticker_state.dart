@@ -12,6 +12,8 @@ class EmojiStickerState {
   final bool isLoadingStickers;
   final String? errorMessage;
   final double keyboardHeight;
+  // Centralized sticker download path tracking (fileId -> localPath)
+  final Map<int, String> stickerDownloadPaths;
 
   const EmojiStickerState({
     this.isPickerVisible = false,
@@ -23,6 +25,7 @@ class EmojiStickerState {
     this.isLoadingStickers = false,
     this.errorMessage,
     this.keyboardHeight = 300.0,
+    this.stickerDownloadPaths = const {},
   });
 
   factory EmojiStickerState.initial() => const EmojiStickerState();
@@ -37,6 +40,7 @@ class EmojiStickerState {
     bool? isLoadingStickers,
     String? errorMessage,
     double? keyboardHeight,
+    Map<int, String>? stickerDownloadPaths,
     bool clearSelectedSet = false,
     bool clearError = false,
   }) {
@@ -45,13 +49,19 @@ class EmojiStickerState {
       selectedTab: selectedTab ?? this.selectedTab,
       installedStickerSets: installedStickerSets ?? this.installedStickerSets,
       recentStickers: recentStickers ?? this.recentStickers,
-      selectedStickerSet: clearSelectedSet ? null : (selectedStickerSet ?? this.selectedStickerSet),
+      selectedStickerSet: clearSelectedSet
+          ? null
+          : (selectedStickerSet ?? this.selectedStickerSet),
       isLoadingStickerSets: isLoadingStickerSets ?? this.isLoadingStickerSets,
       isLoadingStickers: isLoadingStickers ?? this.isLoadingStickers,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       keyboardHeight: keyboardHeight ?? this.keyboardHeight,
+      stickerDownloadPaths: stickerDownloadPaths ?? this.stickerDownloadPaths,
     );
   }
+
+  /// Get the local path for a sticker by its file ID
+  String? getStickerPath(int fileId) => stickerDownloadPaths[fileId];
 
   /// Returns the currently displayed stickers (from selected set or recent)
   List<Sticker> get displayedStickers {

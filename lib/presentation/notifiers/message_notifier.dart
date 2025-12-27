@@ -11,15 +11,12 @@ import '../providers/telegram_client_provider.dart';
 const _lastSelectedChatKey = 'last_selected_chat_id';
 
 class MessageNotifier extends AsyncNotifier<MessageState> {
-  late final TelegramClientRepository _client;
+  TelegramClientRepository get _client => ref.read(telegramClientProvider);
   StreamSubscription<MessageEvent>? _eventSubscription;
   final AppLogger _logger = AppLogger.instance;
 
   @override
   Future<MessageState> build() async {
-    // Use the shared client instance from provider
-    _client = ref.read(telegramClientProvider);
-
     // Start listening to message events
     _listenToMessageEvents();
 
@@ -59,19 +56,45 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
         _handleMessageEdited(chatId, message);
       case MessagesDeletedEvent(:final chatId, :final messageIds):
         _handleMessagesDeleted(chatId, messageIds);
-      case MessageContentChangedEvent(:final chatId, :final messageId, :final newContent):
+      case MessageContentChangedEvent(
+        :final chatId,
+        :final messageId,
+        :final newContent,
+      ):
         _handleMessageContentChanged(chatId, messageId, newContent);
-      case MessageSendSucceededEvent(:final chatId, :final message, :final oldMessageId):
+      case MessageSendSucceededEvent(
+        :final chatId,
+        :final message,
+        :final oldMessageId,
+      ):
         _handleMessageSendSucceeded(chatId, message, oldMessageId);
       case MessageSendFailedEvent(:final errorMessage):
         _handleMessageSendFailed(errorMessage);
       case MessagesBatchReceivedEvent(:final chatId, :final messages):
         _handleMessagesBatch(chatId, messages);
-      case MessagePhotoUpdatedEvent(:final chatId, :final messageId, :final photoPath):
+      case MessagePhotoUpdatedEvent(
+        :final chatId,
+        :final messageId,
+        :final photoPath,
+      ):
         _handleMessagePhotoUpdated(chatId, messageId, photoPath);
-      case MessageStickerUpdatedEvent(:final chatId, :final messageId, :final stickerPath):
+      case MessageStickerUpdatedEvent(
+        :final chatId,
+        :final messageId,
+        :final stickerPath,
+      ):
         _handleMessageStickerUpdated(chatId, messageId, stickerPath);
-      case MessageReactionsUpdatedEvent(:final chatId, :final messageId, :final reactions):
+      case MessageVideoUpdatedEvent(
+        :final chatId,
+        :final messageId,
+        :final videoPath,
+      ):
+        _handleMessageVideoUpdated(chatId, messageId, videoPath);
+      case MessageReactionsUpdatedEvent(
+        :final chatId,
+        :final messageId,
+        :final reactions,
+      ):
         _handleMessageReactionsUpdated(chatId, messageId, reactions);
       case ChatReadOutboxEvent(:final chatId, :final lastReadOutboxMessageId):
         _handleChatReadOutbox(chatId, lastReadOutboxMessageId);
@@ -89,11 +112,19 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     final index = messages.indexWhere((m) => m.id == messageId);
     if (index == -1) return;
 
-    final updatedMessage = messages[index].copyWith(photoPath: photoPath);
+    final existingPhoto = messages[index].photo;
+    if (existingPhoto == null) return;
+    final updatedMessage = messages[index].copyWith(
+      photo: existingPhoto.copyWith(path: photoPath),
+    );
     state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
   }
 
-  void _handleMessageStickerUpdated(int chatId, int messageId, String stickerPath) {
+  void _handleMessageStickerUpdated(
+    int chatId,
+    int messageId,
+    String stickerPath,
+  ) {
     _logger.debug('Message sticker updated in chat $chatId: $messageId');
     final currentState = state.value;
     if (currentState == null) return;
@@ -104,11 +135,38 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     final index = messages.indexWhere((m) => m.id == messageId);
     if (index == -1) return;
 
-    final updatedMessage = messages[index].copyWith(stickerPath: stickerPath);
+    final existingSticker = messages[index].sticker;
+    if (existingSticker == null) return;
+    final updatedMessage = messages[index].copyWith(
+      sticker: existingSticker.copyWith(path: stickerPath),
+    );
     state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
   }
 
-  void _handleMessageReactionsUpdated(int chatId, int messageId, List<MessageReaction> reactions) {
+  void _handleMessageVideoUpdated(int chatId, int messageId, String videoPath) {
+    _logger.debug('Message video updated in chat $chatId: $messageId');
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    final messages = currentState.messagesByChat[chatId];
+    if (messages == null) return;
+
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final existingVideo = messages[index].video;
+    if (existingVideo == null) return;
+    final updatedMessage = messages[index].copyWith(
+      video: existingVideo.copyWith(path: videoPath),
+    );
+    state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
+  }
+
+  void _handleMessageReactionsUpdated(
+    int chatId,
+    int messageId,
+    List<MessageReaction> reactions,
+  ) {
     _logger.debug('Message reactions updated in chat $chatId: $messageId');
     final currentState = state.value;
     if (currentState == null) return;
@@ -119,12 +177,16 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     final index = messages.indexWhere((m) => m.id == messageId);
     if (index == -1) return;
 
-    final updatedMessage = messages[index].copyWith(reactions: reactions.isEmpty ? null : reactions);
+    final updatedMessage = messages[index].copyWith(
+      reactions: reactions.isEmpty ? null : reactions,
+    );
     state = AsyncData(currentState.updateMessage(chatId, updatedMessage));
   }
 
   void _handleChatReadOutbox(int chatId, int lastReadOutboxMessageId) {
-    _logger.debug('Chat $chatId: outbox read up to message $lastReadOutboxMessageId');
+    _logger.debug(
+      'Chat $chatId: outbox read up to message $lastReadOutboxMessageId',
+    );
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -137,7 +199,9 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       if (message.isOutgoing &&
           message.id <= lastReadOutboxMessageId &&
           message.sendingState != MessageSendingState.read) {
-        final updatedMessage = message.copyWith(sendingState: MessageSendingState.read);
+        final updatedMessage = message.copyWith(
+          sendingState: MessageSendingState.read,
+        );
         newState = newState.updateMessage(chatId, updatedMessage);
       }
     }
@@ -173,11 +237,16 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     }
   }
 
-  void _handleMessageContentChanged(int chatId, int messageId, Map<String, dynamic> newContent) {
+  void _handleMessageContentChanged(
+    int chatId,
+    int messageId,
+    Map<String, dynamic> newContent,
+  ) {
     _logger.debug('Message content changed in chat $chatId: $messageId');
     // Content update handling - placeholder until Message supports content updates
     final currentState = state.value;
-    if (currentState != null && currentState.messagesByChat.containsKey(chatId)) {
+    if (currentState != null &&
+        currentState.messagesByChat.containsKey(chatId)) {
       final messages = currentState.messagesByChat[chatId]!;
       final messageIndex = messages.indexWhere((msg) => msg.id == messageId);
       if (messageIndex != -1) {
@@ -187,8 +256,14 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     }
   }
 
-  void _handleMessageSendSucceeded(int chatId, Message message, int oldMessageId) {
-    _logger.debug('Message send succeeded for chat $chatId: ${message.id} (was: $oldMessageId)');
+  void _handleMessageSendSucceeded(
+    int chatId,
+    Message message,
+    int oldMessageId,
+  ) {
+    _logger.debug(
+      'Message send succeeded for chat $chatId: ${message.id} (was: $oldMessageId)',
+    );
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -196,7 +271,10 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     // and update state to sent
     final newState = currentState
         .removeMessage(chatId, oldMessageId)
-        .addMessage(chatId, message.copyWith(sendingState: MessageSendingState.sent))
+        .addMessage(
+          chatId,
+          message.copyWith(sendingState: MessageSendingState.sent),
+        )
         .setSending(false);
     state = AsyncData(newState);
   }
@@ -206,17 +284,24 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(
-        currentState.setSending(false).setError('Failed to send message: $errorMessage'),
+        currentState
+            .setSending(false)
+            .setError('Failed to send message: $errorMessage'),
       );
     }
   }
 
   void _handleMessagesBatch(int chatId, List<Message> messages) {
-    _logger.debug('Received batch of ${messages.length} messages for chat $chatId');
+    _logger.debug(
+      'Received batch of ${messages.length} messages for chat $chatId',
+    );
     final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(
-        currentState.addMessages(chatId, messages).setLoading(false).setLoadingMore(false),
+        currentState
+            .addMessages(chatId, messages)
+            .setLoading(false)
+            .setLoadingMore(false),
       );
     }
   }
@@ -255,14 +340,19 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
   void _downloadMessageMedia(List<Message> messages) {
     for (final message in messages) {
       // Download photos
-      if (message.photoFileId != null &&
-          (message.photoPath == null || message.photoPath!.isEmpty)) {
-        _client.downloadFile(message.photoFileId!);
+      if (message.photo?.fileId != null &&
+          (message.photo?.path == null || message.photo!.path!.isEmpty)) {
+        _client.downloadFile(message.photo!.fileId!);
       }
       // Download stickers
-      if (message.stickerFileId != null &&
-          (message.stickerPath == null || message.stickerPath!.isEmpty)) {
-        _client.downloadFile(message.stickerFileId!);
+      if (message.sticker?.fileId != null &&
+          (message.sticker?.path == null || message.sticker!.path!.isEmpty)) {
+        _client.downloadFile(message.sticker!.fileId!);
+      }
+      // Download videos
+      if (message.video?.fileId != null &&
+          (message.video?.path == null || message.video!.path!.isEmpty)) {
+        _client.downloadFile(message.video!.fileId!);
       }
     }
   }
@@ -282,7 +372,10 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       final oldestMessageId = existingMessages.last.id;
 
       // Load more messages from client
-      final messages = await _client.loadMessages(chatId, fromMessageId: oldestMessageId);
+      final messages = await _client.loadMessages(
+        chatId,
+        fromMessageId: oldestMessageId,
+      );
 
       _logger.debug('Loaded ${messages.length} more messages for chat $chatId');
 
@@ -309,14 +402,17 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       // Send message via client
       // TDLib will immediately fire updateNewMessage with pending state,
       // then updateMessageSendSucceeded when confirmed
-      await _client.sendMessage(chatId, text, replyToMessageId: replyToMessageId);
+      await _client.sendMessage(
+        chatId,
+        text,
+        replyToMessageId: replyToMessageId,
+      );
 
       _logger.debug('Message sent to chat $chatId');
 
       final latestState = state.value ?? MessageState.initial();
       // Clear reply state after sending
       state = AsyncData(latestState.setSending(false).clearReplyingTo());
-
     } catch (e) {
       _logger.error('Failed to send message to chat $chatId', error: e);
       _setError('Failed to send message: $e');
@@ -328,7 +424,10 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       await _client.editMessage(chatId, messageId, newText);
       _logger.debug('Message edited in chat $chatId: $messageId');
     } catch (e) {
-      _logger.error('Failed to edit message $messageId in chat $chatId', error: e);
+      _logger.error(
+        'Failed to edit message $messageId in chat $chatId',
+        error: e,
+      );
       _setError('Failed to edit message: $e');
     }
   }
@@ -339,7 +438,12 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       final replyToMessageId = currentState.replyingToMessage?.id;
       state = AsyncData(currentState.setSending(true));
 
-      await _client.sendPhoto(chatId, filePath, caption: caption, replyToMessageId: replyToMessageId);
+      await _client.sendPhoto(
+        chatId,
+        filePath,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+      );
       _logger.debug('Photo sent to chat $chatId');
 
       final latestState = state.value ?? MessageState.initial();
@@ -356,7 +460,12 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
       final replyToMessageId = currentState.replyingToMessage?.id;
       state = AsyncData(currentState.setSending(true));
 
-      await _client.sendVideo(chatId, filePath, caption: caption, replyToMessageId: replyToMessageId);
+      await _client.sendVideo(
+        chatId,
+        filePath,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+      );
       _logger.debug('Video sent to chat $chatId');
 
       final latestState = state.value ?? MessageState.initial();
@@ -367,13 +476,22 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
     }
   }
 
-  Future<void> sendDocument(int chatId, String filePath, {String? caption}) async {
+  Future<void> sendDocument(
+    int chatId,
+    String filePath, {
+    String? caption,
+  }) async {
     try {
       final currentState = state.value ?? MessageState.initial();
       final replyToMessageId = currentState.replyingToMessage?.id;
       state = AsyncData(currentState.setSending(true));
 
-      await _client.sendDocument(chatId, filePath, caption: caption, replyToMessageId: replyToMessageId);
+      await _client.sendDocument(
+        chatId,
+        filePath,
+        caption: caption,
+        replyToMessageId: replyToMessageId,
+      );
       _logger.debug('Document sent to chat $chatId');
 
       final latestState = state.value ?? MessageState.initial();
@@ -393,24 +511,46 @@ class MessageNotifier extends AsyncNotifier<MessageState> {
         _setError('Failed to delete message');
       }
     } catch (e) {
-      _logger.error('Failed to delete message $messageId in chat $chatId', error: e);
+      _logger.error(
+        'Failed to delete message $messageId in chat $chatId',
+        error: e,
+      );
       _setError('Failed to delete message: $e');
     }
   }
 
   Future<void> markAsRead(int chatId, int messageId) async {
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    // Check if we've already marked this message
+    final lastMarked = currentState.getLastMarkedMessageId(chatId);
+    if (lastMarked == messageId) return;
+
     try {
       await _client.markAsRead(chatId, messageId);
       _logger.debug('Message marked as read in chat $chatId: $messageId');
+
+      // Update the tracking state
+      state = AsyncData(currentState.setLastMarkedMessageId(chatId, messageId));
     } catch (e) {
-      _logger.error('Failed to mark message as read $messageId in chat $chatId', error: e);
+      _logger.error(
+        'Failed to mark message as read $messageId in chat $chatId',
+        error: e,
+      );
     }
   }
 
-  Future<void> forwardMessage(int fromChatId, int toChatId, int messageId) async {
+  Future<void> forwardMessage(
+    int fromChatId,
+    int toChatId,
+    int messageId,
+  ) async {
     try {
       await _client.forwardMessages(fromChatId, toChatId, [messageId]);
-      _logger.debug('Message $messageId forwarded from $fromChatId to $toChatId');
+      _logger.debug(
+        'Message $messageId forwarded from $fromChatId to $toChatId',
+      );
     } catch (e) {
       _logger.error('Failed to forward message $messageId', error: e);
       _setError('Failed to forward message: $e');

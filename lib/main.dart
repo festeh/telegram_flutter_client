@@ -36,11 +36,7 @@ void main() async {
     tdlibLogLevel: TdLibLogLevel.fatal, // Minimal C++ logging
   );
 
-  runApp(
-    const ProviderScope(
-      child: TelegramFlutterApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: TelegramFlutterApp()));
 }
 
 class TelegramFlutterApp extends ConsumerWidget {
@@ -107,7 +103,8 @@ class _AppWrapperState extends ConsumerState<AppWrapper>
               return _buildLoadingScreen();
             },
             loading: () => _buildLoadingScreen(),
-            error: (_, _) => const HomeScreen(), // Show home on chat error, let it handle retry
+            error: (_, _) =>
+                const HomeScreen(), // Show home on chat error, let it handle retry
           );
         } else if (!authState.isInitialized) {
           // Still determining auth status - show loading
@@ -146,10 +143,7 @@ class _AppWrapperState extends ConsumerState<AppWrapper>
                     const SizedBox(height: 8),
                     Text(
                       error.toString(),
-                      style: TextStyle(
-                        color: colorScheme.error,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: colorScheme.error, fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
@@ -198,7 +192,9 @@ class _AppWrapperState extends ConsumerState<AppWrapper>
                     height: 2,
                     child: LinearProgressIndicator(
                       backgroundColor: colorScheme.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],

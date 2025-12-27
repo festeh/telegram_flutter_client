@@ -70,6 +70,14 @@ class MessageStickerUpdatedEvent extends MessageEvent {
   MessageStickerUpdatedEvent(this.chatId, this.messageId, this.stickerPath);
 }
 
+/// Emitted when a message's video finishes downloading.
+class MessageVideoUpdatedEvent extends MessageEvent {
+  final int chatId;
+  final int messageId;
+  final String videoPath;
+  MessageVideoUpdatedEvent(this.chatId, this.messageId, this.videoPath);
+}
+
 /// Emitted when a message's reactions are updated.
 class MessageReactionsUpdatedEvent extends MessageEvent {
   final int chatId;

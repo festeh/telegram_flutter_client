@@ -1,9 +1,100 @@
-enum ChatType {
-  private,
-  basicGroup,
-  supergroup,
-  secret,
-  channel,
+enum ChatType { private, basicGroup, supergroup, secret, channel }
+
+/// Media file info for photos
+class PhotoInfo {
+  final String? path;
+  final int? fileId;
+  final int? width;
+  final int? height;
+
+  const PhotoInfo({this.path, this.fileId, this.width, this.height});
+
+  PhotoInfo copyWith({String? path, int? fileId, int? width, int? height}) {
+    return PhotoInfo(
+      path: path ?? this.path,
+      fileId: fileId ?? this.fileId,
+      width: width ?? this.width,
+      height: height ?? this.height,
+    );
+  }
+}
+
+/// Media file info for stickers
+class StickerInfo {
+  final String? path;
+  final int? fileId;
+  final int? width;
+  final int? height;
+  final String? emoji;
+  final bool isAnimated;
+
+  const StickerInfo({
+    this.path,
+    this.fileId,
+    this.width,
+    this.height,
+    this.emoji,
+    this.isAnimated = false,
+  });
+
+  StickerInfo copyWith({
+    String? path,
+    int? fileId,
+    int? width,
+    int? height,
+    String? emoji,
+    bool? isAnimated,
+  }) {
+    return StickerInfo(
+      path: path ?? this.path,
+      fileId: fileId ?? this.fileId,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      emoji: emoji ?? this.emoji,
+      isAnimated: isAnimated ?? this.isAnimated,
+    );
+  }
+}
+
+/// Media file info for videos
+class VideoInfo {
+  final String? path;
+  final int? fileId;
+  final int? width;
+  final int? height;
+  final int? duration; // seconds
+  final String? thumbnailPath;
+  final int? thumbnailFileId;
+
+  const VideoInfo({
+    this.path,
+    this.fileId,
+    this.width,
+    this.height,
+    this.duration,
+    this.thumbnailPath,
+    this.thumbnailFileId,
+  });
+
+  VideoInfo copyWith({
+    String? path,
+    int? fileId,
+    int? width,
+    int? height,
+    int? duration,
+    String? thumbnailPath,
+    int? thumbnailFileId,
+  }) {
+    return VideoInfo(
+      path: path ?? this.path,
+      fileId: fileId ?? this.fileId,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      duration: duration ?? this.duration,
+      thumbnailPath: thumbnailPath ?? this.thumbnailPath,
+      thumbnailFileId: thumbnailFileId ?? this.thumbnailFileId,
+    );
+  }
 }
 
 class Chat {
@@ -82,7 +173,9 @@ class Chat {
 
     // Check if chat has position in main list
     bool parseIsInMainList(List<dynamic>? positions) {
-      if (positions == null || positions.isEmpty) return false; // Empty = not in main list yet
+      if (positions == null || positions.isEmpty) {
+        return false; // Empty = not in main list yet
+      }
       return positions.any((pos) {
         final list = pos['list'] as Map<String, dynamic>?;
         return list?['@type'] == 'chatListMain';
@@ -106,13 +199,17 @@ class Chat {
       isPinned: json['is_pinned'] as bool? ?? false,
       lastActivity: json['last_message']?['date'] != null
           ? DateTime.fromMillisecondsSinceEpoch(
-              (json['last_message']['date'] as int) * 1000)
+              (json['last_message']['date'] as int) * 1000,
+            )
           : null,
-      isMuted: json['notification_settings']?['mute_for'] != null &&
+      isMuted:
+          json['notification_settings']?['mute_for'] != null &&
           (json['notification_settings']['mute_for'] as int) > 0,
       totalCount: json['message_count'] as int? ?? 0,
       isInMainList: parseIsInMainList(json['positions'] as List<dynamic>?),
-      canSendMessages: parseCanSendMessages(json['permissions'] as Map<String, dynamic>?),
+      canSendMessages: parseCanSendMessages(
+        json['permissions'] as Map<String, dynamic>?,
+      ),
     );
   }
 
@@ -191,18 +288,12 @@ class Message {
   final bool isOutgoing;
   final MessageType type;
   final MessageSendingState? sendingState;
-  // Photo-specific fields
-  final String? photoPath;
-  final int? photoFileId;
-  final int? photoWidth;
-  final int? photoHeight;
-  // Sticker-specific fields
-  final String? stickerPath;
-  final int? stickerFileId;
-  final int? stickerWidth;
-  final int? stickerHeight;
-  final String? stickerEmoji;
-  final bool stickerIsAnimated;
+  // Media info (grouped)
+  final PhotoInfo? photo;
+  final StickerInfo? sticker;
+  final VideoInfo? video;
+  // Link preview photo (for messages with t.me links)
+  final PhotoInfo? linkPreviewPhoto;
   // Reactions
   final List<MessageReaction>? reactions;
   // Reply
@@ -218,21 +309,19 @@ class Message {
     required this.isOutgoing,
     required this.type,
     this.sendingState,
-    this.photoPath,
-    this.photoFileId,
-    this.photoWidth,
-    this.photoHeight,
-    this.stickerPath,
-    this.stickerFileId,
-    this.stickerWidth,
-    this.stickerHeight,
-    this.stickerEmoji,
-    this.stickerIsAnimated = false,
+    this.photo,
+    this.sticker,
+    this.video,
+    this.linkPreviewPhoto,
     this.reactions,
     this.replyToMessageId,
   });
 
-  factory Message.fromJson(Map<String, dynamic> json, {String? senderName}) {
+  factory Message.fromJson(
+    Map<String, dynamic> json, {
+    String? senderName,
+    PhotoInfo? linkPreviewPhoto,
+  }) {
     // Parse message content from TDLib format
     String parseContent(Map<String, dynamic>? contentMap) {
       if (contentMap == null) return '';
@@ -302,31 +391,26 @@ class Message {
     }
 
     // Parse photo info from messagePhoto content
-    ({String? path, int? fileId, int? width, int? height}) parsePhotoInfo(
-        Map<String, dynamic>? contentMap) {
+    PhotoInfo? parsePhotoInfo(Map<String, dynamic>? contentMap) {
       if (contentMap == null || contentMap['@type'] != 'messagePhoto') {
-        return (path: null, fileId: null, width: null, height: null);
+        return null;
       }
 
       final photo = contentMap['photo'] as Map<String, dynamic>?;
-      if (photo == null) {
-        return (path: null, fileId: null, width: null, height: null);
-      }
+      if (photo == null) return null;
 
       // Get the best size (prefer larger sizes for display)
       final sizes = photo['sizes'] as List?;
-      if (sizes == null || sizes.isEmpty) {
-        return (path: null, fileId: null, width: null, height: null);
-      }
+      if (sizes == null || sizes.isEmpty) return null;
 
       // Find the largest size (typically 'm' or 'x' type)
       Map<String, dynamic>? bestSize;
       int bestArea = 0;
       for (final size in sizes) {
         if (size is Map<String, dynamic>) {
-          final width = size['width'] as int? ?? 0;
-          final height = size['height'] as int? ?? 0;
-          final area = width * height;
+          final w = size['width'] as int? ?? 0;
+          final h = size['height'] as int? ?? 0;
+          final area = w * h;
           if (area > bestArea) {
             bestArea = area;
             bestSize = size;
@@ -334,63 +418,81 @@ class Message {
         }
       }
 
-      if (bestSize == null) {
-        return (path: null, fileId: null, width: null, height: null);
-      }
+      if (bestSize == null) return null;
 
       final fileInfo = bestSize['photo'] as Map<String, dynamic>?;
       final localPath = fileInfo?['local']?['path'] as String?;
-      final fileId = fileInfo?['id'] as int?;
-      final width = bestSize['width'] as int?;
-      final height = bestSize['height'] as int?;
 
-      return (
+      return PhotoInfo(
         path: (localPath?.isNotEmpty == true) ? localPath : null,
-        fileId: fileId,
-        width: width,
-        height: height,
+        fileId: fileInfo?['id'] as int?,
+        width: bestSize['width'] as int?,
+        height: bestSize['height'] as int?,
       );
     }
 
-    final photoInfo = parsePhotoInfo(json['content']);
+    final photo = parsePhotoInfo(json['content']);
 
     // Parse sticker info from messageSticker content
-    ({String? path, int? fileId, int? width, int? height, String? emoji, bool isAnimated}) parseStickerInfo(
-        Map<String, dynamic>? contentMap) {
+    StickerInfo? parseStickerInfo(Map<String, dynamic>? contentMap) {
       if (contentMap == null || contentMap['@type'] != 'messageSticker') {
-        return (path: null, fileId: null, width: null, height: null, emoji: null, isAnimated: false);
+        return null;
       }
 
-      final sticker = contentMap['sticker'] as Map<String, dynamic>?;
-      if (sticker == null) {
-        return (path: null, fileId: null, width: null, height: null, emoji: null, isAnimated: false);
-      }
+      final stickerData = contentMap['sticker'] as Map<String, dynamic>?;
+      if (stickerData == null) return null;
 
       // Get sticker file info - the file is in sticker['sticker']
-      final stickerFile = sticker['sticker'] as Map<String, dynamic>?;
+      final stickerFile = stickerData['sticker'] as Map<String, dynamic>?;
       final localPath = stickerFile?['local']?['path'] as String?;
-      final fileId = stickerFile?['id'] as int?;
-
-      // Get dimensions and emoji
-      final width = sticker['width'] as int?;
-      final height = sticker['height'] as int?;
-      final emoji = sticker['emoji'] as String?;
 
       // Check if animated (TGS format)
-      final format = sticker['format'] as Map<String, dynamic>?;
-      final isAnimated = format?['@type'] == 'stickerFormatTgs';
+      final format = stickerData['format'] as Map<String, dynamic>?;
 
-      return (
+      return StickerInfo(
         path: (localPath?.isNotEmpty == true) ? localPath : null,
-        fileId: fileId,
-        width: width,
-        height: height,
-        emoji: emoji,
-        isAnimated: isAnimated,
+        fileId: stickerFile?['id'] as int?,
+        width: stickerData['width'] as int?,
+        height: stickerData['height'] as int?,
+        emoji: stickerData['emoji'] as String?,
+        isAnimated: format?['@type'] == 'stickerFormatTgs',
       );
     }
 
-    final stickerInfo = parseStickerInfo(json['content']);
+    final sticker = parseStickerInfo(json['content']);
+
+    // Parse video info from messageVideo content
+    VideoInfo? parseVideoInfo(Map<String, dynamic>? contentMap) {
+      if (contentMap == null || contentMap['@type'] != 'messageVideo') {
+        return null;
+      }
+
+      final videoData = contentMap['video'] as Map<String, dynamic>?;
+      if (videoData == null) return null;
+
+      // Get video file info
+      final videoFile = videoData['video'] as Map<String, dynamic>?;
+      final localPath = videoFile?['local']?['path'] as String?;
+
+      // Get thumbnail info
+      final thumbnail = videoData['thumbnail'] as Map<String, dynamic>?;
+      final thumbnailFile = thumbnail?['file'] as Map<String, dynamic>?;
+      final thumbnailPath = thumbnailFile?['local']?['path'] as String?;
+
+      return VideoInfo(
+        path: (localPath?.isNotEmpty == true) ? localPath : null,
+        fileId: videoFile?['id'] as int?,
+        width: videoData['width'] as int?,
+        height: videoData['height'] as int?,
+        duration: videoData['duration'] as int?,
+        thumbnailPath: (thumbnailPath?.isNotEmpty == true)
+            ? thumbnailPath
+            : null,
+        thumbnailFileId: thumbnailFile?['id'] as int?,
+      );
+    }
+
+    final video = parseVideoInfo(json['content']);
 
     // Parse sender ID - can be messageSenderUser or messageSenderChat
     int parseSenderId(Map<String, dynamic>? senderIdMap) {
@@ -404,9 +506,12 @@ class Message {
     }
 
     // Parse reactions from interaction_info
-    List<MessageReaction>? parseReactions(Map<String, dynamic>? interactionInfo) {
+    List<MessageReaction>? parseReactions(
+      Map<String, dynamic>? interactionInfo,
+    ) {
       if (interactionInfo == null) return null;
-      final reactionsData = interactionInfo['reactions'] as Map<String, dynamic>?;
+      final reactionsData =
+          interactionInfo['reactions'] as Map<String, dynamic>?;
       if (reactionsData == null) return null;
       final reactionsList = reactionsData['reactions'] as List<dynamic>?;
       if (reactionsList == null || reactionsList.isEmpty) return null;
@@ -416,11 +521,17 @@ class Message {
           .toList();
     }
 
-    final reactions = parseReactions(json['interaction_info'] as Map<String, dynamic>?);
+    final reactions = parseReactions(
+      json['interaction_info'] as Map<String, dynamic>?,
+    );
 
     // Parse sending state from TDLib
-    MessageSendingState? parseSendingState(Map<String, dynamic>? sendingStateMap) {
-      if (sendingStateMap == null) return MessageSendingState.sent; // No state = already sent
+    MessageSendingState? parseSendingState(
+      Map<String, dynamic>? sendingStateMap,
+    ) {
+      if (sendingStateMap == null) {
+        return MessageSendingState.sent; // No state = already sent
+      }
       final type = sendingStateMap['@type'] as String?;
       switch (type) {
         case 'messageSendingStatePending':
@@ -432,7 +543,9 @@ class Message {
       }
     }
 
-    final sendingState = parseSendingState(json['sending_state'] as Map<String, dynamic>?);
+    final sendingState = parseSendingState(
+      json['sending_state'] as Map<String, dynamic>?,
+    );
 
     // Parse reply_to for reply messages
     int? parseReplyToMessageId(Map<String, dynamic>? replyTo) {
@@ -440,30 +553,25 @@ class Message {
       // TDLib 1.8+: reply_to contains message_id
       return replyTo['message_id'] as int?;
     }
-    final replyToMessageId = parseReplyToMessageId(json['reply_to'] as Map<String, dynamic>?);
+
+    final replyToMessageId = parseReplyToMessageId(
+      json['reply_to'] as Map<String, dynamic>?,
+    );
 
     return Message(
       id: json['id'] as int,
       chatId: json['chat_id'] as int,
       senderId: parseSenderId(json['sender_id'] as Map<String, dynamic>?),
       senderName: senderName,
-      date: DateTime.fromMillisecondsSinceEpoch(
-        (json['date'] as int) * 1000,
-      ),
+      date: DateTime.fromMillisecondsSinceEpoch((json['date'] as int) * 1000),
       content: parseContent(json['content']),
       isOutgoing: json['is_outgoing'] as bool? ?? false,
       type: parseMessageType(json['content']),
       sendingState: sendingState,
-      photoPath: photoInfo.path,
-      photoFileId: photoInfo.fileId,
-      photoWidth: photoInfo.width,
-      photoHeight: photoInfo.height,
-      stickerPath: stickerInfo.path,
-      stickerFileId: stickerInfo.fileId,
-      stickerWidth: stickerInfo.width,
-      stickerHeight: stickerInfo.height,
-      stickerEmoji: stickerInfo.emoji,
-      stickerIsAnimated: stickerInfo.isAnimated,
+      photo: photo,
+      sticker: sticker,
+      video: video,
+      linkPreviewPhoto: linkPreviewPhoto,
       reactions: reactions,
       replyToMessageId: replyToMessageId,
     );
@@ -480,23 +588,43 @@ class Message {
       'is_outgoing': isOutgoing,
       'type': type.toString().split('.').last,
       'sending_state': sendingState?.name,
-      'photo_path': photoPath,
-      'photo_file_id': photoFileId,
-      'photo_width': photoWidth,
-      'photo_height': photoHeight,
-      'sticker_path': stickerPath,
-      'sticker_file_id': stickerFileId,
-      'sticker_width': stickerWidth,
-      'sticker_height': stickerHeight,
-      'sticker_emoji': stickerEmoji,
-      'sticker_is_animated': stickerIsAnimated,
-      'reactions': reactions?.map((r) => {
-        'type': r.type.name,
-        'emoji': r.emoji,
-        'custom_emoji_id': r.customEmojiId,
-        'count': r.count,
-        'is_chosen': r.isChosen,
-      }).toList(),
+      if (photo != null)
+        'photo': {
+          'path': photo!.path,
+          'file_id': photo!.fileId,
+          'width': photo!.width,
+          'height': photo!.height,
+        },
+      if (sticker != null)
+        'sticker': {
+          'path': sticker!.path,
+          'file_id': sticker!.fileId,
+          'width': sticker!.width,
+          'height': sticker!.height,
+          'emoji': sticker!.emoji,
+          'is_animated': sticker!.isAnimated,
+        },
+      if (video != null)
+        'video': {
+          'path': video!.path,
+          'file_id': video!.fileId,
+          'width': video!.width,
+          'height': video!.height,
+          'duration': video!.duration,
+          'thumbnail_path': video!.thumbnailPath,
+          'thumbnail_file_id': video!.thumbnailFileId,
+        },
+      'reactions': reactions
+          ?.map(
+            (r) => {
+              'type': r.type.name,
+              'emoji': r.emoji,
+              'custom_emoji_id': r.customEmojiId,
+              'count': r.count,
+              'is_chosen': r.isChosen,
+            },
+          )
+          .toList(),
       'reply_to_message_id': replyToMessageId,
     };
   }
@@ -511,16 +639,10 @@ class Message {
     bool? isOutgoing,
     MessageType? type,
     MessageSendingState? sendingState,
-    String? photoPath,
-    int? photoFileId,
-    int? photoWidth,
-    int? photoHeight,
-    String? stickerPath,
-    int? stickerFileId,
-    int? stickerWidth,
-    int? stickerHeight,
-    String? stickerEmoji,
-    bool? stickerIsAnimated,
+    PhotoInfo? photo,
+    StickerInfo? sticker,
+    VideoInfo? video,
+    PhotoInfo? linkPreviewPhoto,
     List<MessageReaction>? reactions,
     int? replyToMessageId,
   }) {
@@ -534,16 +656,10 @@ class Message {
       isOutgoing: isOutgoing ?? this.isOutgoing,
       type: type ?? this.type,
       sendingState: sendingState ?? this.sendingState,
-      photoPath: photoPath ?? this.photoPath,
-      photoFileId: photoFileId ?? this.photoFileId,
-      photoWidth: photoWidth ?? this.photoWidth,
-      photoHeight: photoHeight ?? this.photoHeight,
-      stickerPath: stickerPath ?? this.stickerPath,
-      stickerFileId: stickerFileId ?? this.stickerFileId,
-      stickerWidth: stickerWidth ?? this.stickerWidth,
-      stickerHeight: stickerHeight ?? this.stickerHeight,
-      stickerEmoji: stickerEmoji ?? this.stickerEmoji,
-      stickerIsAnimated: stickerIsAnimated ?? this.stickerIsAnimated,
+      photo: photo ?? this.photo,
+      sticker: sticker ?? this.sticker,
+      video: video ?? this.video,
+      linkPreviewPhoto: linkPreviewPhoto ?? this.linkPreviewPhoto,
       reactions: reactions ?? this.reactions,
       replyToMessageId: replyToMessageId ?? this.replyToMessageId,
     );

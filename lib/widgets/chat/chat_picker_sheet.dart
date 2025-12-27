@@ -39,10 +39,7 @@ class ChatPickerSheet extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.forward,
-                    color: colorScheme.primary,
-                  ),
+                  Icon(Icons.forward, color: colorScheme.primary),
                   const SizedBox(width: 12),
                   Text(
                     'Forward to...',

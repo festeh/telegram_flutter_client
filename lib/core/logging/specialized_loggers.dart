@@ -129,11 +129,7 @@ class AuthLogger {
   }
 
   void logAuthSuccess(String userId) {
-    _logger.authLog(
-      Level.info,
-      'Authentication successful',
-      userId: userId,
-    );
+    _logger.authLog(Level.info, 'Authentication successful', userId: userId);
   }
 
   void logAuthFailure(String reason, {Object? error}) {
@@ -146,62 +142,35 @@ class AuthLogger {
   }
 
   void logPhoneNumberSubmission() {
-    _logger.authLog(
-      Level.debug,
-      'Phone number submitted',
-    );
+    _logger.authLog(Level.debug, 'Phone number submitted');
   }
 
   void logCodeSubmission() {
-    _logger.authLog(
-      Level.debug,
-      'Verification code submitted',
-    );
+    _logger.authLog(Level.debug, 'Verification code submitted');
   }
 
   void logPasswordSubmission() {
-    _logger.authLog(
-      Level.debug,
-      'Password submitted',
-    );
+    _logger.authLog(Level.debug, 'Password submitted');
   }
 
   void logQrCodeRequest() {
-    _logger.authLog(
-      Level.debug,
-      'QR code authentication requested',
-    );
+    _logger.authLog(Level.debug, 'QR code authentication requested');
   }
 
   void logLogout(String? userId) {
-    _logger.authLog(
-      Level.info,
-      'User logged out',
-      userId: userId,
-    );
+    _logger.authLog(Level.info, 'User logged out', userId: userId);
   }
 
   void logSessionLoad() {
-    _logger.authLog(
-      Level.debug,
-      'Session loaded from storage',
-    );
+    _logger.authLog(Level.debug, 'Session loaded from storage');
   }
 
   void logSessionSave() {
-    _logger.authLog(
-      Level.debug,
-      'Session saved to storage',
-    );
+    _logger.authLog(Level.debug, 'Session saved to storage');
   }
 
   void logError(String message, {Object? error, StackTrace? stackTrace}) {
-    _logger.authLog(
-      Level.error,
-      message,
-      error: error,
-      stackTrace: stackTrace,
-    );
+    _logger.authLog(Level.error, message, error: error, stackTrace: stackTrace);
   }
 }
 

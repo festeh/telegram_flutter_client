@@ -77,7 +77,8 @@ class RotatingFileOutput extends LogOutput {
 
     if (files.length >= maxFiles) {
       files.sort(
-          (a, b) => a.statSync().modified.compareTo(b.statSync().modified));
+        (a, b) => a.statSync().modified.compareTo(b.statSync().modified),
+      );
 
       for (int i = 0; i < files.length - maxFiles + 1; i++) {
         try {
@@ -102,7 +103,8 @@ class RotatingFileOutput extends LogOutput {
 
       if (files.length > maxFiles) {
         files.sort(
-            (a, b) => a.statSync().modified.compareTo(b.statSync().modified));
+          (a, b) => a.statSync().modified.compareTo(b.statSync().modified),
+        );
 
         for (int i = 0; i < files.length - maxFiles; i++) {
           try {

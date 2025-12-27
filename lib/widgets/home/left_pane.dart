@@ -6,10 +6,7 @@ import '../chat/chat_list.dart';
 class LeftPane extends ConsumerStatefulWidget {
   final Function(Chat)? onChatSelected;
 
-  const LeftPane({
-    super.key,
-    this.onChatSelected,
-  });
+  const LeftPane({super.key, this.onChatSelected});
 
   @override
   ConsumerState<LeftPane> createState() => _LeftPaneState();
@@ -24,20 +21,13 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          right: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1,
-          ),
+          right: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
       child: Column(
         children: [
           _buildHeader(colorScheme),
-          Expanded(
-            child: ChatList(
-              onChatSelected: widget.onChatSelected,
-            ),
-          ),
+          Expanded(child: ChatList(onChatSelected: widget.onChatSelected)),
         ],
       ),
     );
@@ -50,10 +40,7 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1,
-          ),
+          bottom: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
       child: Row(
@@ -98,5 +85,4 @@ class _LeftPaneState extends ConsumerState<LeftPane> {
       ),
     );
   }
-
 }

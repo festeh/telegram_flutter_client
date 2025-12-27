@@ -26,9 +26,10 @@ final messageProvider = AsyncNotifierProvider<MessageNotifier, MessageState>(
 );
 
 // Single source of truth for emoji/sticker picker state
-final emojiStickerProvider = NotifierProvider<EmojiStickerNotifier, EmojiStickerState>(
-  () => EmojiStickerNotifier(),
-);
+final emojiStickerProvider =
+    NotifierProvider<EmojiStickerNotifier, EmojiStickerState>(
+      () => EmojiStickerNotifier(),
+    );
 
 // Clean extension methods for convenient UI access
 extension AuthX on WidgetRef {
@@ -39,26 +40,31 @@ extension AuthX on WidgetRef {
   String? get authError => watch(authProvider).error?.toString();
 
   // Computed properties - these will trigger rebuilds only when specific values change
-  bool get isAuthenticated => watch(authProvider
-      .select((state) => state.value?.isAuthenticated ?? false));
+  bool get isAuthenticated => watch(
+    authProvider.select((state) => state.value?.isAuthenticated ?? false),
+  );
 
-  bool get needsPhoneNumber => watch(authProvider
-      .select((state) => state.value?.needsPhoneNumber ?? false));
+  bool get needsPhoneNumber => watch(
+    authProvider.select((state) => state.value?.needsPhoneNumber ?? false),
+  );
 
-  bool get needsCode => watch(
-      authProvider.select((state) => state.value?.needsCode ?? false));
+  bool get needsCode =>
+      watch(authProvider.select((state) => state.value?.needsCode ?? false));
 
-  bool get needsPassword => watch(authProvider
-      .select((state) => state.value?.needsPassword ?? false));
+  bool get needsPassword => watch(
+    authProvider.select((state) => state.value?.needsPassword ?? false),
+  );
 
-  bool get needsRegistration => watch(authProvider
-      .select((state) => state.value?.needsRegistration ?? false));
+  bool get needsRegistration => watch(
+    authProvider.select((state) => state.value?.needsRegistration ?? false),
+  );
 
-  bool get needsQrConfirmation => watch(authProvider
-      .select((state) => state.value?.needsQrConfirmation ?? false));
+  bool get needsQrConfirmation => watch(
+    authProvider.select((state) => state.value?.needsQrConfirmation ?? false),
+  );
 
-  bool get isLoading => watch(
-      authProvider.select((state) => state.value?.isLoading ?? false));
+  bool get isLoading =>
+      watch(authProvider.select((state) => state.value?.isLoading ?? false));
 
   String? get errorMessage =>
       watch(authProvider.select((state) => state.value?.errorMessage));
@@ -114,14 +120,19 @@ extension ChatX on WidgetRef {
       watch(chatProvider.select((state) => state.value?.chats ?? []));
   int get chatCount =>
       watch(chatProvider.select((state) => state.value?.chatCount ?? 0));
-  bool get hasChats => watch(chatProvider
-      .select((state) => state.value?.chats.isNotEmpty ?? false));
+  bool get hasChats => watch(
+    chatProvider.select((state) => state.value?.chats.isNotEmpty ?? false),
+  );
 
   /// Get the currently selected chat (based on messageProvider's selectedChatId)
   Chat? get selectedChat {
-    final chatId = watch(messageProvider.select((state) => state.value?.selectedChatId));
+    final chatId = watch(
+      messageProvider.select((state) => state.value?.selectedChatId),
+    );
     if (chatId == null) return null;
-    final chatList = watch(chatProvider.select((state) => state.value?.chats ?? []));
+    final chatList = watch(
+      chatProvider.select((state) => state.value?.chats ?? []),
+    );
     return chatList.where((c) => c.id == chatId).firstOrNull;
   }
 
@@ -143,24 +154,31 @@ extension MessageX on WidgetRef {
   String? get messageError => watch(messageProvider).error?.toString();
 
   // Computed properties
-  Map<int, List<Message>> get messagesByChat =>
-      watch(messageProvider.select((state) => state.value?.messagesByChat ?? {}));
-  
-  List<Message> get selectedChatMessages =>
-      watch(messageProvider.select((state) => state.value?.selectedChatMessages ?? []));
-  
+  Map<int, List<Message>> get messagesByChat => watch(
+    messageProvider.select((state) => state.value?.messagesByChat ?? {}),
+  );
+
+  List<Message> get selectedChatMessages => watch(
+    messageProvider.select((state) => state.value?.selectedChatMessages ?? []),
+  );
+
   int? get selectedChatId =>
       watch(messageProvider.select((state) => state.value?.selectedChatId));
-  
-  bool get hasSelectedChat =>
-      watch(messageProvider.select((state) => state.value?.hasSelectedChat ?? false));
-  
-  bool get selectedChatHasMessages =>
-      watch(messageProvider.select((state) => state.value?.selectedChatHasMessages ?? false));
-  
-  bool get isLoadingMore =>
-      watch(messageProvider.select((state) => state.value?.isLoadingMore ?? false));
-  
+
+  bool get hasSelectedChat => watch(
+    messageProvider.select((state) => state.value?.hasSelectedChat ?? false),
+  );
+
+  bool get selectedChatHasMessages => watch(
+    messageProvider.select(
+      (state) => state.value?.selectedChatHasMessages ?? false,
+    ),
+  );
+
+  bool get isLoadingMore => watch(
+    messageProvider.select((state) => state.value?.isLoadingMore ?? false),
+  );
+
   bool get isSending =>
       watch(messageProvider.select((state) => state.value?.isSending ?? false));
 
@@ -170,22 +188,22 @@ extension MessageX on WidgetRef {
   // Convenience action methods
   Future<void> loadMessages(int chatId, {bool forceRefresh = false}) =>
       messageActions.loadMessages(chatId, forceRefresh: forceRefresh);
-  
+
   Future<void> loadMoreMessages(int chatId) =>
       messageActions.loadMoreMessages(chatId);
-  
+
   Future<void> sendMessage(int chatId, String text) =>
       messageActions.sendMessage(chatId, text);
-  
+
   Future<void> editMessage(int chatId, int messageId, String newText) =>
       messageActions.editMessage(chatId, messageId, newText);
-  
+
   Future<void> deleteMessage(int chatId, int messageId) =>
       messageActions.deleteMessage(chatId, messageId);
-  
+
   Future<void> markAsRead(int chatId, int messageId) =>
       messageActions.markAsRead(chatId, messageId);
-  
+
   void selectChatForMessages(int chatId) => messageActions.selectChat(chatId);
   void clearMessageError() => messageActions.clearError();
 }
@@ -223,23 +241,51 @@ extension EmojiStickerX on WidgetRef {
   double get pickerKeyboardHeight =>
       watch(emojiStickerProvider.select((state) => state.keyboardHeight));
 
+  Map<int, String> get stickerDownloadPaths =>
+      watch(emojiStickerProvider.select((state) => state.stickerDownloadPaths));
+
+  /// Get the local path for a sticker by its file ID
+  String? getStickerPath(int fileId) => watch(
+    emojiStickerProvider.select((state) => state.getStickerPath(fileId)),
+  );
+
   // Action shortcuts
-  EmojiStickerNotifier get emojiStickerActions => read(emojiStickerProvider.notifier);
+  EmojiStickerNotifier get emojiStickerActions =>
+      read(emojiStickerProvider.notifier);
 
   // Convenience action methods
   void toggleEmojiPicker() => emojiStickerActions.togglePicker();
   void showEmojiPicker() => emojiStickerActions.showPicker();
   void hideEmojiPicker() => emojiStickerActions.hidePicker();
   void selectPickerTab(PickerTab tab) => emojiStickerActions.selectTab(tab);
-  void setPickerKeyboardHeight(double height) => emojiStickerActions.setKeyboardHeight(height);
-  Future<void> loadStickerSets() => emojiStickerActions.loadInstalledStickerSets();
-  Future<void> selectStickerSet(StickerSet set) => emojiStickerActions.selectStickerSet(set);
-  Future<void> sendSticker(int chatId, Sticker sticker) => emojiStickerActions.sendSticker(chatId, sticker);
+  void setPickerKeyboardHeight(double height) =>
+      emojiStickerActions.setKeyboardHeight(height);
+  Future<void> loadStickerSets() =>
+      emojiStickerActions.loadInstalledStickerSets();
+  Future<void> selectStickerSet(StickerSet set) =>
+      emojiStickerActions.selectStickerSet(set);
+  Future<void> sendSticker(int chatId, Sticker sticker) =>
+      emojiStickerActions.sendSticker(chatId, sticker);
+  void requestStickerDownload(int fileId) =>
+      emojiStickerActions.requestStickerDownload(fileId);
 }
+
+// Reply cache version - bump to trigger rebuild of message bubbles with replies
+class ReplyCacheVersionNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  void bump() => state++;
+}
+
+final replyCacheVersionProvider =
+    NotifierProvider<ReplyCacheVersionNotifier, int>(
+      ReplyCacheVersionNotifier.new,
+    );
 
 // Legacy provider names for backward compatibility during migration (optional)
 // These can be removed once all widgets are updated
 final isAuthenticatedProvider = Provider<bool>((ref) {
-  return ref.watch(authProvider
-      .select((state) => state.value?.isAuthenticated ?? false));
+  return ref.watch(
+    authProvider.select((state) => state.value?.isAuthenticated ?? false),
+  );
 });

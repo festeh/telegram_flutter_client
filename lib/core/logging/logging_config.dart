@@ -39,8 +39,11 @@ class LoggingConfig {
     if (enableFileLogging) {
       try {
         final appDir = await getApplicationDocumentsDirectory();
-        logDirectory =
-            path.join(appDir.path, 'telegram_flutter_client', 'logs');
+        logDirectory = path.join(
+          appDir.path,
+          'telegram_flutter_client',
+          'logs',
+        );
       } catch (e) {
         // If we can't get the directory, disable file logging
         enableFileLogging = false;
@@ -52,8 +55,9 @@ class LoggingConfig {
       module: LogModule.general,
       metadata: {
         'app_version': '1.0.0',
-        'build_mode':
-            kDebugMode ? 'debug' : (kProfileMode ? 'profile' : 'release'),
+        'build_mode': kDebugMode
+            ? 'debug'
+            : (kProfileMode ? 'profile' : 'release'),
         'platform': defaultTargetPlatform.name,
       },
     );

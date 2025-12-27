@@ -10,20 +10,19 @@ import '../state/unified_auth_state.dart';
 import '../providers/telegram_client_provider.dart';
 
 class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
-  late final TelegramClientRepository _client;
-  late final StorageRepository _storage;
-  late final AuthenticationRepository _authRepository;
+  TelegramClientRepository get _client => ref.read(telegramClientProvider);
+  StorageRepository? _storage;
+  AuthenticationRepository? _authRepository;
   StreamSubscription<AuthenticationState>? _authSubscription;
 
   @override
   Future<UnifiedAuthState> build() async {
     // Initialize dependencies - use shared client from provider
-    _client = ref.read(telegramClientProvider);
-    _storage = SharedPreferencesStorage();
-    _authRepository = TdlibAuthentication(_client, _storage);
+    _storage ??= SharedPreferencesStorage();
+    _authRepository ??= TdlibAuthentication(_client, _storage!);
 
     // Initialize the repository
-    await _authRepository.initialize();
+    await _authRepository!.initialize();
 
     // Set up state listening
     _listenToAuthChanges();
@@ -34,7 +33,7 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
 
   void _listenToAuthChanges() {
     _authSubscription?.cancel();
-    _authSubscription = _authRepository.authStateChanges.listen(
+    _authSubscription = _authRepository!.authStateChanges.listen(
       (authState) {
         // Update state when repository state changes
         state = AsyncData(_getCurrentUnifiedState());
@@ -46,42 +45,45 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
   }
 
   UnifiedAuthState _getCurrentUnifiedState() {
+    final repo = _authRepository;
+    if (repo == null) return UnifiedAuthState.initial();
     return UnifiedAuthState(
-      status: _authRepository.authState.state,
-      user: _authRepository.currentUser,
-      codeInfo: _authRepository.codeInfo,
-      qrCodeInfo: _authRepository.qrCodeInfo,
-      errorMessage: _authRepository.errorMessage,
-      isLoading: _authRepository.isLoading,
-      isInitialized: _authRepository.isInitialized,
+      status: repo.authState.state,
+      user: repo.currentUser,
+      codeInfo: repo.codeInfo,
+      qrCodeInfo: repo.qrCodeInfo,
+      errorMessage: repo.errorMessage,
+      isLoading: repo.isLoading,
+      isInitialized: repo.isInitialized,
     );
   }
 
   // Authentication Actions
 
   Future<void> submitPhoneNumber(String phoneNumber) =>
-      _executeAuthAction(() => _authRepository.submitPhoneNumber(phoneNumber));
+      _executeAuthAction(() => _authRepository!.submitPhoneNumber(phoneNumber));
 
   Future<void> submitVerificationCode(String code) =>
-      _executeAuthAction(() => _authRepository.submitVerificationCode(code));
+      _executeAuthAction(() => _authRepository!.submitVerificationCode(code));
 
   Future<void> submitPassword(String password) =>
-      _executeAuthAction(() => _authRepository.submitPassword(password));
+      _executeAuthAction(() => _authRepository!.submitPassword(password));
 
   Future<void> requestQrCode() =>
-      _executeAuthAction(() => _authRepository.requestQrCode());
+      _executeAuthAction(() => _authRepository!.requestQrCode());
 
   Future<void> confirmQrCode(String link) =>
-      _executeAuthAction(() => _authRepository.confirmQrCode(link));
+      _executeAuthAction(() => _authRepository!.confirmQrCode(link));
 
   Future<void> resendCode() =>
-      _executeAuthAction(() => _authRepository.resendCode());
+      _executeAuthAction(() => _authRepository!.resendCode());
 
   Future<void> registerUser(String firstName, String lastName) =>
-      _executeAuthAction(() => _authRepository.registerUser(firstName, lastName));
+      _executeAuthAction(
+        () => _authRepository!.registerUser(firstName, lastName),
+      );
 
-  Future<void> logout() =>
-      _executeAuthAction(() => _authRepository.logOut());
+  Future<void> logout() => _executeAuthAction(() => _authRepository!.logOut());
 
   /// Executes an auth action with standardized loading/error handling.
   Future<void> _executeAuthAction(Future<void> Function() action) async {
@@ -99,7 +101,7 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
   // State Management Helpers
 
   void clearError() {
-    _authRepository.clearError();
+    _authRepository?.clearError();
     final currentState = state.value;
     if (currentState != null) {
       state = AsyncData(currentState.clearError());
@@ -115,15 +117,14 @@ class AuthNotifier extends AsyncNotifier<UnifiedAuthState> {
 
   void _setError(String errorMessage) {
     final currentState = state.value ?? UnifiedAuthState.initial();
-    state = AsyncData(currentState.copyWith(
-      errorMessage: errorMessage,
-      isLoading: false,
-    ));
+    state = AsyncData(
+      currentState.copyWith(errorMessage: errorMessage, isLoading: false),
+    );
   }
 
   // Cleanup - called when provider is disposed
   void dispose() {
     _authSubscription?.cancel();
-    _authRepository.dispose();
+    _authRepository?.dispose();
   }
 }

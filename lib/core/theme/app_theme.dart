@@ -86,17 +86,13 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
 
       // Text Button
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: colorScheme.primary,
-        ),
+        style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
       ),
 
       // Input Decoration
@@ -123,7 +119,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
 
       // Divider
@@ -137,17 +136,13 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: colorScheme.surfaceContainer,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
 
       // Dialog
       dialogTheme: DialogThemeData(
         backgroundColor: colorScheme.surfaceContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
       // Bottom Sheet
@@ -165,9 +160,7 @@ class AppTheme {
       ),
 
       // Icon
-      iconTheme: IconThemeData(
-        color: colorScheme.onSurface,
-      ),
+      iconTheme: IconThemeData(color: colorScheme.onSurface),
 
       // Progress Indicator
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -197,10 +190,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: colorScheme.onSurface,
         ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          color: colorScheme.onSurface,
-        ),
+        bodyLarge: TextStyle(fontSize: 16, color: colorScheme.onSurface),
         bodyMedium: TextStyle(
           fontSize: 14,
           color: colorScheme.onSurface.withValues(alpha: 0.7),

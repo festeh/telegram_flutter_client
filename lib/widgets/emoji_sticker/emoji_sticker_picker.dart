@@ -45,7 +45,9 @@ class _EmojiStickerPickerState extends ConsumerState<EmojiStickerPicker>
 
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
-      final tab = _tabController.index == 0 ? PickerTab.emoji : PickerTab.sticker;
+      final tab = _tabController.index == 0
+          ? PickerTab.emoji
+          : PickerTab.sticker;
       ref.read(emojiStickerProvider.notifier).selectTab(tab);
     }
   }
@@ -53,11 +55,14 @@ class _EmojiStickerPickerState extends ConsumerState<EmojiStickerPicker>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final selectedTab = ref.watch(emojiStickerProvider.select((s) => s.selectedTab));
+    final selectedTab = ref.watch(
+      emojiStickerProvider.select((s) => s.selectedTab),
+    );
 
     // Sync tab controller with state
     final targetIndex = selectedTab == PickerTab.emoji ? 0 : 1;
-    if (_tabController.index != targetIndex && !_tabController.indexIsChanging) {
+    if (_tabController.index != targetIndex &&
+        !_tabController.indexIsChanging) {
       _tabController.index = targetIndex;
     }
 
@@ -66,10 +71,7 @@ class _EmojiStickerPickerState extends ConsumerState<EmojiStickerPicker>
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1,
-          ),
+          top: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
       child: Column(
@@ -84,14 +86,8 @@ class _EmojiStickerPickerState extends ConsumerState<EmojiStickerPicker>
               indicatorColor: colorScheme.primary,
               indicatorSize: TabBarIndicatorSize.tab,
               tabs: const [
-                Tab(
-                  icon: Icon(Icons.emoji_emotions_outlined),
-                  text: 'Emoji',
-                ),
-                Tab(
-                  icon: Icon(Icons.sticky_note_2_outlined),
-                  text: 'Stickers',
-                ),
+                Tab(icon: Icon(Icons.emoji_emotions_outlined), text: 'Emoji'),
+                Tab(icon: Icon(Icons.sticky_note_2_outlined), text: 'Stickers'),
               ],
             ),
           ),

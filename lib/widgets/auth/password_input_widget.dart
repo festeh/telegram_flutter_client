@@ -36,11 +36,7 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.lock,
-              size: 48,
-              color: colorScheme.primary,
-            ),
+            Icon(Icons.lock, size: 48, color: colorScheme.primary),
             const SizedBox(height: 24),
             Text(
               'Enter your password',
@@ -51,8 +47,8 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
             Text(
               'Your account has two-step verification enabled',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -64,7 +60,8 @@ class _PasswordInputWidgetState extends ConsumerState<PasswordInputWidget> {
                 prefixIcon: const Icon(Icons.lock),
                 suffixIcon: IconButton(
                   icon: Icon(
-                      _obscureText ? Icons.visibility : Icons.visibility_off),
+                    _obscureText ? Icons.visibility : Icons.visibility_off,
+                  ),
                   onPressed: () => setState(() => _obscureText = !_obscureText),
                 ),
                 border: OutlineInputBorder(

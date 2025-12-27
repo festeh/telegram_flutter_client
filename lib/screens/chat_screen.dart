@@ -36,7 +36,10 @@ class ChatScreen extends ConsumerWidget {
   }
 
   PreferredSizeWidget _buildAppBar(
-      BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+  ) {
     final mutedColor = colorScheme.onSurface.withValues(alpha: 0.6);
     final client = ref.read(telegramClientProvider);
     final statusText = _getChatStatusText(chat, client);
@@ -96,8 +99,9 @@ class ChatScreen extends ConsumerWidget {
                     statusText,
                     style: TextStyle(
                       fontSize: 12,
-                      color:
-                          statusText == 'online' ? colorScheme.primary : mutedColor,
+                      color: statusText == 'online'
+                          ? colorScheme.primary
+                          : mutedColor,
                     ),
                   ),
               ],

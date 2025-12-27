@@ -73,8 +73,12 @@ class AppLogger {
         await logDir.create(recursive: true);
       }
 
-      final logFile = File(path.join(logDir.path,
-          'app_${DateTime.now().toIso8601String().split('T')[0]}.log'));
+      final logFile = File(
+        path.join(
+          logDir.path,
+          'app_${DateTime.now().toIso8601String().split('T')[0]}.log',
+        ),
+      );
 
       return FileOutput(file: logFile);
     } catch (e) {
@@ -118,16 +122,34 @@ class AppLogger {
     _log(Level.warning, message, context: context, error: error);
   }
 
-  void error(dynamic message,
-      {LogContext? context, Object? error, StackTrace? stackTrace}) {
-    _log(Level.error, message,
-        context: context, error: error, stackTrace: stackTrace);
+  void error(
+    dynamic message, {
+    LogContext? context,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    _log(
+      Level.error,
+      message,
+      context: context,
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
-  void fatal(dynamic message,
-      {LogContext? context, Object? error, StackTrace? stackTrace}) {
-    _log(Level.fatal, message,
-        context: context, error: error, stackTrace: stackTrace);
+  void fatal(
+    dynamic message, {
+    LogContext? context,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    _log(
+      Level.fatal,
+      message,
+      context: context,
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   // Convenience methods for different modules
@@ -144,8 +166,13 @@ class AppLogger {
       userId: userId,
       metadata: metadata,
     );
-    _log(level, message,
-        context: context, error: error, stackTrace: stackTrace);
+    _log(
+      level,
+      message,
+      context: context,
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   void tdlibLog(
@@ -161,8 +188,13 @@ class AppLogger {
       requestId: requestId,
       metadata: metadata,
     );
-    _log(level, message,
-        context: context, error: error, stackTrace: stackTrace);
+    _log(
+      level,
+      message,
+      context: context,
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   void networkLog(
@@ -178,8 +210,13 @@ class AppLogger {
       requestId: requestId,
       metadata: metadata,
     );
-    _log(level, message,
-        context: context, error: error, stackTrace: stackTrace);
+    _log(
+      level,
+      message,
+      context: context,
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   void performanceLog(
@@ -196,8 +233,10 @@ class AppLogger {
       },
     );
     _log(
-        Level.info, 'Performance: $operation took ${duration.inMilliseconds}ms',
-        context: context);
+      Level.info,
+      'Performance: $operation took ${duration.inMilliseconds}ms',
+      context: context,
+    );
   }
 
   void setGlobalContext(LogContext context) {

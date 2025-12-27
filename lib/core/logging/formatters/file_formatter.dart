@@ -4,9 +4,7 @@ import 'package:logger/logger.dart';
 class FileFormatter extends LogPrinter {
   final bool includeStackTrace;
 
-  FileFormatter({
-    this.includeStackTrace = true,
-  });
+  FileFormatter({this.includeStackTrace = true});
 
   @override
   List<String> log(LogEvent event) {
@@ -47,7 +45,7 @@ class FileFormatter extends LogPrinter {
     } catch (e) {
       // Fallback to simple string format if JSON encoding fails
       return [
-        '$timestamp [${event.level.name.toUpperCase()}] ${_extractMessage(event.message)}'
+        '$timestamp [${event.level.name.toUpperCase()}] ${_extractMessage(event.message)}',
       ];
     }
   }

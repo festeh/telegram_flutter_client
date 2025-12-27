@@ -10,10 +10,7 @@ import '../emoji_sticker/emoji_sticker_picker.dart';
 class MessageInputArea extends ConsumerStatefulWidget {
   final Chat chat;
 
-  const MessageInputArea({
-    super.key,
-    required this.chat,
-  });
+  const MessageInputArea({super.key, required this.chat});
 
   @override
   ConsumerState<MessageInputArea> createState() => _MessageInputAreaState();
@@ -51,8 +48,10 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
   }
 
   void _updateKeyboardHeight() {
-    final viewInsets = WidgetsBinding.instance.platformDispatcher.views.first.viewInsets;
-    final devicePixelRatio = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    final viewInsets =
+        WidgetsBinding.instance.platformDispatcher.views.first.viewInsets;
+    final devicePixelRatio =
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
     final keyboardHeight = viewInsets.bottom / devicePixelRatio;
 
     final isKeyboardVisible = keyboardHeight > 0;
@@ -63,7 +62,9 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
     }
 
     // If keyboard just appeared while picker is visible, hide picker
-    if (isKeyboardVisible && !_wasKeyboardVisible && ref.read(emojiStickerProvider).isPickerVisible) {
+    if (isKeyboardVisible &&
+        !_wasKeyboardVisible &&
+        ref.read(emojiStickerProvider).isPickerVisible) {
       ref.read(emojiStickerProvider.notifier).hidePicker();
     }
 
@@ -95,7 +96,9 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
     });
 
     try {
-      await ref.read(messageProvider.notifier).sendMessage(widget.chat.id, text);
+      await ref
+          .read(messageProvider.notifier)
+          .sendMessage(widget.chat.id, text);
     } catch (e) {
       _textController.text = text;
 
@@ -119,20 +122,27 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isSending = ref.watch(messageProvider.select((state) => state.value?.isSending ?? false));
-    final hasError = ref.watch(messageProvider.select((state) => state.hasError));
-    final isPickerVisible = ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible));
-    final pickerHeight = ref.watch(emojiStickerProvider.select((s) => s.keyboardHeight));
-    final replyingToMessage = ref.watch(messageProvider.select((state) => state.value?.replyingToMessage));
+    final isSending = ref.watch(
+      messageProvider.select((state) => state.value?.isSending ?? false),
+    );
+    final hasError = ref.watch(
+      messageProvider.select((state) => state.hasError),
+    );
+    final isPickerVisible = ref.watch(
+      emojiStickerProvider.select((s) => s.isPickerVisible),
+    );
+    final pickerHeight = ref.watch(
+      emojiStickerProvider.select((s) => s.keyboardHeight),
+    );
+    final replyingToMessage = ref.watch(
+      messageProvider.select((state) => state.value?.replyingToMessage),
+    );
 
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1,
-          ),
+          top: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
       child: Column(
@@ -161,7 +171,9 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
 
   Widget _buildErrorBanner() {
     final colorScheme = Theme.of(context).colorScheme;
-    final error = ref.watch(messageProvider.select((state) => state.error?.toString()));
+    final error = ref.watch(
+      messageProvider.select((state) => state.error?.toString()),
+    );
 
     return Container(
       width: double.infinity,
@@ -203,7 +215,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
 
   Widget _buildReplyPreview(Message message) {
     final colorScheme = Theme.of(context).colorScheme;
-    final senderName = message.senderName ?? (message.isOutgoing ? 'You' : 'User');
+    final senderName =
+        message.senderName ?? (message.isOutgoing ? 'You' : 'User');
     final content = message.content.length > 50
         ? '${message.content.substring(0, 50)}...'
         : message.content;
@@ -213,20 +226,11 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh,
-        border: Border(
-          left: BorderSide(
-            color: colorScheme.primary,
-            width: 3,
-          ),
-        ),
+        border: Border(left: BorderSide(color: colorScheme.primary, width: 3)),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.reply,
-            size: 18,
-            color: colorScheme.primary,
-          ),
+          Icon(Icons.reply, size: 18, color: colorScheme.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -255,17 +259,15 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
             ),
           ),
           IconButton(
-            onPressed: () => ref.read(messageProvider.notifier).clearReplyingTo(),
+            onPressed: () =>
+                ref.read(messageProvider.notifier).clearReplyingTo(),
             icon: Icon(
               Icons.close,
               size: 18,
               color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
         ],
       ),
@@ -290,10 +292,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
           ),
           Expanded(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: 40,
-                maxHeight: 120,
-              ),
+              constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
               child: TextField(
                 controller: _textController,
                 focusNode: _focusNode,
@@ -310,7 +309,9 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
                 decoration: InputDecoration(
                   hintText: isSending ? 'Sending...' : 'Type a message...',
                   hintStyle: TextStyle(
-                    color: colorScheme.onSurface.withValues(alpha: isSending ? 0.3 : 0.5),
+                    color: colorScheme.onSurface.withValues(
+                      alpha: isSending ? 0.3 : 0.5,
+                    ),
                   ),
                   filled: true,
                   fillColor: colorScheme.surfaceContainerHigh,
@@ -339,12 +340,21 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
                   suffixIcon: IconButton(
                     onPressed: isSending ? null : _showEmojiPicker,
                     icon: Icon(
-                      ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible))
+                      ref.watch(
+                            emojiStickerProvider.select(
+                              (s) => s.isPickerVisible,
+                            ),
+                          )
                           ? Icons.keyboard_outlined
                           : Icons.emoji_emotions_outlined,
-                      color: colorScheme.onSurface.withValues(alpha: isSending ? 0.3 : 0.6),
+                      color: colorScheme.onSurface.withValues(
+                        alpha: isSending ? 0.3 : 0.6,
+                      ),
                     ),
-                    tooltip: ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible))
+                    tooltip:
+                        ref.watch(
+                          emojiStickerProvider.select((s) => s.isPickerVisible),
+                        )
                         ? 'Show keyboard'
                         : 'Add emoji',
                   ),
@@ -389,11 +399,7 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
                   ),
                 ),
               )
-            : Icon(
-                Icons.send,
-                color: colorScheme.onPrimary,
-                size: 20,
-              ),
+            : Icon(Icons.send, color: colorScheme.onPrimary, size: 20),
         tooltip: isSending ? 'Sending...' : 'Send message',
         splashRadius: 20,
       ),
@@ -466,23 +472,28 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
       final media = await picker.pickMedia();
       if (media != null) {
         final path = media.path.toLowerCase();
-        final isVideo = path.endsWith('.mp4') ||
-                        path.endsWith('.mov') ||
-                        path.endsWith('.avi') ||
-                        path.endsWith('.webm') ||
-                        path.endsWith('.mkv');
+        final isVideo =
+            path.endsWith('.mp4') ||
+            path.endsWith('.mov') ||
+            path.endsWith('.avi') ||
+            path.endsWith('.webm') ||
+            path.endsWith('.mkv');
 
         if (isVideo) {
-          await ref.read(messageProvider.notifier).sendVideo(widget.chat.id, media.path);
+          await ref
+              .read(messageProvider.notifier)
+              .sendVideo(widget.chat.id, media.path);
         } else {
-          await ref.read(messageProvider.notifier).sendPhoto(widget.chat.id, media.path);
+          await ref
+              .read(messageProvider.notifier)
+              .sendPhoto(widget.chat.id, media.path);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick media: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick media: $e')));
       }
     }
   }
@@ -502,13 +513,15 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
       final picker = ImagePicker();
       final image = await picker.pickImage(source: ImageSource.camera);
       if (image != null) {
-        await ref.read(messageProvider.notifier).sendPhoto(widget.chat.id, image.path);
+        await ref
+            .read(messageProvider.notifier)
+            .sendPhoto(widget.chat.id, image.path);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to capture image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to capture image: $e')));
       }
     }
   }
@@ -517,16 +530,15 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
     try {
       final result = await FilePicker.platform.pickFiles();
       if (result != null && result.files.single.path != null) {
-        await ref.read(messageProvider.notifier).sendDocument(
-          widget.chat.id,
-          result.files.single.path!,
-        );
+        await ref
+            .read(messageProvider.notifier)
+            .sendDocument(widget.chat.id, result.files.single.path!);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick document: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick document: $e')));
       }
     }
   }
@@ -546,15 +558,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
           Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 28,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: 28),
           ),
           const SizedBox(height: 8),
           Text(
@@ -582,5 +587,4 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
       ref.read(emojiStickerProvider.notifier).showPicker();
     }
   }
-
 }

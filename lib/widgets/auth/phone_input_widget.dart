@@ -44,11 +44,7 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.phone,
-              size: 32,
-              color: colorScheme.primary,
-            ),
+            Icon(Icons.phone, size: 32, color: colorScheme.primary),
             const SizedBox(height: 12),
             Text(
               'Enter your phone number',
@@ -59,8 +55,8 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
             Text(
               'You\'ll receive a verification code',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -70,7 +66,9 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
                   onTap: _showCountryPicker,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 12),
+                      horizontal: 10,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(color: colorScheme.outline),
                       borderRadius: const BorderRadius.only(
@@ -95,7 +93,11 @@ class _PhoneInputWidgetState extends ConsumerState<PhoneInputWidget> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Icon(Icons.arrow_drop_down, size: 20, color: colorScheme.onSurface),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          size: 20,
+                          color: colorScheme.onSurface,
+                        ),
                       ],
                     ),
                   ),

@@ -14,8 +14,9 @@ class TdlibAuthentication implements AuthenticationRepository {
   late StreamSubscription _updateSubscription;
   final AuthLogger _logger = AuthLogger.instance;
 
-  AuthenticationState _authState =
-      const AuthenticationState(state: AuthorizationState.unknown);
+  AuthenticationState _authState = const AuthenticationState(
+    state: AuthorizationState.unknown,
+  );
   UserSession? _currentUser;
   CodeInfo? _codeInfo;
   QrCodeInfo? _qrCodeInfo;
@@ -143,7 +144,8 @@ class TdlibAuthentication implements AuthenticationRepository {
       _authStateController.add(_authState);
     } catch (e) {
       _logger.logError('Authentication initialization failed', error: e);
-      _isInitialized = true; // On error, mark as initialized to show error state
+      _isInitialized =
+          true; // On error, mark as initialized to show error state
       _authStateController.add(_authState);
       rethrow;
     }
@@ -315,7 +317,9 @@ class TdlibAuthentication implements AuthenticationRepository {
 
     try {
       await _storage.setString(
-          'user_session', jsonEncode(_currentUser!.toJson()));
+        'user_session',
+        jsonEncode(_currentUser!.toJson()),
+      );
     } catch (e) {
       _logger.logError('Failed to save user session', error: e);
     }

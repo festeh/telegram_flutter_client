@@ -1,12 +1,4 @@
-enum LogModule {
-  auth,
-  tdlib,
-  network,
-  storage,
-  ui,
-  performance,
-  general,
-}
+enum LogModule { auth, tdlib, network, storage, ui, performance, general }
 
 extension LogModuleExtension on LogModule {
   String get name {

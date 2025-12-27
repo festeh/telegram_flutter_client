@@ -31,8 +31,11 @@ abstract class TelegramClientRepository {
   Future<void> logOut();
 
   // Chat methods
-  Future<List<Chat>> loadChats(
-      {int limit = 20, int offsetOrder = 0, int offsetChatId = 0});
+  Future<List<Chat>> loadChats({
+    int limit = 20,
+    int offsetOrder = 0,
+    int offsetChatId = 0,
+  });
   Future<Chat?> getChat(int chatId);
 
   // User methods
@@ -42,20 +45,58 @@ abstract class TelegramClientRepository {
   Future<void> downloadFile(int fileId);
 
   // Message methods
-  Future<List<Message>> loadMessages(int chatId, {int limit = 50, int fromMessageId = 0});
-  Future<Message?> sendMessage(int chatId, String text, {int? replyToMessageId});
-  Future<void> sendPhoto(int chatId, String filePath, {String? caption, int? replyToMessageId});
-  Future<void> sendVideo(int chatId, String filePath, {String? caption, int? replyToMessageId});
-  Future<void> sendDocument(int chatId, String filePath, {String? caption, int? replyToMessageId});
+  Future<List<Message>> loadMessages(
+    int chatId, {
+    int limit = 50,
+    int fromMessageId = 0,
+  });
+  Future<Message?> getMessage(int chatId, int messageId);
+  Message? getCachedReplyMessage(int chatId, int replyToMessageId);
+  Future<Message?> fetchReplyMessage(
+    int chatId,
+    int messageId,
+    int replyToMessageId,
+  );
+  Future<Message?> sendMessage(
+    int chatId,
+    String text, {
+    int? replyToMessageId,
+  });
+  Future<void> sendPhoto(
+    int chatId,
+    String filePath, {
+    String? caption,
+    int? replyToMessageId,
+  });
+  Future<void> sendVideo(
+    int chatId,
+    String filePath, {
+    String? caption,
+    int? replyToMessageId,
+  });
+  Future<void> sendDocument(
+    int chatId,
+    String filePath, {
+    String? caption,
+    int? replyToMessageId,
+  });
   Future<void> markAsRead(int chatId, int messageId);
   Future<bool> deleteMessage(int chatId, int messageId);
   Future<Message?> editMessage(int chatId, int messageId, String newText);
-  Future<void> forwardMessages(int fromChatId, int toChatId, List<int> messageIds);
+  Future<void> forwardMessages(
+    int fromChatId,
+    int toChatId,
+    List<int> messageIds,
+  );
 
   // Reaction methods
   Future<List<String>> getAvailableReactions(int chatId, int messageId);
   Future<void> addReaction(int chatId, int messageId, MessageReaction reaction);
-  Future<void> removeReaction(int chatId, int messageId, MessageReaction reaction);
+  Future<void> removeReaction(
+    int chatId,
+    int messageId,
+    MessageReaction reaction,
+  );
 
   // Sticker methods
   Future<List<StickerSet>> getInstalledStickerSets();

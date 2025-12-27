@@ -1,17 +1,35 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/repositories/telegram_client_repository.dart';
 import '../../domain/entities/sticker.dart';
+import '../../data/repositories/tdlib_telegram_client.dart';
 import '../state/emoji_sticker_state.dart';
 import '../providers/telegram_client_provider.dart';
 
 class EmojiStickerNotifier extends Notifier<EmojiStickerState> {
-  late final TelegramClientRepository _client;
+  TelegramClientRepository get _client => ref.read(telegramClientProvider);
+  StreamSubscription? _downloadSubscription;
 
   @override
   EmojiStickerState build() {
-    _client = ref.read(telegramClientProvider);
+    _listenToFileDownloads();
+    ref.onDispose(() {
+      _downloadSubscription?.cancel();
+    });
     return EmojiStickerState.initial();
+  }
+
+  void _listenToFileDownloads() {
+    final client = _client;
+    if (client is TdlibTelegramClient) {
+      _downloadSubscription = client.fileDownloads.listen((event) {
+        // Update the centralized download paths map
+        final newPaths = Map<int, String>.from(state.stickerDownloadPaths);
+        newPaths[event.fileId] = event.path;
+        state = state.copyWith(stickerDownloadPaths: newPaths);
+      });
+    }
   }
 
   void togglePicker() {
@@ -62,14 +80,22 @@ class EmojiStickerNotifier extends Notifier<EmojiStickerState> {
     state = state.copyWith(isLoadingStickerSets: true, clearError: true);
 
     try {
-      debugPrint('[EmojiStickerNotifier] Calling _client.getInstalledStickerSets()...');
+      debugPrint(
+        '[EmojiStickerNotifier] Calling _client.getInstalledStickerSets()...',
+      );
       final stickerSets = await _client.getInstalledStickerSets();
-      debugPrint('[EmojiStickerNotifier] Got ${stickerSets.length} sticker sets');
+      debugPrint(
+        '[EmojiStickerNotifier] Got ${stickerSets.length} sticker sets',
+      );
 
       // Also load recent stickers
-      debugPrint('[EmojiStickerNotifier] Calling _client.getRecentStickers()...');
+      debugPrint(
+        '[EmojiStickerNotifier] Calling _client.getRecentStickers()...',
+      );
       final recentStickers = await _client.getRecentStickers();
-      debugPrint('[EmojiStickerNotifier] Got ${recentStickers.length} recent stickers');
+      debugPrint(
+        '[EmojiStickerNotifier] Got ${recentStickers.length} recent stickers',
+      );
 
       state = state.copyWith(
         installedStickerSets: stickerSets,
@@ -133,13 +159,19 @@ class EmojiStickerNotifier extends Notifier<EmojiStickerState> {
       // Optionally hide picker after sending
       // hidePicker();
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: 'Failed to send sticker: $e',
-      );
+      state = state.copyWith(errorMessage: 'Failed to send sticker: $e');
     }
   }
 
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  /// Request a sticker file to be downloaded
+  void requestStickerDownload(int fileId) {
+    final client = _client;
+    if (client is TdlibTelegramClient) {
+      client.downloadFile(fileId);
+    }
   }
 }

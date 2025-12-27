@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 class LoadingStateWidget extends StatelessWidget {
   final String message;
 
-  const LoadingStateWidget({
-    super.key,
-    this.message = 'Loading...',
-  });
+  const LoadingStateWidget({super.key, this.message = 'Loading...'});
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +89,10 @@ class EmptyStateWidget extends StatelessWidget {
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
                 elevation: 2,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],
@@ -120,18 +120,18 @@ class ErrorStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final buttonBgColor = useErrorColor ? colorScheme.error : colorScheme.primary;
-    final buttonFgColor = useErrorColor ? colorScheme.onError : colorScheme.onPrimary;
+    final buttonBgColor = useErrorColor
+        ? colorScheme.error
+        : colorScheme.primary;
+    final buttonFgColor = useErrorColor
+        ? colorScheme.onError
+        : colorScheme.onPrimary;
 
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: colorScheme.error,
-          ),
+          Icon(Icons.error_outline, size: 64, color: colorScheme.error),
           const SizedBox(height: 16),
           Text(
             title,
@@ -162,7 +162,10 @@ class ErrorStateWidget extends StatelessWidget {
                 backgroundColor: buttonBgColor,
                 foregroundColor: buttonFgColor,
                 elevation: 2,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
             ),
           ],

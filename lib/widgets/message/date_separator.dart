@@ -4,10 +4,7 @@ import 'package:intl/intl.dart';
 class DateSeparator extends StatelessWidget {
   final DateTime date;
 
-  const DateSeparator({
-    super.key,
-    required this.date,
-  });
+  const DateSeparator({super.key, required this.date});
 
   @override
   Widget build(BuildContext context) {

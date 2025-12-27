@@ -164,8 +164,8 @@ class _QrAuthWidgetState extends ConsumerState<QrAuthWidget> {
           Text(
             'Scan this QR code with Telegram on your phone',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -198,8 +198,8 @@ class _QrAuthWidgetState extends ConsumerState<QrAuthWidget> {
                   Text(
                     'Waiting for confirmation...',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.secondary,
-                        ),
+                      color: colorScheme.secondary,
+                    ),
                   ),
                 ],
               ),
@@ -219,8 +219,10 @@ class _QrAuthWidgetState extends ConsumerState<QrAuthWidget> {
                     color: colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   const SizedBox(height: 16),
-                  Text('Generate QR Code',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Generate QR Code',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ],
               ),
             ),
@@ -235,7 +237,9 @@ class _QrAuthWidgetState extends ConsumerState<QrAuthWidget> {
           ],
           const SizedBox(height: 32),
           LoadingButton(
-            label: qrCodeInfo != null ? 'Generate New QR Code' : 'Generate QR Code',
+            label: qrCodeInfo != null
+                ? 'Generate New QR Code'
+                : 'Generate QR Code',
             onPressed: () => ref.requestQrCode(),
             isLoading: isLoading,
             height: 50,

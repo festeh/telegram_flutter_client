@@ -64,10 +64,7 @@ class LoadingButton extends StatelessWidget {
         ),
         child: isLoading
             ? SmallLoadingIndicator(color: colorScheme.onPrimary)
-            : Text(
-                label,
-                style: const TextStyle(fontSize: 16),
-              ),
+            : Text(label, style: const TextStyle(fontSize: 16)),
       ),
     );
   }

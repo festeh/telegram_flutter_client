@@ -35,10 +35,7 @@ class ReactionBar extends StatelessWidget {
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 24),
-                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
                 ),
               ),
             );

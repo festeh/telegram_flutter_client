@@ -29,7 +29,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
   static int get apiId => int.parse(dotenv.env['TELEGRAM_API_ID'] ?? '0');
   static String get apiHash => dotenv.env['TELEGRAM_API_HASH'] ?? '';
 
-  late TdJsonClient _client;
+  TdJsonClient? _client;
   late StreamController<Map<String, dynamic>> _updateController;
   late StreamController<AuthenticationState> _authController;
   late StreamController<FileDownloadComplete> _fileDownloadController;
@@ -49,8 +49,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
   @override
   Stream<MessageEvent> get messageEvents => _messageEventController.stream;
 
-  AuthenticationState _currentAuthState =
-      const AuthenticationState(state: AuthorizationState.unknown);
+  AuthenticationState _currentAuthState = const AuthenticationState(
+    state: AuthorizationState.unknown,
+  );
   UserSession? _currentUser;
   final Map<int, Chat> _chats = <int, Chat>{};
   final Map<int, List<Message>> _messages = <int, List<Message>>{};
@@ -61,6 +62,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
   final Map<int, ({int chatId, int messageId})> _photoFileToMessage = {};
   // Track file ID to message ID mapping for sticker updates
   final Map<int, ({int chatId, int messageId})> _stickerFileToMessage = {};
+  // Track file ID to message ID mapping for video updates
+  final Map<int, ({int chatId, int messageId})> _videoFileToMessage = {};
 
   // Sticker file cache: fileId -> localPath (for picker caching)
   final Map<int, String> _stickerFileCache = {};
@@ -75,9 +78,19 @@ class TdlibTelegramClient implements TelegramClientRepository {
   // fileId -> customEmojiId (reverse mapping for download completion)
   final Map<int, int> _fileIdToCustomEmoji = {};
   // customEmojiId -> set of (chatId, messageId) that use this emoji
-  final Map<int, Set<({int chatId, int messageId})>> _customEmojiToMessages = {};
+  final Map<int, Set<({int chatId, int messageId})>> _customEmojiToMessages =
+      {};
   // Track pending custom emoji fetches to avoid duplicate requests
   final Set<int> _pendingCustomEmojiFetches = {};
+
+  // Reply message cache: (chatId, messageId) -> Message
+  final Map<(int, int), Message> _replyMessageCache = {};
+  // Track pending reply message fetches to avoid duplicate requests
+  final Set<(int, int)> _pendingReplyFetches = {};
+
+  // Request-response correlation using TDLib's @extra field
+  int _requestId = 0;
+  final Map<String, Completer<Map<String, dynamic>?>> _pendingRequests = {};
 
   @override
   AuthenticationState get currentAuthState => _currentAuthState;
@@ -85,31 +98,30 @@ class TdlibTelegramClient implements TelegramClientRepository {
   @override
   UserSession? get currentUser => _currentUser;
 
-  bool _isStarted = false;
   Timer? _receiveTimer;
   final List<Map<String, dynamic>> _pendingUpdates = [];
 
   TdlibTelegramClient() {
     _updateController = StreamController<Map<String, dynamic>>.broadcast();
     _authController = StreamController<AuthenticationState>.broadcast();
-    _fileDownloadController = StreamController<FileDownloadComplete>.broadcast();
+    _fileDownloadController =
+        StreamController<FileDownloadComplete>.broadcast();
     _chatEventController = StreamController<ChatEvent>.broadcast();
     _messageEventController = StreamController<MessageEvent>.broadcast();
   }
 
   /// Stream of file download completion events
-  Stream<FileDownloadComplete> get fileDownloads => _fileDownloadController.stream;
+  Stream<FileDownloadComplete> get fileDownloads =>
+      _fileDownloadController.stream;
 
   @override
   Future<void> start() async {
-    if (_isStarted) return;
+    if (_client != null) return; // Already initialized
 
     _client = TdJsonClient();
 
     // Set TDLib log verbosity level before any other operations
     _setTdLibLogVerbosity();
-
-    _isStarted = true;
 
     _startReceiving();
 
@@ -147,7 +159,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _receiveTimer = Timer.periodic(AppConfig.updatePollingInterval, (timer) {
       bool hasUpdates = false;
       while (true) {
-        final response = _client.receive(0.0);
+        final response = _client!.receive(0.0);
         if (response != null) {
           try {
             final update = jsonDecode(response) as Map<String, dynamic>;
@@ -191,6 +203,15 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _logger.logUpdate(update);
     _updateController.add(update);
 
+    // Check for @extra to complete pending async requests
+    final extra = update['@extra'] as String?;
+    if (extra != null && _pendingRequests.containsKey(extra)) {
+      _pendingRequests.remove(extra)?.complete(update);
+      // Response to our request - don't process as a regular update
+      // (e.g., getRepliedMessage responses shouldn't be added to chat history)
+      return;
+    }
+
     final type = update[TdlibFields.type] as String;
 
     // Debug log for sticker-related types
@@ -199,8 +220,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
 
     if (type == TdlibUpdateTypes.authorizationState) {
-      final authState =
-          AuthenticationState.fromJson(update['authorization_state']);
+      final authState = AuthenticationState.fromJson(
+        update['authorization_state'],
+      );
       _logger.logAuthState(authState.state.toString());
       _currentAuthState = authState;
       _authController.add(authState);
@@ -249,7 +271,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
     } else if (type == TdlibUpdateTypes.messageInteractionInfo) {
       _handleMessageInteractionInfoUpdate(update);
     } else if (type == 'stickerSets' || type == 'StickerSets') {
-      _logger.logResponse({'@type': 'DEBUG_stickerSets_received', 'type': type, 'sets_count': (update['sets'] as List?)?.length});
+      _logger.logResponse({
+        '@type': 'DEBUG_stickerSets_received',
+        'type': type,
+        'sets_count': (update['sets'] as List?)?.length,
+      });
       _handleStickerSetsResponse(update);
     } else if (type == 'stickerSet' || type == 'StickerSet') {
       _logger.logResponse({'@type': 'DEBUG_stickerSet_received', 'type': type});
@@ -289,7 +315,245 @@ class TdlibTelegramClient implements TelegramClientRepository {
       }
     }
 
-    return Message.fromJson(json, senderName: senderName);
+    // For forwarded messages, prefer the original sender name
+    final forwardInfo = json['forward_info'] as Map<String, dynamic>?;
+    if (forwardInfo != null && senderName == null) {
+      final origin = forwardInfo['origin'] as Map<String, dynamic>?;
+      if (origin != null) {
+        final originType = origin['@type'] as String?;
+        if (originType == 'messageOriginChannel') {
+          // Get original channel name
+          final originChatId = origin['chat_id'] as int?;
+          if (originChatId != null) {
+            final originChat = _chats[originChatId];
+            senderName =
+                originChat?.title ?? origin['author_signature'] as String?;
+          }
+        } else if (originType == 'messageOriginUser') {
+          final originUserId = origin['sender_user_id'] as int?;
+          if (originUserId != null) {
+            senderName = _userNames[originUserId];
+          }
+        } else if (originType == 'messageOriginHiddenUser') {
+          senderName = origin['sender_name'] as String?;
+        }
+      }
+    }
+
+    // For messages with Telegram link previews (e.g., replies to channel posts in discussions),
+    // use the link preview title as sender name if it's a t.me link
+    final content = json['content'] as Map<String, dynamic>?;
+    PhotoInfo? linkPreviewPhoto;
+    if (content != null && content['@type'] == 'messageText') {
+      final linkPreview = content['link_preview'] as Map<String, dynamic>?;
+      if (linkPreview != null) {
+        final url = linkPreview['url'] as String? ?? '';
+        if (url.contains('t.me/') || url.contains('telegram.me/')) {
+          final previewTitle = linkPreview['title'] as String?;
+          if (previewTitle != null && previewTitle.isNotEmpty) {
+            senderName = previewTitle;
+          }
+        }
+
+        // Parse link preview photo if available
+        final previewType = linkPreview['type'] as Map<String, dynamic>?;
+        if (previewType != null &&
+            previewType['@type'] == 'linkPreviewTypePhoto') {
+          final photoData = previewType['photo'] as Map<String, dynamic>?;
+          if (photoData != null) {
+            linkPreviewPhoto = _parsePhotoFromSizes(photoData);
+          }
+        }
+      }
+    }
+
+    final message = Message.fromJson(
+      json,
+      senderName: senderName,
+      linkPreviewPhoto: linkPreviewPhoto,
+    );
+
+    // For cross-chat replies, extract and cache the reply preview from reply_to
+    _cacheInlineReplyPreview(json, message.chatId);
+
+    return message;
+  }
+
+  /// Cache reply preview data from cross-chat replies (where reply_to contains inline content)
+  void _cacheInlineReplyPreview(Map<String, dynamic> json, int messageChatId) {
+    final replyTo = json['reply_to'] as Map<String, dynamic>?;
+    if (replyTo == null) return;
+
+    final replyChatId = replyTo['chat_id'] as int?;
+    final replyMessageId = replyTo['message_id'] as int?;
+    if (replyChatId == null || replyMessageId == null) return;
+
+    // Check if this is a cross-chat reply (different chat_id)
+    final isCrossChat = replyChatId != messageChatId;
+    if (!isCrossChat) return;
+
+    // Already cached?
+    final cacheKey = (messageChatId, replyMessageId);
+    if (_replyMessageCache.containsKey(cacheKey)) return;
+
+    // Extract sender name from origin
+    String? replySenderName;
+    final origin = replyTo['origin'] as Map<String, dynamic>?;
+    if (origin != null) {
+      final originType = origin['@type'] as String?;
+      if (originType == 'messageOriginChannel') {
+        final originChatId = origin['chat_id'] as int?;
+        if (originChatId != null) {
+          replySenderName = _chats[originChatId]?.title;
+        }
+        replySenderName ??= origin['author_signature'] as String?;
+      } else if (originType == 'messageOriginUser') {
+        final userId = origin['sender_user_id'] as int?;
+        if (userId != null) {
+          replySenderName = _userNames[userId];
+        }
+      } else if (originType == 'messageOriginHiddenUser') {
+        replySenderName = origin['sender_name'] as String?;
+      }
+    }
+
+    // Extract content - prefer quote text, fall back to content
+    String replyContent = '';
+    MessageType replyType = MessageType.text;
+    PhotoInfo? replyPhoto;
+    PhotoInfo? replyLinkPreviewPhoto;
+
+    // Try to get quote text first
+    final quote = replyTo['quote'] as Map<String, dynamic>?;
+    if (quote != null) {
+      final quoteText = quote['text'] as Map<String, dynamic>?;
+      if (quoteText != null) {
+        replyContent = quoteText['text'] as String? ?? '';
+      }
+    }
+
+    // Parse content from reply_to
+    final replyToContent = replyTo['content'] as Map<String, dynamic>?;
+    if (replyToContent != null) {
+      final contentType = replyToContent['@type'] as String?;
+
+      if (contentType == 'messagePhoto') {
+        replyType = MessageType.photo;
+        if (replyContent.isEmpty) replyContent = '📷 Photo';
+        // Parse photo
+        final photoData = replyToContent['photo'] as Map<String, dynamic>?;
+        if (photoData != null) {
+          replyPhoto = _parsePhotoFromSizes(photoData);
+        }
+      } else if (contentType == 'messageText') {
+        // Extract text if we don't have quote
+        if (replyContent.isEmpty) {
+          final text = replyToContent['text'] as Map<String, dynamic>?;
+          replyContent = text?['text'] as String? ?? '';
+        }
+        // Parse link preview photo
+        final linkPreview =
+            replyToContent['link_preview'] as Map<String, dynamic>?;
+        if (linkPreview != null) {
+          // Use link preview title as sender name if not set
+          if (replySenderName == null || replySenderName.isEmpty) {
+            replySenderName = linkPreview['title'] as String?;
+          }
+          final previewType = linkPreview['type'] as Map<String, dynamic>?;
+          if (previewType != null &&
+              previewType['@type'] == 'linkPreviewTypePhoto') {
+            final photoData = previewType['photo'] as Map<String, dynamic>?;
+            if (photoData != null) {
+              replyLinkPreviewPhoto = _parsePhotoFromSizes(photoData);
+            }
+          }
+        }
+      } else if (contentType == 'messageVideo') {
+        replyType = MessageType.video;
+        if (replyContent.isEmpty) replyContent = '🎥 Video';
+      } else if (contentType == 'messageSticker') {
+        replyType = MessageType.sticker;
+        if (replyContent.isEmpty) replyContent = '🎭 Sticker';
+      }
+    }
+
+    // Create synthetic message for cache
+    final syntheticReply = Message(
+      id: replyMessageId,
+      chatId: replyChatId,
+      senderId: replyChatId, // Use chat ID as sender for channels
+      senderName: replySenderName ?? 'Channel',
+      date: DateTime.now(), // Not critical for preview
+      content: replyContent,
+      isOutgoing: false,
+      type: replyType,
+      photo: replyPhoto,
+      linkPreviewPhoto: replyLinkPreviewPhoto,
+    );
+
+    _replyMessageCache[cacheKey] = syntheticReply;
+    _logger.logRequest({
+      '@type': 'cross_chat_reply_cached',
+      'cache_key': '($messageChatId, $replyMessageId)',
+      'sender_name': replySenderName,
+      'content_preview': replyContent.substring(
+        0,
+        replyContent.length.clamp(0, 50),
+      ),
+      'has_photo': replyPhoto != null,
+      'has_link_preview_photo': replyLinkPreviewPhoto != null,
+    });
+
+    // Trigger photo downloads if needed
+    if (replyPhoto != null &&
+        replyPhoto.path == null &&
+        replyPhoto.fileId != null) {
+      _photoFileToMessage[replyPhoto.fileId!] = (
+        chatId: messageChatId,
+        messageId: replyMessageId,
+      );
+      downloadFile(replyPhoto.fileId!);
+    }
+    if (replyLinkPreviewPhoto != null &&
+        replyLinkPreviewPhoto.path == null &&
+        replyLinkPreviewPhoto.fileId != null) {
+      _photoFileToMessage[replyLinkPreviewPhoto.fileId!] = (
+        chatId: messageChatId,
+        messageId: replyMessageId,
+      );
+      downloadFile(replyLinkPreviewPhoto.fileId!);
+    }
+  }
+
+  /// Parse photo from TDLib photo data (message photos, link previews, etc.)
+  /// Prefers 'm' size (~320px) for thumbnails, falls back to first available.
+  PhotoInfo? _parsePhotoFromSizes(Map<String, dynamic> photoData) {
+    final sizes = photoData['sizes'] as List?;
+    if (sizes == null || sizes.isEmpty) return null;
+
+    Map<String, dynamic>? bestSize;
+    for (final size in sizes) {
+      if (size is Map<String, dynamic>) {
+        final sizeType = size['type'] as String?;
+        if (sizeType == 'm') {
+          bestSize = size;
+          break;
+        }
+        bestSize ??= size;
+      }
+    }
+
+    if (bestSize == null) return null;
+
+    final fileInfo = bestSize['photo'] as Map<String, dynamic>?;
+    final localPath = fileInfo?['local']?['path'] as String?;
+
+    return PhotoInfo(
+      path: (localPath?.isNotEmpty == true) ? localPath : null,
+      fileId: fileInfo?['id'] as int?,
+      width: bestSize['width'] as int?,
+      height: bestSize['height'] as int?,
+    );
   }
 
   void _handleUserUpdate(Map<String, dynamic> update) {
@@ -363,7 +627,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
       });
 
       // Emit event for UI updates
-      _chatEventController.add(UserStatusUpdatedEvent(userId, statusString, lastSeen: lastSeen));
+      _chatEventController.add(
+        UserStatusUpdatedEvent(userId, statusString, lastSeen: lastSeen),
+      );
     } catch (e) {
       _logger.logError('Error processing updateUserStatus', error: e);
     }
@@ -484,17 +750,22 @@ class TdlibTelegramClient implements TelegramClientRepository {
         _chats[chatId] = _chats[chatId]!.copyWith(unreadCount: unreadCount);
       }
       // Emit typed event
-      _chatEventController.add(ChatUnreadCountUpdatedEvent(chatId, unreadCount));
+      _chatEventController.add(
+        ChatUnreadCountUpdatedEvent(chatId, unreadCount),
+      );
     }
   }
 
   void _handleChatReadOutboxUpdate(Map<String, dynamic> update) {
     final chatId = update['chat_id'] as int?;
-    final lastReadOutboxMessageId = update['last_read_outbox_message_id'] as int?;
+    final lastReadOutboxMessageId =
+        update['last_read_outbox_message_id'] as int?;
 
     if (chatId != null && lastReadOutboxMessageId != null) {
       // Emit typed event for message state updates
-      _messageEventController.add(ChatReadOutboxEvent(chatId, lastReadOutboxMessageId));
+      _messageEventController.add(
+        ChatReadOutboxEvent(chatId, lastReadOutboxMessageId),
+      );
     }
   }
 
@@ -517,7 +788,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _chats[chatId] = _chats[chatId]!.copyWith(isInMainList: hasValidPosition);
     }
     // Emit typed event
-    _chatEventController.add(ChatPositionChangedEvent(chatId, hasValidPosition));
+    _chatEventController.add(
+      ChatPositionChangedEvent(chatId, hasValidPosition),
+    );
   }
 
   void _handleAuthorizationState(AuthenticationState state) {
@@ -546,17 +819,54 @@ class TdlibTelegramClient implements TelegramClientRepository {
       return path.join(appDir.path, 'tdlib');
     }
     final homeDir = Platform.environment['HOME'] ?? '';
-    final dbPath =
-        path.join(homeDir, '.local', 'share', 'telegram_flutter_client');
+    final dbPath = path.join(
+      homeDir,
+      '.local',
+      'share',
+      'telegram_flutter_client',
+    );
     return dbPath;
   }
 
   Future<Map<String, dynamic>?> _sendRequest(
-      Map<String, dynamic> request) async {
+    Map<String, dynamic> request,
+  ) async {
     _logger.logRequest(request);
     final requestJson = jsonEncode(request);
-    _client.send(requestJson);
+    _client!.send(requestJson);
     return null;
+  }
+
+  /// Send a request and wait for the actual response using @extra correlation.
+  /// Use this for requests where you need the response data.
+  Future<Map<String, dynamic>?> _sendRequestAsync(
+    Map<String, dynamic> request, {
+    Duration? timeout,
+  }) async {
+    final requestId = 'req_${++_requestId}';
+    final completer = Completer<Map<String, dynamic>?>();
+    _pendingRequests[requestId] = completer;
+
+    // Add @extra for response correlation
+    final requestWithExtra = {...request, '@extra': requestId};
+    _logger.logRequest(requestWithExtra);
+    final requestJson = jsonEncode(requestWithExtra);
+    _client!.send(requestJson);
+
+    // Wait for response with timeout
+    try {
+      final response = await completer.future.timeout(
+        timeout ?? const Duration(seconds: 5),
+        onTimeout: () {
+          _pendingRequests.remove(requestId);
+          return null;
+        },
+      );
+      return response;
+    } catch (e) {
+      _pendingRequests.remove(requestId);
+      return null;
+    }
   }
 
   @override
@@ -569,10 +879,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
   @override
   Future<void> checkAuthenticationCode(String code) async {
-    await _sendRequest({
-      '@type': 'checkAuthenticationCode',
-      'code': code,
-    });
+    await _sendRequest({'@type': 'checkAuthenticationCode', 'code': code});
   }
 
   @override
@@ -593,10 +900,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
   @override
   Future<void> confirmQrCodeAuthentication(String link) async {
-    await _sendRequest({
-      '@type': 'confirmQrCodeAuthentication',
-      'link': link,
-    });
+    await _sendRequest({'@type': 'confirmQrCodeAuthentication', 'link': link});
   }
 
   @override
@@ -610,21 +914,20 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
   @override
   Future<void> resendAuthenticationCode() async {
-    await _sendRequest({
-      '@type': 'resendAuthenticationCode',
-    });
+    await _sendRequest({'@type': 'resendAuthenticationCode'});
   }
 
   @override
   Future<void> logOut() async {
-    await _sendRequest({
-      '@type': 'logOut',
-    });
+    await _sendRequest({'@type': 'logOut'});
   }
 
   @override
-  Future<List<Chat>> loadChats(
-      {int limit = 20, int offsetOrder = 0, int offsetChatId = 0}) async {
+  Future<List<Chat>> loadChats({
+    int limit = 20,
+    int offsetOrder = 0,
+    int offsetChatId = 0,
+  }) async {
     // Send the getChats request to trigger TDLib to send updateNewChat events
     await _sendRequest({
       '@type': 'getChats',
@@ -659,10 +962,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
 
     // If not in cache, request it from TDLib
-    await _sendRequest({
-      '@type': 'getChat',
-      'chat_id': chatId,
-    });
+    await _sendRequest({'@type': 'getChat', 'chat_id': chatId});
 
     // Wait a moment for the update to arrive
     await Future.delayed(AppConfig.singleChatFetchDelay);
@@ -682,20 +982,22 @@ class TdlibTelegramClient implements TelegramClientRepository {
       });
 
       // Use synchronous execute method for immediate effect
-      _client.execute(request);
+      _client!.execute(request);
 
       _logger.logConnectionState(
-          'Log verbosity set to level ${logLevel.level} (${logLevel.description})');
-    } catch (e) {
-      _logger.logError(
-        'Failed to set TDLib log verbosity',
-        error: e,
+        'Log verbosity set to level ${logLevel.level} (${logLevel.description})',
       );
+    } catch (e) {
+      _logger.logError('Failed to set TDLib log verbosity', error: e);
     }
   }
 
   @override
-  Future<List<Message>> loadMessages(int chatId, {int limit = 50, int fromMessageId = 0}) async {
+  Future<List<Message>> loadMessages(
+    int chatId, {
+    int limit = 50,
+    int fromMessageId = 0,
+  }) async {
     try {
       // First check if we have cached messages for initial load
       if (_messages.containsKey(chatId) && fromMessageId == 0) {
@@ -708,7 +1010,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
       }
 
       // For initial load, try to get at least minCachedMessages
-      final minMessages = fromMessageId == 0 ? AppConfig.minCachedMessages : limit;
+      final minMessages = fromMessageId == 0
+          ? AppConfig.minCachedMessages
+          : limit;
       return await _loadMessagesRecursively(chatId, minMessages, fromMessageId);
     } catch (e) {
       _logger.logError('Failed to load messages for chat $chatId', error: e);
@@ -719,16 +1023,16 @@ class TdlibTelegramClient implements TelegramClientRepository {
   Future<List<Message>> _loadMessagesRecursively(
     int chatId,
     int minMessages,
-    int fromMessageId,
-    {int? maxAttempts}
-  ) async {
+    int fromMessageId, {
+    int? maxAttempts,
+  }) async {
     maxAttempts ??= AppConfig.messageLoadRetries;
     int attempts = 0;
     int currentFromMessageId = fromMessageId;
-    
+
     while (attempts < maxAttempts) {
       attempts++;
-      
+
       _logger.logRequest({
         '@type': 'recursive_load_attempt',
         'chat_id': chatId,
@@ -752,27 +1056,29 @@ class TdlibTelegramClient implements TelegramClientRepository {
       await Future.delayed(AppConfig.messageLoadDelay);
 
       final currentMessages = _messages[chatId] ?? [];
-      
+
       // Check if we have enough messages
       if (currentMessages.length >= minMessages) {
         break;
       }
-      
+
       // After first attempt, if no messages were received at all, stop trying
       if (attempts > 1 && currentMessages.isEmpty) {
         break;
       }
-      
+
       // Get the oldest message ID for next request
-      final oldestMessage = currentMessages.reduce((a, b) => a.date.isBefore(b.date) ? a : b);
+      final oldestMessage = currentMessages.reduce(
+        (a, b) => a.date.isBefore(b.date) ? a : b,
+      );
       currentFromMessageId = oldestMessage.id;
-      
+
       // Small delay to avoid overwhelming TDLib
       await Future.delayed(AppConfig.retryDelay);
     }
 
     final finalMessages = _messages[chatId] ?? [];
-    
+
     _logger.logRequest({
       '@type': 'recursive_load_completed',
       'chat_id': chatId,
@@ -785,15 +1091,148 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   @override
-  Future<Message?> sendMessage(int chatId, String text, {int? replyToMessageId}) async {
+  Future<Message?> getMessage(int chatId, int messageId) async {
+    try {
+      final response = await _sendRequest({
+        '@type': 'getMessage',
+        'chat_id': chatId,
+        'message_id': messageId,
+      });
+
+      if (response == null || response['@type'] == 'error') {
+        _logger.logError(
+          'Failed to get message $messageId in chat $chatId',
+          error: response?['message'],
+        );
+        return null;
+      }
+
+      if (response['@type'] == 'message') {
+        return _createMessageFromJson(response);
+      }
+
+      return null;
+    } catch (e) {
+      _logger.logError(
+        'Failed to get message $messageId in chat $chatId',
+        error: e,
+      );
+      return null;
+    }
+  }
+
+  /// Get a reply message - checks cache first, fetches from server if needed.
+  /// Returns cached message synchronously if available.
+  @override
+  Message? getCachedReplyMessage(int chatId, int messageId) {
+    // Check message cache first
+    final messages = _messages[chatId];
+    if (messages != null) {
+      final cached = messages.cast<Message?>().firstWhere(
+        (m) => m?.id == messageId,
+        orElse: () => null,
+      );
+      if (cached != null) return cached;
+    }
+    // Check reply cache
+    return _replyMessageCache[(chatId, messageId)];
+  }
+
+  /// Fetch a reply message if not already cached or pending.
+  /// Uses getRepliedMessage TDLib API which properly fetches from server.
+  /// messageId is the ID of the message that has the reply.
+  /// replyToMessageId is the ID of the message being replied to (for caching).
+  @override
+  Future<Message?> fetchReplyMessage(
+    int chatId,
+    int messageId,
+    int replyToMessageId,
+  ) async {
+    final key = (chatId, replyToMessageId);
+
+    // Already cached?
+    final cached = getCachedReplyMessage(chatId, replyToMessageId);
+    if (cached != null) return cached;
+
+    // Already fetching?
+    if (_pendingReplyFetches.contains(key)) return null;
+
+    _pendingReplyFetches.add(key);
+    try {
+      // Use getRepliedMessage with async response
+      final response = await _sendRequestAsync({
+        '@type': 'getRepliedMessage',
+        'chat_id': chatId,
+        'message_id': messageId,
+      });
+
+      if (response == null || response['@type'] == 'error') {
+        _logger.logError(
+          'Failed to get replied message for $messageId in chat $chatId: ${response?['message']}',
+        );
+        return null;
+      }
+
+      if (response['@type'] == 'message') {
+        final message = _createMessageFromJson(response);
+        _logger.logRequest({
+          '@type': 'reply_message_resolved',
+          'sender_name': message.senderName,
+          'sender_id': message.senderId,
+          'content_preview': message.content.substring(
+            0,
+            message.content.length.clamp(0, 50),
+          ),
+          'has_photo': message.photo != null,
+          'has_link_preview_photo': message.linkPreviewPhoto != null,
+        });
+        _replyMessageCache[key] = message;
+
+        // Trigger download for photos in reply messages
+        if (message.photo != null &&
+            message.photo!.path == null &&
+            message.photo!.fileId != null) {
+          _photoFileToMessage[message.photo!.fileId!] = (
+            chatId: chatId,
+            messageId: replyToMessageId,
+          );
+          downloadFile(message.photo!.fileId!);
+        }
+        // Trigger download for link preview photos
+        if (message.linkPreviewPhoto != null &&
+            message.linkPreviewPhoto!.path == null &&
+            message.linkPreviewPhoto!.fileId != null) {
+          _photoFileToMessage[message.linkPreviewPhoto!.fileId!] = (
+            chatId: chatId,
+            messageId: replyToMessageId,
+          );
+          downloadFile(message.linkPreviewPhoto!.fileId!);
+        }
+
+        return message;
+      }
+
+      return null;
+    } finally {
+      _pendingReplyFetches.remove(key);
+    }
+  }
+
+  @override
+  Future<Message?> sendMessage(
+    int chatId,
+    String text, {
+    int? replyToMessageId,
+  }) async {
     try {
       final request = {
         '@type': 'sendMessage',
         'chat_id': chatId,
-        if (replyToMessageId != null) 'reply_to': {
-          '@type': 'inputMessageReplyToMessage',
-          'message_id': replyToMessageId,
-        },
+        if (replyToMessageId != null)
+          'reply_to': {
+            '@type': 'inputMessageReplyToMessage',
+            'message_id': replyToMessageId,
+          },
         'input_message_content': {
           '@type': 'inputMessageText',
           'text': {
@@ -815,15 +1254,21 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   @override
-  Future<void> sendPhoto(int chatId, String filePath, {String? caption, int? replyToMessageId}) async {
+  Future<void> sendPhoto(
+    int chatId,
+    String filePath, {
+    String? caption,
+    int? replyToMessageId,
+  }) async {
     try {
       final request = {
         '@type': 'sendMessage',
         'chat_id': chatId,
-        if (replyToMessageId != null) 'reply_to': {
-          '@type': 'inputMessageReplyToMessage',
-          'message_id': replyToMessageId,
-        },
+        if (replyToMessageId != null)
+          'reply_to': {
+            '@type': 'inputMessageReplyToMessage',
+            'message_id': replyToMessageId,
+          },
         'input_message_content': {
           '@type': 'inputMessagePhoto',
           'photo': {'@type': 'inputFileLocal', 'path': filePath},
@@ -840,15 +1285,21 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   @override
-  Future<void> sendVideo(int chatId, String filePath, {String? caption, int? replyToMessageId}) async {
+  Future<void> sendVideo(
+    int chatId,
+    String filePath, {
+    String? caption,
+    int? replyToMessageId,
+  }) async {
     try {
       final request = {
         '@type': 'sendMessage',
         'chat_id': chatId,
-        if (replyToMessageId != null) 'reply_to': {
-          '@type': 'inputMessageReplyToMessage',
-          'message_id': replyToMessageId,
-        },
+        if (replyToMessageId != null)
+          'reply_to': {
+            '@type': 'inputMessageReplyToMessage',
+            'message_id': replyToMessageId,
+          },
         'input_message_content': {
           '@type': 'inputMessageVideo',
           'video': {'@type': 'inputFileLocal', 'path': filePath},
@@ -865,15 +1316,21 @@ class TdlibTelegramClient implements TelegramClientRepository {
   }
 
   @override
-  Future<void> sendDocument(int chatId, String filePath, {String? caption, int? replyToMessageId}) async {
+  Future<void> sendDocument(
+    int chatId,
+    String filePath, {
+    String? caption,
+    int? replyToMessageId,
+  }) async {
     try {
       final request = {
         '@type': 'sendMessage',
         'chat_id': chatId,
-        if (replyToMessageId != null) 'reply_to': {
-          '@type': 'inputMessageReplyToMessage',
-          'message_id': replyToMessageId,
-        },
+        if (replyToMessageId != null)
+          'reply_to': {
+            '@type': 'inputMessageReplyToMessage',
+            'message_id': replyToMessageId,
+          },
         'input_message_content': {
           '@type': 'inputMessageDocument',
           'document': {'@type': 'inputFileLocal', 'path': filePath},
@@ -899,7 +1356,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'force_read': true,
       });
     } catch (e) {
-      _logger.logError('Failed to mark message as read in chat $chatId', error: e);
+      _logger.logError(
+        'Failed to mark message as read in chat $chatId',
+        error: e,
+      );
     }
   }
 
@@ -912,21 +1372,28 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'message_ids': [messageId],
         'revoke': true,
       });
-      
+
       // Remove from local cache
       if (_messages.containsKey(chatId)) {
         _messages[chatId]!.removeWhere((msg) => msg.id == messageId);
       }
-      
+
       return true;
     } catch (e) {
-      _logger.logError('Failed to delete message $messageId in chat $chatId', error: e);
+      _logger.logError(
+        'Failed to delete message $messageId in chat $chatId',
+        error: e,
+      );
       return false;
     }
   }
 
   @override
-  Future<Message?> editMessage(int chatId, int messageId, String newText) async {
+  Future<Message?> editMessage(
+    int chatId,
+    int messageId,
+    String newText,
+  ) async {
     try {
       await _sendRequest({
         '@type': 'editMessageText',
@@ -944,13 +1411,20 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       return null; // Updated message will come via updates
     } catch (e) {
-      _logger.logError('Failed to edit message $messageId in chat $chatId', error: e);
+      _logger.logError(
+        'Failed to edit message $messageId in chat $chatId',
+        error: e,
+      );
       return null;
     }
   }
 
   @override
-  Future<void> forwardMessages(int fromChatId, int toChatId, List<int> messageIds) async {
+  Future<void> forwardMessages(
+    int fromChatId,
+    int toChatId,
+    List<int> messageIds,
+  ) async {
     try {
       await _sendRequest({
         '@type': 'forwardMessages',
@@ -960,9 +1434,17 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'send_copy': false,
         'remove_caption': false,
       });
-      _logger.logResponse({'@type': 'forwardMessages_success', 'count': messageIds.length, 'from': fromChatId, 'to': toChatId});
+      _logger.logResponse({
+        '@type': 'forwardMessages_success',
+        'count': messageIds.length,
+        'from': fromChatId,
+        'to': toChatId,
+      });
     } catch (e) {
-      _logger.logError('Failed to forward messages from $fromChatId to $toChatId', error: e);
+      _logger.logError(
+        'Failed to forward messages from $fromChatId to $toChatId',
+        error: e,
+      );
       rethrow;
     }
   }
@@ -971,7 +1453,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
   Future<List<String>> getAvailableReactions(int chatId, int messageId) async {
     try {
       // If there's already a pending request, reuse it
-      if (_availableReactionsCompleter != null && !_availableReactionsCompleter!.isCompleted) {
+      if (_availableReactionsCompleter != null &&
+          !_availableReactionsCompleter!.isCompleted) {
         return _availableReactionsCompleter!.future;
       }
 
@@ -1037,19 +1520,25 @@ class TdlibTelegramClient implements TelegramClientRepository {
       extractEmojis(update['recent_reactions'] as List<dynamic>?);
       extractEmojis(update['popular_reactions'] as List<dynamic>?);
 
-      if (_availableReactionsCompleter != null && !_availableReactionsCompleter!.isCompleted) {
+      if (_availableReactionsCompleter != null &&
+          !_availableReactionsCompleter!.isCompleted) {
         _availableReactionsCompleter!.complete(emojis);
       }
     } catch (e) {
       _logger.logError('Error handling available reactions response', error: e);
-      if (_availableReactionsCompleter != null && !_availableReactionsCompleter!.isCompleted) {
+      if (_availableReactionsCompleter != null &&
+          !_availableReactionsCompleter!.isCompleted) {
         _availableReactionsCompleter!.complete([]);
       }
     }
   }
 
   @override
-  Future<void> addReaction(int chatId, int messageId, MessageReaction reaction) async {
+  Future<void> addReaction(
+    int chatId,
+    int messageId,
+    MessageReaction reaction,
+  ) async {
     _logger.logRequest({
       '@type': 'addReaction_called',
       'chat_id': chatId,
@@ -1062,9 +1551,15 @@ class TdlibTelegramClient implements TelegramClientRepository {
       Map<String, dynamic> reactionType;
       switch (reaction.type) {
         case ReactionType.emoji:
-          reactionType = {'@type': 'reactionTypeEmoji', 'emoji': reaction.emoji};
+          reactionType = {
+            '@type': 'reactionTypeEmoji',
+            'emoji': reaction.emoji,
+          };
         case ReactionType.customEmoji:
-          reactionType = {'@type': 'reactionTypeCustomEmoji', 'custom_emoji_id': reaction.customEmojiId};
+          reactionType = {
+            '@type': 'reactionTypeCustomEmoji',
+            'custom_emoji_id': reaction.customEmojiId,
+          };
         case ReactionType.paid:
           reactionType = {'@type': 'reactionTypePaid'};
       }
@@ -1083,20 +1578,33 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'response': response?.toString(),
       });
     } catch (e) {
-      _logger.logError('Failed to add reaction to message $messageId in chat $chatId', error: e);
+      _logger.logError(
+        'Failed to add reaction to message $messageId in chat $chatId',
+        error: e,
+      );
       rethrow;
     }
   }
 
   @override
-  Future<void> removeReaction(int chatId, int messageId, MessageReaction reaction) async {
+  Future<void> removeReaction(
+    int chatId,
+    int messageId,
+    MessageReaction reaction,
+  ) async {
     try {
       Map<String, dynamic> reactionType;
       switch (reaction.type) {
         case ReactionType.emoji:
-          reactionType = {'@type': 'reactionTypeEmoji', 'emoji': reaction.emoji};
+          reactionType = {
+            '@type': 'reactionTypeEmoji',
+            'emoji': reaction.emoji,
+          };
         case ReactionType.customEmoji:
-          reactionType = {'@type': 'reactionTypeCustomEmoji', 'custom_emoji_id': reaction.customEmojiId};
+          reactionType = {
+            '@type': 'reactionTypeCustomEmoji',
+            'custom_emoji_id': reaction.customEmojiId,
+          };
         case ReactionType.paid:
           reactionType = {'@type': 'reactionTypePaid'};
       }
@@ -1108,7 +1616,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'reaction_type': reactionType,
       });
     } catch (e) {
-      _logger.logError('Failed to remove reaction from message $messageId in chat $chatId', error: e);
+      _logger.logError(
+        'Failed to remove reaction from message $messageId in chat $chatId',
+        error: e,
+      );
       rethrow;
     }
   }
@@ -1116,7 +1627,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
   /// Adds a message to the cache for a chat.
   /// [insertAtStart] - if true, inserts at beginning (for new incoming messages)
   ///                   if false, appends at end (for batch history loading)
-  void _addMessageToCache(int chatId, Message message, {bool insertAtStart = false}) {
+  void _addMessageToCache(
+    int chatId,
+    Message message, {
+    bool insertAtStart = false,
+  }) {
     if (!_messages.containsKey(chatId)) {
       _messages[chatId] = <Message>[];
     }
@@ -1124,11 +1639,17 @@ class TdlibTelegramClient implements TelegramClientRepository {
     // Process custom emojis in reactions if present
     var processedMessage = message;
     if (message.reactions != null && message.reactions!.isNotEmpty) {
-      final processedReactions = _processCustomEmojiReactions(chatId, message.id, message.reactions!);
+      final processedReactions = _processCustomEmojiReactions(
+        chatId,
+        message.id,
+        message.reactions!,
+      );
       processedMessage = message.copyWith(reactions: processedReactions);
     }
 
-    final existingIndex = _messages[chatId]!.indexWhere((msg) => msg.id == processedMessage.id);
+    final existingIndex = _messages[chatId]!.indexWhere(
+      (msg) => msg.id == processedMessage.id,
+    );
     if (existingIndex != -1) {
       _messages[chatId]![existingIndex] = processedMessage;
     } else {
@@ -1140,13 +1661,27 @@ class TdlibTelegramClient implements TelegramClientRepository {
     }
 
     // Track photo file ID for download completion updates
-    if (processedMessage.photoFileId != null) {
-      _photoFileToMessage[processedMessage.photoFileId!] = (chatId: chatId, messageId: processedMessage.id);
+    if (processedMessage.photo?.fileId != null) {
+      _photoFileToMessage[processedMessage.photo!.fileId!] = (
+        chatId: chatId,
+        messageId: processedMessage.id,
+      );
     }
 
     // Track sticker file ID for download completion updates
-    if (processedMessage.stickerFileId != null) {
-      _stickerFileToMessage[processedMessage.stickerFileId!] = (chatId: chatId, messageId: processedMessage.id);
+    if (processedMessage.sticker?.fileId != null) {
+      _stickerFileToMessage[processedMessage.sticker!.fileId!] = (
+        chatId: chatId,
+        messageId: processedMessage.id,
+      );
+    }
+
+    // Track video file ID for download completion updates
+    if (processedMessage.video?.fileId != null) {
+      _videoFileToMessage[processedMessage.video!.fileId!] = (
+        chatId: chatId,
+        messageId: processedMessage.id,
+      );
     }
   }
 
@@ -1158,7 +1693,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
   void _handleMessageUpdate(Map<String, dynamic> update) {
     try {
-      final message = update['message'] as Map<String, dynamic>?;
+      // Handle both wrapped (updateNewMessage) and direct (getMessage) responses
+      final message =
+          update['message'] as Map<String, dynamic>? ??
+          (update['@type'] == 'message' ? update : null);
       if (message == null) return;
 
       final chatId = message['chat_id'] as int?;
@@ -1169,7 +1707,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       // Keep only the most recent messages per chat
       if (_messages[chatId]!.length > AppConfig.maxMessagesPerChat) {
-        _messages[chatId] = _messages[chatId]!.take(AppConfig.maxMessagesPerChat).toList();
+        _messages[chatId] = _messages[chatId]!
+            .take(AppConfig.maxMessagesPerChat)
+            .toList();
       }
 
       _logger.logRequest({
@@ -1238,7 +1778,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
       if (chatId == null || messageId == null || newContent == null) return;
 
       // Emit typed event
-      _messageEventController.add(MessageContentChangedEvent(chatId, messageId, newContent));
+      _messageEventController.add(
+        MessageContentChangedEvent(chatId, messageId, newContent),
+      );
     } catch (e) {
       _logger.logError('Error handling message content update', error: e);
     }
@@ -1258,9 +1800,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _addMessageToCache(chatId, message, insertAtStart: false);
 
       // Emit typed event with old message ID for replacement
-      _messageEventController.add(MessageSendSucceededEvent(chatId, message, oldMessageId));
+      _messageEventController.add(
+        MessageSendSucceededEvent(chatId, message, oldMessageId),
+      );
     } catch (e) {
-      _logger.logError('Error handling message send succeeded update', error: e);
+      _logger.logError(
+        'Error handling message send succeeded update',
+        error: e,
+      );
     }
   }
 
@@ -1280,7 +1827,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
     try {
       final chatId = update['chat_id'] as int?;
       final messageId = update['message_id'] as int?;
-      final interactionInfo = update['interaction_info'] as Map<String, dynamic>?;
+      final interactionInfo =
+          update['interaction_info'] as Map<String, dynamic>?;
 
       _logger.logRequest({
         '@type': 'interaction_info_update_received',
@@ -1294,7 +1842,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
       // Parse reactions from interaction_info
       List<MessageReaction>? reactions;
       if (interactionInfo != null) {
-        final reactionsData = interactionInfo['reactions'] as Map<String, dynamic>?;
+        final reactionsData =
+            interactionInfo['reactions'] as Map<String, dynamic>?;
         if (reactionsData != null) {
           final reactionsList = reactionsData['reactions'] as List<dynamic>?;
           if (reactionsList != null && reactionsList.isNotEmpty) {
@@ -1316,7 +1865,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
       if (cachedMessages != null) {
         final idx = cachedMessages.indexWhere((m) => m.id == messageId);
         if (idx != -1) {
-          final updatedMessage = cachedMessages[idx].copyWith(reactions: reactions);
+          final updatedMessage = cachedMessages[idx].copyWith(
+            reactions: reactions,
+          );
           cachedMessages[idx] = updatedMessage;
         }
       }
@@ -1332,7 +1883,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
         MessageReactionsUpdatedEvent(chatId, messageId, reactions ?? []),
       );
     } catch (e) {
-      _logger.logError('Error handling message interaction info update', error: e);
+      _logger.logError(
+        'Error handling message interaction info update',
+        error: e,
+      );
     }
   }
 
@@ -1345,12 +1899,16 @@ class TdlibTelegramClient implements TelegramClientRepository {
     final customEmojiIdsToFetch = <int>[];
 
     final processedReactions = reactions.map((reaction) {
-      if (reaction.type == ReactionType.customEmoji && reaction.customEmojiId != null) {
+      if (reaction.type == ReactionType.customEmoji &&
+          reaction.customEmojiId != null) {
         final emojiId = reaction.customEmojiId!;
 
         // Track which messages use this custom emoji
         _customEmojiToMessages.putIfAbsent(emojiId, () => {});
-        _customEmojiToMessages[emojiId]!.add((chatId: chatId, messageId: messageId));
+        _customEmojiToMessages[emojiId]!.add((
+          chatId: chatId,
+          messageId: messageId,
+        ));
 
         // Check if we have cached path
         final cachedPath = _customEmojiCache[emojiId];
@@ -1359,7 +1917,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
         }
 
         // Need to fetch this custom emoji
-        if (!_pendingCustomEmojiFetches.contains(emojiId) && !_customEmojiFileIds.containsKey(emojiId)) {
+        if (!_pendingCustomEmojiFetches.contains(emojiId) &&
+            !_customEmojiFileIds.containsKey(emojiId)) {
           customEmojiIdsToFetch.add(emojiId);
         }
       }
@@ -1484,7 +2043,8 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       // Update the reaction with the downloaded path
       final updatedReactions = message.reactions!.map((r) {
-        if (r.type == ReactionType.customEmoji && r.customEmojiId == customEmojiId) {
+        if (r.type == ReactionType.customEmoji &&
+            r.customEmojiId == customEmojiId) {
           return r.copyWith(customEmojiPath: path);
         }
         return r;
@@ -1495,7 +2055,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       // Emit update event
       _messageEventController.add(
-        MessageReactionsUpdatedEvent(ref.chatId, ref.messageId, updatedReactions),
+        MessageReactionsUpdatedEvent(
+          ref.chatId,
+          ref.messageId,
+          updatedReactions,
+        ),
       );
     }
   }
@@ -1560,7 +2124,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
       final isComplete = local?['is_downloading_completed'] as bool? ?? false;
       final filePath = local?['path'] as String?;
 
-      if (isComplete && fileId != null && filePath != null && filePath.isNotEmpty) {
+      if (isComplete &&
+          fileId != null &&
+          filePath != null &&
+          filePath.isNotEmpty) {
         _logger.logRequest({
           '@type': 'file_download_completed',
           'file_id': fileId,
@@ -1582,6 +2149,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
         // Update any messages that have this file ID as their sticker
         _updateMessageStickerByFileId(fileId, filePath);
+
+        // Update any messages that have this file ID as their video
+        _updateMessageVideoByFileId(fileId, filePath);
 
         // Update any custom emojis that have this file ID
         _updateCustomEmojiByFileId(fileId, filePath);
@@ -1637,26 +2207,68 @@ class TdlibTelegramClient implements TelegramClientRepository {
     final chatId = messageInfo.chatId;
     final messageId = messageInfo.messageId;
 
-    // Find and update the message in cache
+    bool updated = false;
+
+    // Try to update message in main messages cache
     final messages = _messages[chatId];
-    if (messages == null) return;
+    if (messages != null) {
+      final index = messages.indexWhere((m) => m.id == messageId);
+      if (index != -1) {
+        final existingPhoto = messages[index].photo;
+        if (existingPhoto != null) {
+          final updatedMessage = messages[index].copyWith(
+            photo: existingPhoto.copyWith(path: path),
+          );
+          messages[index] = updatedMessage;
+          updated = true;
+        }
+      }
+    }
 
-    final index = messages.indexWhere((m) => m.id == messageId);
-    if (index == -1) return;
+    // Also update reply message cache (for both photo and linkPreviewPhoto)
+    final replyKey = (chatId, messageId);
+    final cachedReply = _replyMessageCache[replyKey];
+    if (cachedReply != null) {
+      Message? updatedReply;
+      // Update regular photo if it matches
+      if (cachedReply.photo?.fileId == fileId) {
+        updatedReply = cachedReply.copyWith(
+          photo: cachedReply.photo!.copyWith(path: path),
+        );
+      }
+      // Update link preview photo if it matches
+      if (cachedReply.linkPreviewPhoto?.fileId == fileId) {
+        updatedReply = (updatedReply ?? cachedReply).copyWith(
+          linkPreviewPhoto: cachedReply.linkPreviewPhoto!.copyWith(path: path),
+        );
+      }
+      if (updatedReply != null) {
+        _replyMessageCache[replyKey] = updatedReply;
+        updated = true;
+        _logger.logRequest({
+          '@type': 'reply_photo_updated',
+          'chat_id': chatId,
+          'message_id': messageId,
+          'file_id': fileId,
+          'path': path,
+        });
+      }
+    }
 
-    final updatedMessage = messages[index].copyWith(photoPath: path);
-    messages[index] = updatedMessage;
+    if (updated) {
+      _logger.logRequest({
+        '@type': 'message_photo_updated',
+        'chat_id': chatId,
+        'message_id': messageId,
+        'file_id': fileId,
+        'path': path,
+      });
 
-    _logger.logRequest({
-      '@type': 'message_photo_updated',
-      'chat_id': chatId,
-      'message_id': messageId,
-      'file_id': fileId,
-      'path': path,
-    });
-
-    // Emit typed event for presentation layer
-    _messageEventController.add(MessagePhotoUpdatedEvent(chatId, messageId, path));
+      // Emit typed event for presentation layer
+      _messageEventController.add(
+        MessagePhotoUpdatedEvent(chatId, messageId, path),
+      );
+    }
 
     // Clean up tracking
     _photoFileToMessage.remove(fileId);
@@ -1676,7 +2288,11 @@ class TdlibTelegramClient implements TelegramClientRepository {
     final index = messages.indexWhere((m) => m.id == messageId);
     if (index == -1) return;
 
-    final updatedMessage = messages[index].copyWith(stickerPath: path);
+    final existingSticker = messages[index].sticker;
+    if (existingSticker == null) return;
+    final updatedMessage = messages[index].copyWith(
+      sticker: existingSticker.copyWith(path: path),
+    );
     messages[index] = updatedMessage;
 
     _logger.logRequest({
@@ -1688,10 +2304,50 @@ class TdlibTelegramClient implements TelegramClientRepository {
     });
 
     // Emit typed event for presentation layer
-    _messageEventController.add(MessageStickerUpdatedEvent(chatId, messageId, path));
+    _messageEventController.add(
+      MessageStickerUpdatedEvent(chatId, messageId, path),
+    );
 
     // Clean up tracking
     _stickerFileToMessage.remove(fileId);
+  }
+
+  void _updateMessageVideoByFileId(int fileId, String path) {
+    final messageInfo = _videoFileToMessage[fileId];
+    if (messageInfo == null) return;
+
+    final chatId = messageInfo.chatId;
+    final messageId = messageInfo.messageId;
+
+    // Find and update the message in cache
+    final messages = _messages[chatId];
+    if (messages == null) return;
+
+    final index = messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+
+    final existingVideo = messages[index].video;
+    if (existingVideo == null) return;
+    final updatedMessage = messages[index].copyWith(
+      video: existingVideo.copyWith(path: path),
+    );
+    messages[index] = updatedMessage;
+
+    _logger.logRequest({
+      '@type': 'message_video_updated',
+      'chat_id': chatId,
+      'message_id': messageId,
+      'file_id': fileId,
+      'path': path,
+    });
+
+    // Emit typed event for presentation layer
+    _messageEventController.add(
+      MessageVideoUpdatedEvent(chatId, messageId, path),
+    );
+
+    // Clean up tracking
+    _videoFileToMessage.remove(fileId);
   }
 
   /// Get cached sticker file path if available
@@ -1741,7 +2397,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
     // Return cached if available
     if (_installedStickerSets.isNotEmpty) {
-      _logger.logRequest({'@type': 'DEBUG_returning_cached', 'count': _installedStickerSets.length});
+      _logger.logRequest({
+        '@type': 'DEBUG_returning_cached',
+        'count': _installedStickerSets.length,
+      });
       return _installedStickerSets;
     }
 
@@ -1769,7 +2428,10 @@ class TdlibTelegramClient implements TelegramClientRepository {
           return <StickerSet>[];
         },
       );
-      _logger.logRequest({'@type': 'DEBUG_got_stickerSets', 'count': result.length});
+      _logger.logRequest({
+        '@type': 'DEBUG_got_stickerSets',
+        'count': result.length,
+      });
       return result;
     } catch (e) {
       _logger.logError('Failed to get installed sticker sets', error: e);
@@ -1796,10 +2458,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _pendingStickerSetRequests[setId] = completer;
     _stickerSetCompleter = completer;
 
-    await _sendRequest({
-      '@type': 'getStickerSet',
-      'set_id': setId,
-    });
+    await _sendRequest({'@type': 'getStickerSet', 'set_id': setId});
 
     // Wait for response with timeout
     try {
@@ -1820,16 +2479,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
   @override
   Future<List<Sticker>> getRecentStickers() async {
     // If there's already a pending request, reuse it
-    if (_recentStickersCompleter != null && !_recentStickersCompleter!.isCompleted) {
+    if (_recentStickersCompleter != null &&
+        !_recentStickersCompleter!.isCompleted) {
       return _recentStickersCompleter!.future;
     }
 
     _recentStickersCompleter = Completer<List<Sticker>>();
 
-    await _sendRequest({
-      '@type': 'getRecentStickers',
-      'is_attached': false,
-    });
+    await _sendRequest({'@type': 'getRecentStickers', 'is_attached': false});
 
     // Wait for response with timeout
     try {
@@ -1852,10 +2509,7 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'chat_id': chatId,
         'input_message_content': {
           '@type': 'inputMessageSticker',
-          'sticker': {
-            '@type': 'inputFileId',
-            'id': sticker.fileId,
-          },
+          'sticker': {'@type': 'inputFileId', 'id': sticker.fileId},
           'width': sticker.width,
           'height': sticker.height,
           'emoji': sticker.emoji,
@@ -1874,13 +2528,17 @@ class TdlibTelegramClient implements TelegramClientRepository {
       _logger.logRequest({
         '@type': 'DEBUG_parsing_sticker_sets',
         'raw_count': setInfos.length,
-        'first_type': setInfos.isNotEmpty ? setInfos.first.runtimeType.toString() : 'empty',
+        'first_type': setInfos.isNotEmpty
+            ? setInfos.first.runtimeType.toString()
+            : 'empty',
       });
 
       for (final setInfo in setInfos) {
         try {
           // Cast to Map more safely
-          final Map<String, dynamic> setMap = Map<String, dynamic>.from(setInfo as Map);
+          final Map<String, dynamic> setMap = Map<String, dynamic>.from(
+            setInfo as Map,
+          );
           final stickerSet = StickerSet.fromInfoJson(setMap);
           _installedStickerSets.add(stickerSet);
         } catch (e) {
@@ -1893,12 +2551,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'count': _installedStickerSets.length,
       });
 
-      if (_stickerSetsCompleter != null && !_stickerSetsCompleter!.isCompleted) {
+      if (_stickerSetsCompleter != null &&
+          !_stickerSetsCompleter!.isCompleted) {
         _stickerSetsCompleter!.complete(_installedStickerSets);
       }
     } catch (e) {
       _logger.logError('Error handling sticker sets response', error: e);
-      if (_stickerSetsCompleter != null && !_stickerSetsCompleter!.isCompleted) {
+      if (_stickerSetsCompleter != null &&
+          !_stickerSetsCompleter!.isCompleted) {
         _stickerSetsCompleter!.complete([]);
       }
     }
@@ -1932,7 +2592,9 @@ class TdlibTelegramClient implements TelegramClientRepository {
 
       for (final stickerData in stickersJson) {
         try {
-          final Map<String, dynamic> stickerMap = Map<String, dynamic>.from(stickerData as Map);
+          final Map<String, dynamic> stickerMap = Map<String, dynamic>.from(
+            stickerData as Map,
+          );
           stickers.add(Sticker.fromJson(stickerMap));
         } catch (e) {
           _logger.logError('Error parsing recent sticker', error: e);
@@ -1944,12 +2606,14 @@ class TdlibTelegramClient implements TelegramClientRepository {
         'count': stickers.length,
       });
 
-      if (_recentStickersCompleter != null && !_recentStickersCompleter!.isCompleted) {
+      if (_recentStickersCompleter != null &&
+          !_recentStickersCompleter!.isCompleted) {
         _recentStickersCompleter!.complete(stickers);
       }
     } catch (e) {
       _logger.logError('Error handling recent stickers response', error: e);
-      if (_recentStickersCompleter != null && !_recentStickersCompleter!.isCompleted) {
+      if (_recentStickersCompleter != null &&
+          !_recentStickersCompleter!.isCompleted) {
         _recentStickersCompleter!.complete([]);
       }
     }
@@ -1963,8 +2627,6 @@ class TdlibTelegramClient implements TelegramClientRepository {
     _fileDownloadController.close();
     _chatEventController.close();
     _messageEventController.close();
-    if (_isStarted) {
-      _client.destroy();
-    }
+    _client?.destroy();
   }
 }

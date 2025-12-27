@@ -16,22 +16,14 @@ class ChatState {
   }) : _version = version;
 
   // Factory constructors for common states
-  factory ChatState.initial() => const ChatState(
-        isLoading: true,
-        isInitialized: false,
-      );
+  factory ChatState.initial() =>
+      const ChatState(isLoading: true, isInitialized: false);
 
-  factory ChatState.error(String message) => ChatState(
-        errorMessage: message,
-        isLoading: false,
-        isInitialized: false,
-      );
+  factory ChatState.error(String message) =>
+      ChatState(errorMessage: message, isLoading: false, isInitialized: false);
 
-  factory ChatState.loaded(List<Chat> chats) => ChatState(
-        chats: chats,
-        isLoading: false,
-        isInitialized: true,
-      );
+  factory ChatState.loaded(List<Chat> chats) =>
+      ChatState(chats: chats, isLoading: false, isInitialized: true);
 
   // Copy with method for immutable updates
   ChatState copyWith({

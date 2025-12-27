@@ -25,11 +25,7 @@ class ErrorContainer extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error,
-            color: colorScheme.onErrorContainer,
-            size: 18,
-          ),
+          Icon(Icons.error, color: colorScheme.onErrorContainer, size: 18),
           const SizedBox(width: 6),
           Expanded(
             child: Text(

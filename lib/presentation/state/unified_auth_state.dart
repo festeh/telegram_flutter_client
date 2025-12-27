@@ -22,17 +22,17 @@ class UnifiedAuthState {
 
   // Factory constructors for common states
   factory UnifiedAuthState.initial() => const UnifiedAuthState(
-        status: AuthorizationState.unknown,
-        isLoading: true,
-        isInitialized: false,
-      );
+    status: AuthorizationState.unknown,
+    isLoading: true,
+    isInitialized: false,
+  );
 
   factory UnifiedAuthState.error(String message) => UnifiedAuthState(
-        status: AuthorizationState.unknown,
-        errorMessage: message,
-        isLoading: false,
-        isInitialized: false,
-      );
+    status: AuthorizationState.unknown,
+    errorMessage: message,
+    isLoading: false,
+    isInitialized: false,
+  );
 
   // Computed properties
   bool get isAuthenticated => status == AuthorizationState.ready;

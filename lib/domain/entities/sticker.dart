@@ -135,8 +135,9 @@ class StickerSet {
       stickers: stickers,
       thumbnailPath: (thumbnailPath?.isNotEmpty == true) ? thumbnailPath : null,
       thumbnailFileId: thumbnailFileId > 0 ? thumbnailFileId : null,
-      isAnimated: typeStr == 'stickerTypeCustomEmoji' ||
-                  stickers.any((s) => s.isAnimated),
+      isAnimated:
+          typeStr == 'stickerTypeCustomEmoji' ||
+          stickers.any((s) => s.isAnimated),
       isVideo: stickers.any((s) => s.isVideo),
     );
   }
@@ -195,5 +196,6 @@ class StickerSet {
   }
 
   @override
-  String toString() => 'StickerSet(id: $id, title: $title, stickers: ${stickers.length})';
+  String toString() =>
+      'StickerSet(id: $id, title: $title, stickers: ${stickers.length})';
 }

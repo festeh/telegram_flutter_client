@@ -10,7 +10,7 @@ enum AuthorizationState {
   loggingOut,
   closing,
   closed,
-  unknown
+  unknown,
 }
 
 class AuthenticationState {
@@ -18,11 +18,7 @@ class AuthenticationState {
   final Map<String, dynamic>? extra;
   final String? error;
 
-  const AuthenticationState({
-    required this.state,
-    this.extra,
-    this.error,
-  });
+  const AuthenticationState({required this.state, this.extra, this.error});
 
   factory AuthenticationState.fromJson(Map<String, dynamic> json) {
     final type = json['@type'] as String;
@@ -66,10 +62,7 @@ class AuthenticationState {
         state = AuthorizationState.unknown;
     }
 
-    return AuthenticationState(
-      state: state,
-      extra: json,
-    );
+    return AuthenticationState(state: state, extra: json);
   }
 
   @override
@@ -107,8 +100,6 @@ class QrCodeInfo {
   const QrCodeInfo({required this.link});
 
   factory QrCodeInfo.fromJson(Map<String, dynamic> json) {
-    return QrCodeInfo(
-      link: json['link'] ?? '',
-    );
+    return QrCodeInfo(link: json['link'] ?? '');
   }
 }

@@ -13,10 +13,7 @@ import 'reaction_bar.dart';
 class MessageList extends ConsumerStatefulWidget {
   final Chat chat;
 
-  const MessageList({
-    super.key,
-    required this.chat,
-  });
+  const MessageList({super.key, required this.chat});
 
   @override
   ConsumerState<MessageList> createState() => _MessageListState();
@@ -26,14 +23,13 @@ class _MessageListState extends ConsumerState<MessageList> {
   late ScrollController _scrollController;
   bool _isAutoScrolling = false;
   bool _shouldAutoScroll = true;
-  int? _lastMarkedMessageId;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    
+
     // Load messages for this chat when widget is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(messageProvider.notifier).selectChat(widget.chat.id);
@@ -46,7 +42,6 @@ class _MessageListState extends ConsumerState<MessageList> {
     super.didUpdateWidget(oldWidget);
     // When chat changes, load messages for the new chat
     if (oldWidget.chat.id != widget.chat.id) {
-      _lastMarkedMessageId = null; // Reset for new chat
       // Delay the provider modification to avoid modifying during build
       Future(() {
         ref.read(messageProvider.notifier).selectChat(widget.chat.id);
@@ -71,14 +66,17 @@ class _MessageListState extends ConsumerState<MessageList> {
       _shouldAutoScroll = currentScrollPosition < 100;
 
       // Load more messages when scrolling to the top (older messages)
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
         _loadMoreMessages();
       }
     }
   }
 
   void _loadMoreMessages() {
-    if (!ref.read(messageProvider.select((state) => state.value?.isLoadingMore ?? false))) {
+    if (!ref.read(
+      messageProvider.select((state) => state.value?.isLoadingMore ?? false),
+    )) {
       ref.read(messageProvider.notifier).loadMoreMessages(widget.chat.id);
     }
   }
@@ -94,23 +92,24 @@ class _MessageListState extends ConsumerState<MessageList> {
 
     if (latestIncoming == null) return;
 
-    // Don't mark the same message twice
-    if (_lastMarkedMessageId == latestIncoming.id) return;
-
-    _lastMarkedMessageId = latestIncoming.id;
-    ref.read(messageProvider.notifier).markAsRead(widget.chat.id, latestIncoming.id);
+    // The notifier handles duplicate checking via lastMarkedMessageIds in state
+    ref
+        .read(messageProvider.notifier)
+        .markAsRead(widget.chat.id, latestIncoming.id);
   }
 
   void _scrollToBottom({bool animated = true}) {
     if (_scrollController.hasClients && !_isAutoScrolling) {
       _isAutoScrolling = true;
-      
+
       if (animated) {
-        _scrollController.animateTo(
-          0.0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        ).then((_) => _isAutoScrolling = false);
+        _scrollController
+            .animateTo(
+              0.0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            )
+            .then((_) => _isAutoScrolling = false);
       } else {
         _scrollController.jumpTo(0.0);
         _isAutoScrolling = false;
@@ -121,29 +120,40 @@ class _MessageListState extends ConsumerState<MessageList> {
   @override
   Widget build(BuildContext context) {
     // Listen to message updates for this chat
-    ref.listen(messageProvider.select((state) => state.value?.selectedChatMessages),
+    ref.listen(
+      messageProvider.select((state) => state.value?.selectedChatMessages),
       (prev, next) {
-        if (next != null && prev != null && next.length > prev.length && _shouldAutoScroll) {
+        if (next != null &&
+            prev != null &&
+            next.length > prev.length &&
+            _shouldAutoScroll) {
           // New message arrived, scroll to bottom and mark as read
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _scrollToBottom();
             _markLatestAsRead(next);
           });
         }
-      }
+      },
     );
 
     final messageState = ref.watch(messageProvider).value;
-    final isLoadingMore = ref.watch(messageProvider.select((state) => state.value?.isLoadingMore ?? false));
-    final hasError = ref.watch(messageProvider.select((state) => state.hasError));
-    final error = ref.watch(messageProvider.select((state) => state.error?.toString()));
-    
+    final isLoadingMore = ref.watch(
+      messageProvider.select((state) => state.value?.isLoadingMore ?? false),
+    );
+    final hasError = ref.watch(
+      messageProvider.select((state) => state.hasError),
+    );
+    final error = ref.watch(
+      messageProvider.select((state) => state.error?.toString()),
+    );
+
     if (hasError && error != null) {
       return _buildErrorState(error);
     }
 
     final messages = messageState?.messagesByChat[widget.chat.id];
-    final isChatInitialized = messageState?.isChatInitialized(widget.chat.id) ?? false;
+    final isChatInitialized =
+        messageState?.isChatInitialized(widget.chat.id) ?? false;
 
     // Show loading if messages not loaded yet OR chat hasn't completed initialization
     if (messages == null || !isChatInitialized) {
@@ -177,7 +187,10 @@ class _MessageListState extends ConsumerState<MessageList> {
                     final message = messages[index];
                     final isLastInGroup = _isLastInGroup(messages, index);
                     final showSender = !message.isOutgoing && isLastInGroup;
-                    final showDateSeparator = _shouldShowDateSeparator(messages, index);
+                    final showDateSeparator = _shouldShowDateSeparator(
+                      messages,
+                      index,
+                    );
 
                     return Column(
                       children: [
@@ -188,7 +201,8 @@ class _MessageListState extends ConsumerState<MessageList> {
                           message: message,
                           showTime: isLastInGroup,
                           showSender: showSender,
-                          onLongPress: () => _showMessageOptions(context, message),
+                          onLongPress: () =>
+                              _showMessageOptions(context, message),
                         ),
                       ],
                     );
@@ -287,7 +301,9 @@ class _MessageListState extends ConsumerState<MessageList> {
   bool _shouldShowDateSeparator(List<Message> messages, int index) {
     // In reversed list: index 0 = newest (bottom), higher index = older (top)
     // Show separator when this message starts a new day compared to the next older message
-    if (index == messages.length - 1) return true; // Always show for oldest message
+    if (index == messages.length - 1) {
+      return true; // Always show for oldest message
+    }
 
     final currentMessage = messages[index];
     final nextOlderMessage = messages[index + 1];
@@ -307,18 +323,16 @@ class _MessageListState extends ConsumerState<MessageList> {
   }
 
   Future<void> _refreshMessages() async {
-    await ref.read(messageProvider.notifier).loadMessages(
-      widget.chat.id, 
-      forceRefresh: true,
-    );
+    await ref
+        .read(messageProvider.notifier)
+        .loadMessages(widget.chat.id, forceRefresh: true);
   }
 
   void _showMessageOptions(BuildContext context, Message message) {
     // Fetch available reactions
-    final reactionsFuture = ref.read(telegramClientProvider).getAvailableReactions(
-      widget.chat.id,
-      message.id,
-    );
+    final reactionsFuture = ref
+        .read(telegramClientProvider)
+        .getAvailableReactions(widget.chat.id, message.id);
 
     showModalBottomSheet(
       context: context,
@@ -413,17 +427,13 @@ class _MessageListState extends ConsumerState<MessageList> {
         title: const Text('Edit Message'),
         content: TextFormField(
           controller: textController,
-          decoration: const InputDecoration(
-            hintText: 'Enter new message...',
-          ),
+          decoration: const InputDecoration(hintText: 'Enter new message...'),
           autofocus: true,
           onFieldSubmitted: (newText) {
             if (newText.trim().isNotEmpty) {
-              ref.read(messageProvider.notifier).editMessage(
-                widget.chat.id,
-                message.id,
-                newText.trim(),
-              );
+              ref
+                  .read(messageProvider.notifier)
+                  .editMessage(widget.chat.id, message.id, newText.trim());
             }
             Navigator.pop(dialogContext);
           },
@@ -437,11 +447,9 @@ class _MessageListState extends ConsumerState<MessageList> {
             onPressed: () {
               final newText = textController.text.trim();
               if (newText.isNotEmpty && newText != message.content) {
-                ref.read(messageProvider.notifier).editMessage(
-                  widget.chat.id,
-                  message.id,
-                  newText,
-                );
+                ref
+                    .read(messageProvider.notifier)
+                    .editMessage(widget.chat.id, message.id, newText);
               }
               Navigator.pop(dialogContext);
             },
@@ -465,10 +473,9 @@ class _MessageListState extends ConsumerState<MessageList> {
           ),
           TextButton(
             onPressed: () {
-              ref.read(messageProvider.notifier).deleteMessage(
-                widget.chat.id,
-                message.id,
-              );
+              ref
+                  .read(messageProvider.notifier)
+                  .deleteMessage(widget.chat.id, message.id);
               Navigator.pop(context);
             },
             child: const Text('Delete'),
@@ -485,11 +492,9 @@ class _MessageListState extends ConsumerState<MessageList> {
       builder: (context) => ChatPickerSheet(
         excludeChatId: widget.chat.id,
         onChatSelected: (targetChat) {
-          ref.read(messageProvider.notifier).forwardMessage(
-            widget.chat.id,
-            targetChat.id,
-            message.id,
-          );
+          ref
+              .read(messageProvider.notifier)
+              .forwardMessage(widget.chat.id, targetChat.id, message.id);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Message forwarded to ${targetChat.title}'),
@@ -508,10 +513,8 @@ class _MessageListState extends ConsumerState<MessageList> {
       count: 0,
       isChosen: false,
     );
-    ref.read(telegramClientProvider).addReaction(
-      widget.chat.id,
-      message.id,
-      reaction,
-    );
+    ref
+        .read(telegramClientProvider)
+        .addReaction(widget.chat.id, message.id, reaction);
   }
 }

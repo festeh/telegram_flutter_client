@@ -30,13 +30,8 @@ class EmojiTab extends StatelessWidget {
           horizontalSpacing: 0,
           gridPadding: EdgeInsets.zero,
           backgroundColor: colorScheme.surface,
-          noRecents: const Text(
-            'No Recents',
-            style: TextStyle(fontSize: 16),
-          ),
-          loadingIndicator: const Center(
-            child: CircularProgressIndicator(),
-          ),
+          noRecents: const Text('No Recents', style: TextStyle(fontSize: 16)),
+          loadingIndicator: const Center(child: CircularProgressIndicator()),
           buttonMode: ButtonMode.MATERIAL,
         ),
         skinToneConfig: const SkinToneConfig(),
@@ -106,12 +101,7 @@ class _CustomCategoryView extends StatelessWidget {
           pageController.jumpToPage(index);
         },
         tabs: Category.values.map((category) {
-          return Tab(
-            icon: Icon(
-              _getCategoryIcon(category),
-              size: 20,
-            ),
-          );
+          return Tab(icon: Icon(_getCategoryIcon(category), size: 20));
         }).toList(),
       ),
     );

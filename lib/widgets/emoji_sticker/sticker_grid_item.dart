@@ -1,10 +1,10 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import '../../domain/entities/sticker.dart';
 import '../../data/repositories/tdlib_telegram_client.dart';
+import '../../presentation/providers/app_providers.dart';
 import '../../presentation/providers/telegram_client_provider.dart';
 
 class StickerGridItem extends ConsumerStatefulWidget {
@@ -28,36 +28,39 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
   bool _loadError = false;
   bool _isLoading = false;
   bool _downloadRequested = false;
-  String? _localPath;
-  StreamSubscription? _downloadSubscription;
 
   @override
   void initState() {
     super.initState();
-    _localPath = widget.sticker.localPath;
     _initSticker();
   }
 
   @override
   void didUpdateWidget(StickerGridItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.sticker.localPath != widget.sticker.localPath ||
-        oldWidget.sticker.id != widget.sticker.id) {
-      _localPath = widget.sticker.localPath;
+    if (oldWidget.sticker.id != widget.sticker.id) {
+      _composition = null;
+      _loadError = false;
+      _isLoading = false;
       _downloadRequested = false;
       _initSticker();
     }
   }
 
-  @override
-  void dispose() {
-    _downloadSubscription?.cancel();
-    super.dispose();
-  }
-
   void _initSticker() {
-    if (_localPath != null && _localPath!.isNotEmpty) {
-      _loadSticker();
+    // First check if sticker already has a local path
+    if (widget.sticker.localPath != null &&
+        widget.sticker.localPath!.isNotEmpty) {
+      _loadSticker(widget.sticker.localPath!);
+      return;
+    }
+
+    // Check the centralized download paths
+    final downloadPath = ref
+        .read(emojiStickerProvider)
+        .getStickerPath(widget.sticker.fileId);
+    if (downloadPath != null) {
+      _loadSticker(downloadPath);
       return;
     }
 
@@ -67,8 +70,7 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
       if (client is TdlibTelegramClient) {
         final cachedPath = client.getCachedStickerPath(widget.sticker.fileId);
         if (cachedPath != null) {
-          _localPath = cachedPath;
-          _loadSticker();
+          _loadSticker(cachedPath);
           return;
         }
       }
@@ -81,32 +83,15 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
 
   void _requestDownload() {
     _downloadRequested = true;
-    final client = ref.read(telegramClientProvider);
-
-    // Listen for download completion
-    if (client is TdlibTelegramClient) {
-      _downloadSubscription?.cancel();
-      _downloadSubscription = client.fileDownloads.listen((event) {
-        if (event.fileId == widget.sticker.fileId && mounted) {
-          setState(() {
-            _localPath = event.path;
-          });
-          _loadSticker();
-        }
-      });
-
-      // Request download
-      client.downloadFile(widget.sticker.fileId);
-    }
+    ref
+        .read(emojiStickerProvider.notifier)
+        .requestStickerDownload(widget.sticker.fileId);
   }
 
-  Future<void> _loadSticker() async {
-    final path = _localPath;
-    if (path == null || path.isEmpty) {
-      return;
-    }
-
+  Future<void> _loadSticker(String path) async {
+    if (path.isEmpty) return;
     if (_isLoading) return;
+
     setState(() => _isLoading = true);
 
     try {
@@ -154,8 +139,26 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
 
   @override
   Widget build(BuildContext context) {
-    final path = _localPath;
-    final hasPath = path != null && path.isNotEmpty;
+    // Watch for download path updates from the centralized provider
+    final downloadPath = ref.watch(
+      emojiStickerProvider.select(
+        (state) => state.getStickerPath(widget.sticker.fileId),
+      ),
+    );
+
+    // Determine the effective path
+    final effectivePath = widget.sticker.localPath ?? downloadPath;
+    final hasPath = effectivePath != null && effectivePath.isNotEmpty;
+
+    // If we got a new download path, trigger loading
+    if (downloadPath != null &&
+        _composition == null &&
+        !_isLoading &&
+        !_loadError) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadSticker(downloadPath);
+      });
+    }
 
     Widget content;
 
@@ -164,9 +167,9 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
     } else if (!hasPath || _loadError) {
       content = _buildPlaceholder(context);
     } else if (widget.sticker.isAnimated) {
-      content = _buildAnimatedSticker();
+      content = _buildAnimatedSticker(effectivePath);
     } else {
-      content = _buildStaticSticker();
+      content = _buildStaticSticker(effectivePath);
     }
 
     if (widget.onTap != null) {
@@ -175,10 +178,7 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
         child: InkWell(
           onTap: widget.onTap,
           borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: content,
-          ),
+          child: Padding(padding: const EdgeInsets.all(4), child: content),
         ),
       );
     }
@@ -196,12 +196,9 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
     );
   }
 
-  Widget _buildAnimatedSticker() {
+  Widget _buildAnimatedSticker(String? path) {
     if (_composition != null) {
-      return Lottie(
-        composition: _composition,
-        fit: BoxFit.contain,
-      );
+      return Lottie(composition: _composition, fit: BoxFit.contain);
     }
 
     // Still loading
@@ -212,8 +209,7 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
     return _buildPlaceholder(context);
   }
 
-  Widget _buildStaticSticker() {
-    final path = _localPath;
+  Widget _buildStaticSticker(String? path) {
     if (path == null) return _buildPlaceholder(context);
 
     return Image.file(
@@ -231,9 +227,7 @@ class _StickerGridItemState extends ConsumerState<StickerGridItem> {
       return Center(
         child: Text(
           widget.sticker.emoji,
-          style: TextStyle(
-            fontSize: widget.size > 40 ? 32 : 20,
-          ),
+          style: TextStyle(fontSize: widget.size > 40 ? 32 : 20),
         ),
       );
     }
