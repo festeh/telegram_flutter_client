@@ -21,13 +21,11 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isMultiline = false;
-  bool _wasKeyboardVisible = false;
 
   @override
   void initState() {
     super.initState();
     _textController.addListener(_onTextChanged);
-    _focusNode.addListener(_onFocusChanged);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -35,7 +33,6 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _textController.removeListener(_onTextChanged);
-    _focusNode.removeListener(_onFocusChanged);
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -54,29 +51,17 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
         WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
     final keyboardHeight = viewInsets.bottom / devicePixelRatio;
 
-    final isKeyboardVisible = keyboardHeight > 0;
-
-    if (keyboardHeight > 50) {
-      // Store keyboard height for picker
+    // Only store substantial keyboard heights (not during animation)
+    if (keyboardHeight > 150) {
       ref.read(emojiStickerProvider.notifier).setKeyboardHeight(keyboardHeight);
     }
-
-    // If keyboard just appeared while picker is visible, hide picker
-    if (isKeyboardVisible &&
-        !_wasKeyboardVisible &&
-        ref.read(emojiStickerProvider).isPickerVisible) {
-      ref.read(emojiStickerProvider.notifier).hidePicker();
-    }
-
-    _wasKeyboardVisible = isKeyboardVisible;
   }
 
-  void _onFocusChanged() {
-    // When text field gains focus from tap, hide picker
-    if (_focusNode.hasFocus && ref.read(emojiStickerProvider).isPickerVisible) {
+  void _onTextFieldTapped() {
+    // Hide picker when user taps in text field to type
+    if (ref.read(emojiStickerProvider).isPickerVisible) {
       ref.read(emojiStickerProvider.notifier).hidePicker();
     }
-    setState(() {});
   }
 
   void _onTextChanged() {
@@ -152,17 +137,20 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
           if (replyingToMessage != null) _buildReplyPreview(replyingToMessage),
           _buildInputArea(isSending),
           if (isPickerVisible)
-            EmojiStickerPicker(
-              height: pickerHeight > 0 ? pickerHeight : 300,
-              textController: _textController,
-              chatId: widget.chat.id,
-              onEmojiSelected: () {
-                // Keep focus on text field for continued typing
-              },
-              onStickerSent: () {
-                // Optionally hide picker after sending sticker
-                ref.read(emojiStickerProvider.notifier).hidePicker();
-              },
+            SafeArea(
+              top: false,
+              child: EmojiStickerPicker(
+                height: pickerHeight > 150 ? pickerHeight : 300,
+                textController: _textController,
+                chatId: widget.chat.id,
+                onEmojiSelected: () {
+                  // Keep focus on text field for continued typing
+                },
+                onStickerSent: () {
+                  // Optionally hide picker after sending sticker
+                  ref.read(emojiStickerProvider.notifier).hidePicker();
+                },
+              ),
             ),
         ],
       ),
@@ -278,12 +266,14 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           IconButton(
             onPressed: isSending ? null : _showAttachmentOptions,
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
             icon: Icon(
               Icons.attach_file,
               color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -291,83 +281,88 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
             tooltip: 'Attach file',
           ),
           Expanded(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
-              child: TextField(
-                controller: _textController,
-                focusNode: _focusNode,
-                enabled: !isSending,
-                maxLines: null,
-                textInputAction: _isMultiline
-                    ? TextInputAction.newline
-                    : TextInputAction.send,
-                onSubmitted: (_) {
-                  if (!_isMultiline) {
-                    _sendMessage();
-                  }
-                },
-                decoration: InputDecoration(
-                  hintText: isSending ? 'Sending...' : 'Type a message...',
-                  hintStyle: TextStyle(
-                    color: colorScheme.onSurface.withValues(
-                      alpha: isSending ? 0.3 : 0.5,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHigh,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.outline,
-                      width: 1,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  suffixIcon: IconButton(
-                    onPressed: isSending ? null : _showEmojiPicker,
-                    icon: Icon(
-                      ref.watch(
-                            emojiStickerProvider.select(
-                              (s) => s.isPickerVisible,
-                            ),
-                          )
-                          ? Icons.keyboard_outlined
-                          : Icons.emoji_emotions_outlined,
+            child: GestureDetector(
+              onTap: _onTextFieldTapped,
+              behavior: HitTestBehavior.translucent,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 40, maxHeight: 120),
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  enabled: !isSending,
+                  maxLines: null,
+                  textInputAction: _isMultiline
+                      ? TextInputAction.newline
+                      : TextInputAction.send,
+                  onSubmitted: (_) {
+                    if (!_isMultiline) {
+                      _sendMessage();
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: isSending ? 'Sending...' : 'Type a message...',
+                    hintStyle: TextStyle(
                       color: colorScheme.onSurface.withValues(
-                        alpha: isSending ? 0.3 : 0.6,
+                        alpha: isSending ? 0.3 : 0.5,
                       ),
                     ),
-                    tooltip:
-                        ref.watch(
-                          emojiStickerProvider.select((s) => s.isPickerVisible),
-                        )
-                        ? 'Show keyboard'
-                        : 'Add emoji',
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHigh,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide(
+                        color: colorScheme.outline,
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide(
+                        color: colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: isSending ? null : _showEmojiPicker,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      iconSize: 22,
+                      icon: Icon(
+                        ref.watch(emojiStickerProvider.select((s) => s.isPickerVisible))
+                            ? Icons.keyboard_outlined
+                            : Icons.emoji_emotions_outlined,
+                        color: colorScheme.onSurface.withValues(
+                          alpha: isSending ? 0.3 : 0.6,
+                        ),
+                      ),
+                      tooltip: ref.watch(
+                            emojiStickerProvider.select((s) => s.isPickerVisible),
+                          )
+                          ? 'Show keyboard'
+                          : 'Add emoji',
+                    ),
+                    suffixIconConstraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 40,
+                    ),
                   ),
-                ),
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.3,
-                  color: colorScheme.onSurface,
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.3,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
           _buildSendButton(isSending),
         ],
       ),
@@ -378,8 +373,9 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      height: 40,
-      width: 40,
+      height: 36,
+      width: 36,
+      margin: const EdgeInsets.only(left: 8),
       decoration: BoxDecoration(
         color: isSending
             ? colorScheme.surfaceContainerHighest
@@ -388,6 +384,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
       ),
       child: IconButton(
         onPressed: isSending ? null : _sendMessage,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
         icon: isSending
             ? SizedBox(
                 width: 16,
@@ -399,9 +397,8 @@ class _MessageInputAreaState extends ConsumerState<MessageInputArea>
                   ),
                 ),
               )
-            : Icon(Icons.send, color: colorScheme.onPrimary, size: 20),
+            : Icon(Icons.send, color: colorScheme.onPrimary, size: 18),
         tooltip: isSending ? 'Sending...' : 'Send message',
-        splashRadius: 20,
       ),
     );
   }
